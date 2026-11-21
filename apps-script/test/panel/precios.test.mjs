@@ -288,3 +288,19 @@ describe('vistaPreviaPrecios()', () => {
     expect(() => c.vistaPreviaPrecios({ producto_id: sin.id })).toThrow(/^invalido: .*precio/);
   });
 });
+
+describe('porcentajeDescuentoGas_', () => {
+  test('da lo mismo que porcentajeDescuento del paquete de contratos', async () => {
+    const { porcentajeDescuento } = await import('@catalogo/contratos');
+    let n = 0;
+    for (const regular of [1, 9.9, 10, 33.33, 59.9, 89, 99.99, 100, 120.5, 999, 1000]) {
+      for (let paso = 1; paso < 200; paso++) {
+        const precio = Math.round(regular * (paso / 200) * 100) / 100;
+        if (!(precio > 0 && precio < regular)) continue;
+        expect(ctx.porcentajeDescuentoGas_(regular, precio), `${regular} → ${precio}`).toBe(porcentajeDescuento(regular, precio));
+        n++;
+      }
+    }
+    expect(n).toBeGreaterThan(1000);
+  });
+});
