@@ -174,7 +174,7 @@
       <p>Crea o repara tu hoja «Catálogo Ropa — Base de datos» y las carpetas de fotos en tu Drive. Puedes pulsarlo las veces que quieras: no borra nada.</p>
       <div class="fila-botones">
         <button type="button" class="boton" :disabled="instalando" @click="instalar()" x-text="instalando ? 'Instalando…' : 'Completar instalación'"></button>
-        <a class="boton" target="_blank" rel="noopener" :href="instalado.hojaUrl" x-show="instalado && instalado.hojaUrl">Abrir mi hoja <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+        <a class="boton" target="_blank" rel="noopener" :href="instalado ? instalado.hojaUrl : null" x-show="instalado && instalado.hojaUrl">Abrir mi hoja <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
       </div>
       <p class="nota ok" role="status" x-show="instalado" x-text="textoInstalado"></p>
       <p class="nota error" x-show="errorInstalar" x-text="errorInstalar"></p>

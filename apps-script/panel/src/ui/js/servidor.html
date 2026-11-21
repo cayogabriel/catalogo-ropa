@@ -22,7 +22,7 @@
       case 'no_encontrado': return 'No encontré lo que buscas. Puede que ya no exista.';
       case 'conflicto': return 'Alguien cambió esto en otra pestaña. Cargué la versión más reciente.';
       case 'invalido': return detalle ? conPunto(mayuscula(detalle)) : 'Un dato no es válido. Revísalo.';
-      case 'limite': return detalle ? 'Pasaste el límite: ' + detalle.charAt(0).toLowerCase() + detalle.slice(1).replace(/\.$/, '') + '.' : 'Pasaste el tamaño o la cantidad máxima.';
+      case 'limite': return detalle ? conPunto(mayuscula(detalle)) : 'Pasaste el tamaño o la cantidad máxima.';
       case 'github': return 'No pude conectar con GitHub. Prueba de nuevo en un momento.';
       case 'sin_token': return 'Falta conectar con GitHub. Pega el token en Configuración.';
       case 'foto_no_disponible': return 'Una foto ya no está en Drive. Cámbiala por otra.';

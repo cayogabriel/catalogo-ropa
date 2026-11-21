@@ -56,8 +56,10 @@ describe('mensajeAmable', () => {
     expect(S.mensajeAmable('sin_token')).toMatch(/Configuración/);
     expect(S.mensajeAmable('desconocido')).toMatch(/conexión/i);
   });
-  it('invalido muestra el detalle del servidor con mayúscula y punto', () => {
+  it('invalido y limite muestran el detalle del servidor con mayúscula y punto', () => {
     expect(S.mensajeAmable('invalido', 'el precio debe ser mayor que 0')).toBe('El precio debe ser mayor que 0.');
+    expect(S.mensajeAmable('limite', 'la foto pesa más de 8 MB')).toBe('La foto pesa más de 8 MB.');
+    expect(S.mensajeAmable('limite')).toBe('Pasaste el tamaño o la cantidad máxima.');
   });
 });
 

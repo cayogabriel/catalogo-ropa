@@ -52,13 +52,15 @@
               <input type="text" :value="edit.nombre" @input="g(edit, 'nombre', $event)" :aria-invalid="errores.nombre ? 'true' : 'false'" />
               <span class="campo-error" x-show="errores.nombre" x-text="errores.nombre"></span>
             </label>
-            <label class="campo">
-              <span class="campo-etiqueta">Dirección de la página</span>
-              <input type="text" :value="edit.slug" @input="g(edit, 'slug', $event)" :aria-invalid="errores.slug ? 'true' : 'false'" autocapitalize="none" spellcheck="false" />
-              <span class="campo-ayuda num" x-text="'…/temporada/' + edit.slug + '/'"></span>
-              <span class="campo-error" x-show="errores.slug" x-text="errores.slug"></span>
-              <button type="button" class="boton texto chico" style="align-self: flex-start" @click="gv(edit, 'slug', $u.slug(edit.nombre))">Usar el nombre</button>
-            </label>
+            <div class="campo">
+              <label class="campo">
+                <span class="campo-etiqueta">Dirección de la página</span>
+                <input type="text" :value="edit.slug" @input="g(edit, 'slug', $event)" :aria-invalid="errores.slug ? 'true' : 'false'" autocapitalize="none" spellcheck="false" />
+                <span class="campo-ayuda num" x-text="'…/temporada/' + edit.slug + '/'"></span>
+                <span class="campo-error" x-show="errores.slug" x-text="errores.slug"></span>
+              </label>
+              <button type="button" class="boton texto chico" style="align-self: flex-start" @click="gv(edit, 'slug', $u.slug(edit.nombre))">Usar el nombre como dirección</button>
+            </div>
             <label class="campo">
               <span class="campo-etiqueta">Título de la portada</span>
               <input type="text" :value="edit.titulo" @input="g(edit, 'titulo', $event)" />
