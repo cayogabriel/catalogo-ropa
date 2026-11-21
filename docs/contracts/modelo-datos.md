@@ -14,6 +14,11 @@ Una pestaña por entidad. La fila 1 tiene los encabezados exactos de abajo, cong
 | lista | texto separado por comas (`S,M,L`) | arreglo de textos |
 | json | texto JSON | objeto |
 
+**Formato de texto:**
+- Las columnas que no son número, booleano ni fecha (ver `TIPOS` en `esquema.js`) llevan formato de texto plano (`@`), que pone `instalar()`.
+- Sin ese formato, Sheets convierte `'51'` en número, `'2026-12-01'` en fecha y todo lo que empieza con `=` en fórmula.
+- Si escribes en una columna de texto, mantén el formato.
+
 Toda pestaña editable lleva `version` (número): sube en 1 con cada cambio y el autoguardado la usa para detectar choques. Lo que se edite a mano en la hoja no sube `version` ni queda en el historial, y el Panel lo tolera.
 
 ## `productos`
@@ -216,6 +221,9 @@ Los secretos no van aquí: el token de GitHub vive en las propiedades del script
 ## `eventos`
 
 La API pública agrega una fila por evento.
+
+- Cada madrugada, `diario_()` los consolida en `estadisticas_diarias` y **borra los eventos de más de 35 días**. Así el libro no crece sin límite: Google admite 10 millones de celdas por libro.
+- Las columnas son de texto (salvo `fecha`), así que ninguna ruta se vuelve fórmula.
 
 | Columna | Tipo | Regla |
 |---|---|---|

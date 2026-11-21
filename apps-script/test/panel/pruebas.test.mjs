@@ -36,6 +36,18 @@ describe('publicarPrueba()', () => {
     expect(dobles._url.llamadas[0].url).toBe(`${RAW}catalogo.ejemplo.json`);
   });
 
+  test('la fecha de cada foto es su última modificación en Drive, con hora de Lima', () => {
+    const { ctx, dobles } = preparar();
+    ctx.instalar();
+    const r = ctx.publicarPrueba();
+    const copia = JSON.parse(dobles.DriveApp.getFileById(r.archivoId).getBlob().getDataAsString());
+    for (const [id, foto] of Object.entries(copia.fotos)) {
+      const modificada = dobles.DriveApp.getFileById(id).getLastUpdated();
+      expect(foto.actualizado).toBe(dobles.Utilities.formatDate(modificada, 'America/Lima', "yyyy-MM-dd'T'HH:mm:ssXXX"));
+    }
+    expect(copia.generado_en).toMatch(/-05:00$/);
+  });
+
   test('anota la copia en el puntero que lee la API', () => {
     const { ctx, dobles } = preparar();
     ctx.instalar();

@@ -46,4 +46,15 @@ revisarPaleta(tokens); // → { ok, faltantes[], fallos[] }
   Las paletas predefinidas usan su slug (`verano-costa`).
 - **Fechas en JSON:** ISO 8601 con desfase de Lima (`2026-12-05T00:00:00-05:00`). `null` = sin límite.
 - **Dinero:** número en la moneda de la tienda (S/), con decimales si los tiene. El redondeo lo aplica el Panel al publicar.
-- **Fotos:** se identifican por su id de archivo de Drive. En la web nunca se usan enlaces de Drive: solo las copias que genera el workflow.
+- **Fotos:**
+  - Se identifican por su id de archivo de Drive.
+  - En la web nunca se usan enlaces de Drive: solo las copias que genera el workflow.
+  - `fotos[id].actualizado` es la última modificación del archivo en Drive (ISO con `-05:00`) y sirve de clave de caché.
+- **Precios honestos** (los exige `validarCatalogo`):
+  - **Sin oferta:** el precio es el regular, sin «antes», % ni insignias.
+  - **Con oferta:**
+    - el precio baja;
+    - «antes» es el precio regular real;
+    - el % sale de los precios, redondeado hacia abajo (`porcentajeDescuento`);
+    - la cuenta regresiva solo va si hay fecha de fin.
+  - **Revista:** la vigencia impresa no pasa el último día de la oferta de sus prendas.

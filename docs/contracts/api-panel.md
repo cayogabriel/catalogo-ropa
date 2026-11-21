@@ -28,7 +28,7 @@
 | Función | Recibe | Devuelve |
 |---|---|---|
 | `obtenerEstadoInicial()` | — | `{ usuario, config: {clave: valor}, textos: {clave: valor}, conteos: {[entidad]: n}, publicacion: EstadoPublicacion, cambios_sin_publicar: boolean, sitio_url }` |
-| `instalar()` | — | `{ hojaId, hojaUrl, carpetaRaizId, nueva }`. Se puede repetir sin miedo: completa lo que falte |
+| `instalar()` | — | `{ hojaId, hojaUrl, carpetaRaizId, nueva, restaurado }`. Se puede repetir sin miedo, aunque la vez anterior haya fallado a mitad: <br>• usa un candado; <br>• guarda cada id apenas lo crea; <br>• restaura de la papelera la carpeta o la hoja (`restaurado: true`); <br>• da formato de texto a las columnas de texto; <br>• recorta las columnas sobrantes |
 | `autorizar()` | — | `'ok'`. Solo sirve para que Google pida los permisos |
 
 ## Edición (autoguardado)
@@ -56,6 +56,11 @@
 
 Las fotos se guardan en la carpeta de Drive que corresponde al destino, con el código del producto o el slug de la temporada en el nombre, y quedan privadas.
 
+**Privacidad de las fotos:**
+- **En el navegador:** la interfaz **siempre** re-codifica la imagen antes de subirla (canvas: lado mayor de 2000 px, JPEG al 0,85, orientación EXIF ya aplicada). Eso elimina los datos EXIF, entre ellos la ubicación GPS de una foto sacada en casa.
+- **En el servidor:** `subirFoto` rechaza con `invalido` un JPEG que todavía traiga un bloque EXIF (segmento APP1 que empieza con `Exif`).
+- **Por qué importa:** la API pública entrega los bytes tal como se guardaron.
+
 ## Precios, textos y configuración
 
 | Función | Recibe | Devuelve |
@@ -71,7 +76,18 @@ Las fotos se guardan en la carpeta de Drive que corresponde al destino, con el c
 
 | Función | Recibe | Devuelve |
 |---|---|---|
-| `publicar()` | — | `EstadoPublicacion`. Pasos: 1) arma la copia, 2) la valida, 3) la guarda en `Publicado/catalogo-publicado.json`, 4) actualiza `publicado_id` en el puntero, 5) envía `repository_dispatch` (`event_type: 'publicar'`) a GitHub |
+| `publicar()` | — | `EstadoPublicacion`. Ver los pasos abajo |
+
+**Pasos de `publicar()`:**
+1. Arma la copia.
+2. La valida: debe cumplir `validarCatalogo`, y S2 lo prueba en sus tests. Además comprueba que **cada foto exista en Drive y no esté en la papelera**; si no, lanza `invalido: la foto <id> de <código> ya no está en Drive`.
+3. La guarda en `Publicado/catalogo-publicado.json`.
+4. Actualiza `publicado_id` en el puntero.
+5. Envía `repository_dispatch` (`event_type: 'publicar'`) a GitHub.
+
+Además:
+- Si la tienda no tiene nombre (`tienda_nombre` vacío), lanza `invalido` antes de enviar nada.
+- En el índice, `fotos[id].actualizado` es **la última modificación del archivo en Drive** (`getLastUpdated()`), en ISO con `-05:00`. Es la clave de la caché del workflow: no uses la hora de publicación, porque haría volver a bajar todas las fotos cada vez.
 | `estadoPublicacion()` | — | `EstadoPublicacion` = `{ estado: 'nunca'\|'en_cola'\|'publicando'\|'publicado'\|'error', iniciado_en, terminado_en, url_ejecucion, mensaje, documentos_guardados }` |
 | `resumen(opciones)` | `{ dias: 7\|30 }` | `{ totales: {vistas, whatsapp, favoritos, compartidos, descargas}, por_producto: [{ producto_id, codigo, nombre, …totales }], por_origen: {[origen]: totales} }` |
 | `documentos()` | — | `{ revistas: [{ temporada_id, nombre, pdf: {url, actualizado}, carrusel: {url, cantidad} }], catalogo: {url, actualizado} \| null, reportes: [{ mes, url }] }` |

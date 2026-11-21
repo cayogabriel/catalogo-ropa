@@ -5,6 +5,7 @@
 // S2 la reemplaza por publicar() real; puede borrarla cuando ya no sirva.
 
 const RAW_FIXTURES = 'https://raw.githubusercontent.com/cayogabriel/catalogo-ropa/main/fixtures/';
+const ISO_LIMA = "yyyy-MM-dd'T'HH:mm:ssXXX";
 
 function publicarPrueba() {
   requireAdmin_();
@@ -28,11 +29,11 @@ function publicarPrueba() {
     return JSON.stringify(mapa[id] || id);
   });
   const publicado = JSON.parse(texto);
-  const ahora = new Date().toISOString();
-  publicado.generado_en = ahora;
+  publicado.generado_en = Utilities.formatDate(new Date(), 'America/Lima', ISO_LIMA);
+  // Contrato: «actualizado» es la última modificación del archivo en Drive (clave de la caché de fotos).
   publicado.fotos = {};
   reales.forEach(function (id) {
-    publicado.fotos[id] = { actualizado: ahora };
+    publicado.fotos[id] = { actualizado: Utilities.formatDate(DriveApp.getFileById(id).getLastUpdated(), 'America/Lima', ISO_LIMA) };
   });
 
   const contenido = JSON.stringify(publicado);
@@ -55,7 +56,10 @@ function descargar_(url) {
 
 function subirFotoDePrueba_(carpeta, nombre, idEjemplo) {
   const existentes = carpeta.getFilesByName(nombre);
-  if (existentes.hasNext()) return existentes.next().getId();
+  while (existentes.hasNext()) {
+    const archivo = existentes.next();
+    if (!archivo.isTrashed()) return archivo.getId();
+  }
   const blob = descargar_(RAW_FIXTURES + 'img/' + idEjemplo + '.jpg').getBlob().setName(nombre);
   return carpeta.createFile(blob).getId();
 }
