@@ -1,0 +1,107 @@
+{
+  "_nota": "Calendario comercial de Perú (hemisferio sur). Fechas MM-DD. Día de la Madre (2.º domingo de mayo), Día del Padre (3.er domingo de junio), Black Friday (viernes tras el 4.º jueves de noviembre) y Cyber Wow (IAB Perú: ediciones de ~4 días en abril, julio y noviembre) cambian de día cada año: los rangos cubren la semana previa y la fecha exacta debe confirmarse cada año (para Cyber Wow, en el sitio oficial del IAB Perú). Gratificaciones de julio y diciembre aumentan la compra. La administradora ajusta fechas en el panel. Fuentes consultadas: gestion.pe, infomercado.pe, peru-retail.com, andina.pe.",
+  "campanas": [
+    {
+      "id": "verano", "nombre": "Verano", "desde": "12-15", "hasta": "02-14", "paleta_sugerida": "verano-costa",
+      "tacticas": ["novedades", "revista_de_temporada", "combos"],
+      "portada": { "titulo": "Verano", "subtitulo": "Prendas frescas para los días de sol.", "boton": "Ver temporada" },
+      "revista": { "intro": "Telas ligeras y colores de playa para el verano. Elige lo que te guste y pídelo por WhatsApp.", "cierre": "Gracias por mirar la revista. Escríbenos para elegir tu talla y coordinar el envío." }
+    },
+    {
+      "id": "san-valentin", "nombre": "San Valentín", "desde": "02-01", "hasta": "02-14", "paleta_sugerida": "san-valentin",
+      "tacticas": ["novedades", "combos", "regalo_con_fecha_real"],
+      "portada": { "titulo": "Para regalar o regalarte", "subtitulo": "Prendas pensadas para el 14 de febrero.", "boton": "Ver prendas" },
+      "revista": { "intro": "Ideas de ropa para regalar o para ti este 14 de febrero.", "cierre": "Escríbenos con anticipación y coordinamos el envío a tiempo." }
+    },
+    {
+      "id": "liquidacion-verano", "nombre": "Liquidación de verano", "desde": "02-15", "hasta": "03-31", "paleta_sugerida": "liquidacion",
+      "tacticas": ["liquidacion", "precio_ancla", "cuenta_regresiva", "ultimas_unidades"],
+      "portada": { "titulo": "Liquidación de verano", "subtitulo": "Últimas prendas de la temporada con precio rebajado.", "boton": "Ver liquidación" },
+      "revista": { "intro": "Las últimas prendas de verano, con su precio anterior y su precio actual.", "cierre": "Cuando se acaba una talla, se acaba. Escríbenos para confirmar disponibilidad." }
+    },
+    {
+      "id": "otono", "nombre": "Otoño", "desde": "03-20", "hasta": "05-04", "paleta_sugerida": "otono-tierra",
+      "tacticas": ["novedades", "revista_de_temporada", "combos"],
+      "portada": { "titulo": "Otoño", "subtitulo": "Tonos tierra y capas para el cambio de clima.", "boton": "Ver temporada" },
+      "revista": { "intro": "Tonos tierra y prendas para combinar en las mañanas frescas.", "cierre": "Gracias por mirar. Escríbenos y armamos tu pedido." }
+    },
+    {
+      "id": "cyber-wow-abril", "nombre": "Cyber Wow (abril)", "desde": "04-03", "hasta": "04-10", "paleta_sugerida": "cyber-wow",
+      "tacticas": ["ofertas", "cuenta_regresiva", "precio_ancla"],
+      "portada": { "titulo": "Ofertas Cyber Wow", "subtitulo": "Precios rebajados solo durante el evento.", "boton": "Ver ofertas" },
+      "revista": { "intro": "Ofertas para el Cyber Wow, con el precio regular y el precio del evento.", "cierre": "Las ofertas terminan en la fecha indicada. Escríbenos para pedir." }
+    },
+    {
+      "id": "dia-de-la-madre", "nombre": "Día de la Madre", "desde": "04-25", "hasta": "05-14", "paleta_sugerida": "dia-de-la-madre",
+      "tacticas": ["novedades", "combos", "regalo_con_fecha_real", "revista_de_temporada"],
+      "portada": { "titulo": "Para mamá", "subtitulo": "Prendas para regalar en su día.", "boton": "Ver regalos" },
+      "revista": { "intro": "Ideas de ropa para mamá, con precios claros y envío desde Ayacucho.", "cierre": "Pide con tiempo para que llegue antes de su día. Escríbenos por WhatsApp." }
+    },
+    {
+      "id": "invierno", "nombre": "Invierno", "desde": "05-20", "hasta": "08-31", "paleta_sugerida": "invierno-andino",
+      "tacticas": ["novedades", "revista_de_temporada", "combos"],
+      "portada": { "titulo": "Invierno", "subtitulo": "Abrigo y calidez para las noches frías.", "boton": "Ver temporada" },
+      "revista": { "intro": "Prendas abrigadas para el frío de la sierra y la costa.", "cierre": "Escríbenos y te ayudamos a elegir tu talla." }
+    },
+    {
+      "id": "dia-del-padre", "nombre": "Día del Padre", "desde": "06-08", "hasta": "06-21", "paleta_sugerida": "invierno-andino",
+      "tacticas": ["combos", "regalo_con_fecha_real"],
+      "portada": { "titulo": "Para papá", "subtitulo": "Ideas de regalo para su día.", "boton": "Ver regalos" },
+      "revista": { "intro": "Ideas de regalo para papá y para quienes lo acompañan.", "cierre": "Escríbenos con anticipación para coordinar el envío." }
+    },
+    {
+      "id": "fiestas-patrias", "nombre": "Fiestas Patrias", "desde": "07-10", "hasta": "07-31", "paleta_sugerida": "fiestas-patrias",
+      "tacticas": ["ofertas", "cuenta_regresiva", "combos"],
+      "portada": { "titulo": "Fiestas Patrias", "subtitulo": "Ofertas para celebrar el 28 y 29 de julio.", "boton": "Ver ofertas" },
+      "revista": { "intro": "Prendas y ofertas para las Fiestas Patrias.", "cierre": "Las ofertas terminan en la fecha indicada. Escríbenos para pedir." }
+    },
+    {
+      "id": "cyber-wow-julio", "nombre": "Cyber Wow (julio)", "desde": "07-03", "hasta": "07-10", "paleta_sugerida": "cyber-wow",
+      "tacticas": ["ofertas", "cuenta_regresiva", "precio_ancla"],
+      "portada": { "titulo": "Ofertas Cyber Wow", "subtitulo": "Precios rebajados solo durante el evento.", "boton": "Ver ofertas" },
+      "revista": { "intro": "Ofertas para el Cyber Wow, con el precio regular y el precio del evento.", "cierre": "Las ofertas terminan en la fecha indicada. Escríbenos para pedir." }
+    },
+    {
+      "id": "liquidacion-invierno", "nombre": "Liquidación de invierno", "desde": "08-15", "hasta": "09-15", "paleta_sugerida": "liquidacion",
+      "tacticas": ["liquidacion", "precio_ancla", "cuenta_regresiva", "ultimas_unidades"],
+      "portada": { "titulo": "Liquidación de invierno", "subtitulo": "Últimas prendas abrigadas con precio rebajado.", "boton": "Ver liquidación" },
+      "revista": { "intro": "Las últimas prendas de invierno, con su precio anterior y su precio actual.", "cierre": "Cuando se acaba una talla, se acaba. Escríbenos para confirmar." }
+    },
+    {
+      "id": "primavera", "nombre": "Primavera", "desde": "09-16", "hasta": "10-24", "paleta_sugerida": "primavera-jardin",
+      "tacticas": ["novedades", "revista_de_temporada"],
+      "portada": { "titulo": "Primavera", "subtitulo": "Colores suaves y prendas livianas.", "boton": "Ver temporada" },
+      "revista": { "intro": "Colores suaves y prendas livianas para la primavera.", "cierre": "Gracias por mirar. Escríbenos y armamos tu pedido." }
+    },
+    {
+      "id": "halloween-criolla", "nombre": "Halloween y Canción Criolla", "desde": "10-25", "hasta": "10-31", "paleta_sugerida": "halloween-criolla",
+      "tacticas": ["novedades", "combos"],
+      "portada": { "titulo": "31 de octubre", "subtitulo": "Disfraces, noche criolla o plan en casa: elige tu look.", "boton": "Ver prendas" },
+      "revista": { "intro": "Looks para la noche del 31, de Halloween o de Canción Criolla.", "cierre": "Escríbenos con tiempo para coordinar el envío." }
+    },
+    {
+      "id": "cyber-wow-noviembre", "nombre": "Cyber Wow (noviembre)", "desde": "11-01", "hasta": "11-08", "paleta_sugerida": "cyber-wow",
+      "tacticas": ["ofertas", "cuenta_regresiva", "precio_ancla"],
+      "portada": { "titulo": "Ofertas Cyber Wow", "subtitulo": "Precios rebajados solo durante el evento.", "boton": "Ver ofertas" },
+      "revista": { "intro": "Ofertas para el Cyber Wow, con el precio regular y el precio del evento.", "cierre": "Las ofertas terminan en la fecha indicada. Escríbenos para pedir." }
+    },
+    {
+      "id": "black-friday", "nombre": "Black Friday", "desde": "11-24", "hasta": "11-30", "paleta_sugerida": "cyber-wow",
+      "tacticas": ["ofertas", "cuenta_regresiva", "precio_ancla"],
+      "portada": { "titulo": "Black Friday", "subtitulo": "Precios rebajados por unos días.", "boton": "Ver ofertas" },
+      "revista": { "intro": "Ofertas de Black Friday con su precio anterior y su precio actual.", "cierre": "Las ofertas terminan en la fecha indicada. Escríbenos para pedir." }
+    },
+    {
+      "id": "navidad", "nombre": "Navidad", "desde": "12-01", "hasta": "12-24", "paleta_sugerida": "navidad-festiva",
+      "tacticas": ["novedades", "combos", "regalo_con_fecha_real", "revista_de_temporada"],
+      "portada": { "titulo": "Navidad", "subtitulo": "Ropa para estrenar y regalar estas fiestas.", "boton": "Ver regalos" },
+      "revista": { "intro": "Ropa para estrenar en Navidad y para regalar a quien quieres.", "cierre": "Pide con tiempo para que llegue antes del 24. Escríbenos por WhatsApp." }
+    },
+    {
+      "id": "basico-todo-el-ano", "nombre": "Básicos de todo el año", "desde": "01-01", "hasta": "12-31", "paleta_sugerida": "neutra-minimal",
+      "tacticas": ["novedades", "mas_consultados"],
+      "portada": { "titulo": "Básicos que combinan con todo", "subtitulo": "Prendas simples para el día a día.", "boton": "Ver catálogo" },
+      "revista": { "intro": "Prendas simples para combinar de mil formas.", "cierre": "Escríbenos para elegir tu talla." }
+    }
+  ]
+}

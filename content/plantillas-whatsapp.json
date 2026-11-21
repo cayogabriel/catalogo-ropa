@@ -1,0 +1,19 @@
+{
+  "_nota": "Plantillas editables. Variables de producto: {vendedora} {producto} {codigo} {talla} {color} {precio} {enlace}. Variables de lista: {vendedora} {lista} {total}. Si falta talla o color, la web omite esa línea completa (las líneas opcionales van en 'lineas_opcionales').",
+  "plantillas": {
+    "producto": {
+      "descripcion": "Un producto desde su ficha, con talla y color elegidos.",
+      "mensaje": "Hola {vendedora}, me interesa esta prenda:\n{producto} (código {codigo})\nTalla: {talla}\nColor: {color}\nPrecio: {precio}\n{enlace}\n¿Está disponible?",
+      "lineas_opcionales": ["Talla: {talla}", "Color: {color}"]
+    },
+    "lista": {
+      "descripcion": "Toda la lista de favoritos en un solo mensaje. {lista} trae una línea por prenda: '- Producto (código) · talla · color · precio'.",
+      "mensaje": "Hola {vendedora}, esta es mi lista:\n{lista}\nTotal: {total}\n¿Me confirmas disponibilidad y envío?"
+    },
+    "revista": {
+      "descripcion": "Desde la revista (PDF o web): sin talla elegida.",
+      "mensaje": "Hola {vendedora}, vi esta prenda en la revista:\n{producto} (código {codigo})\nPrecio: {precio}\n{enlace}\n¿Qué tallas tienes?",
+      "lineas_opcionales": []
+    }
+  }
+}

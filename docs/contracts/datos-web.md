@@ -58,6 +58,7 @@ El script `web/scripts/publicar.mjs` (de S6) lo escribe antes de `astro build`. 
    - el enlace es `https://wa.me/<whatsapp>?text=<encodeURIComponent(mensaje)>`;
    - el número es el de la vendedora del producto o, si no tiene, el de la vendedora por defecto;
    - el mensaje sale de `textos['whatsapp.producto']`, `textos['whatsapp.lista']` o `textos['whatsapp.revista']`, reemplazando `{vendedora}`, `{producto}`, `{codigo}`, `{talla}`, `{color}`, `{precio}`, `{enlace}`, `{lista}` y `{total}`;
+   - si una variable queda vacía (por ejemplo, no se eligió talla), se elimina **la línea completa** que la contiene antes de reemplazar;
    - si falta una plantilla, se usa: `Hola, me interesa {producto} ({codigo}). {enlace}`.
 7. **Otras redes:** se arman con el usuario guardado en `tienda.redes`.
 
@@ -70,7 +71,21 @@ El script `web/scripts/publicar.mjs` (de S6) lo escribe antes de `astro build`. 
 
    Si una red es `null`, su botón no se muestra.
 8. **Eventos:** se envían a `import.meta.env.PUBLIC_API_URL` (la misma URL que `CATALOG_API_URL`) con el formato de [api-publica.md](api-publica.md). Si la variable falta, los eventos no se envían.
-9. **Favoritos:**
+9. **Variables en los textos:** los textos de `textos` pueden traer estas variables, que la web reemplaza.
+
+   | Variable | Se reemplaza por |
+   |---|---|
+   | `{tienda}` | `tienda.nombre` |
+   | `{fecha}` | `dd/mm` |
+   | `{monto}` | `S/ 59` o `S/ 59.90`; los decimales solo si los hay |
+   | `{porcentaje}` | número sin `%` |
+   | `{cantidad}` | número |
+   | `{codigo}` | código del producto |
+   | `{anio}` | año, `aaaa` |
+   | `{producto}` | nombre del producto |
+
+   Las claves que empiezan con `_` son notas y no se muestran.
+10. **Favoritos:**
    - se guardan en `localStorage` con la clave `catalogo-ropa:lista`, como un arreglo de `{ codigo, talla, color }`;
    - todo acceso va dentro de `try/catch`;
    - si `localStorage` está bloqueado, la lista solo dura mientras la pestaña está abierta.

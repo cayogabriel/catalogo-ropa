@@ -17,7 +17,7 @@ Los genera el workflow `publicar.yml` (S6) en cada publicación, con Playwright/
 - **Páginas editoriales:** una por foto con `destacada: true` (a página completa), o dos fotos por página.
 - **Páginas de prendas:** foto, nombre, precio antes/ahora y botón «Pedir por WhatsApp».
 - **Contraportada:** texto `cierre`, contactos y botones de redes, la URL de la temporada y un QR que lleva a ella.
-- **Pie de cada página:** `revista.precios_validos_hasta` con `vigencia_hasta` en formato `dd/mm/aaaa`.
+- **Pie de cada página:** `revista.precios_validos_hasta` con `vigencia_hasta` en formato `dd/mm`, que va en la variable `{fecha}`.
 
 ## Manifiesto `documentos.json`
 
