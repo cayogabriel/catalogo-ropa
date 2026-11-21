@@ -99,3 +99,14 @@ describe('candado que puede fallar', () => {
     expect(() => lock.waitLock(1000)).toThrow(/lock/i);
   });
 });
+
+describe('UrlFetch: reiniciar', () => {
+  test('borra las respuestas programadas y las llamadas anotadas', () => {
+    const { UrlFetchApp, _url } = crearDobles();
+    _url.responder(/a/, { texto: 'x' });
+    UrlFetchApp.fetch('a');
+    _url.reiniciar();
+    expect(_url.llamadas).toHaveLength(0);
+    expect(() => UrlFetchApp.fetch('a')).toThrow(/sin respuesta programada/);
+  });
+});

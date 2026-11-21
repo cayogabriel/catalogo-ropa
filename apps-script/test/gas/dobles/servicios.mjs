@@ -123,7 +123,11 @@ export function crearUrlFetch() {
   };
   return {
     UrlFetchApp,
-    ayudas: { llamadas, responder: (patron, respuesta) => respuestas.push({ patron, ...respuesta }) },
+    ayudas: {
+      llamadas,
+      responder: (patron, respuesta) => respuestas.push({ patron, ...respuesta }),
+      reiniciar: () => ((respuestas.length = 0), (llamadas.length = 0)),
+    },
   };
 }
 
