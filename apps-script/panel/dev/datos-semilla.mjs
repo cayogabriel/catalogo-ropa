@@ -27,7 +27,7 @@ export function semilla() {
     creado_en: creado, actualizado_en: creado, publicado_en: p.estado === 'borrador' ? null : creado, version: 1,
   }));
   const extra = (n, codigo, categoria_id, campos) => ({
-    id: `prd_0000001${n}`, codigo, nombre: '', descripcion: '', categoria_id, precio_regular: null, stock: null,
+    id: `prd_a000000${n}`, codigo, nombre: '', descripcion: '', categoria_id, precio_regular: null, stock: null,
     tallas: [], tallas_agotadas: [], colores: [], fotos: [], texto_alt: '', etiquetas: [], estado: 'borrador',
     vendedora_id: '', orden: productos.length + n, creado_en: creado, actualizado_en: creado, publicado_en: null,
     version: 1, ...campos,

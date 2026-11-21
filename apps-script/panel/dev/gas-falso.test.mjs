@@ -411,3 +411,14 @@ describe('crearGasFalso: fallas simuladas', () => {
     expect((await gas.llamar('listar', ['productos'])).filas[0].nombre).toBe(f.nombre);
   });
 });
+
+describe('crearGasFalso: datos de partida', () => {
+  it('ningún id se repite dentro de una entidad', async () => {
+    const gas = crearGasFalso();
+    for (const entidad of ['productos', 'categorias', 'secciones', 'portadas', 'ofertas', 'temporadas', 'temporada_fotos', 'paletas', 'vendedoras']) {
+      const { filas } = await gas.llamar('listar', [entidad, { incluir_archivados: true }]);
+      const ids = filas.map((f) => f.id);
+      expect(new Set(ids).size, entidad).toBe(ids.length);
+    }
+  });
+});

@@ -1,0 +1,592 @@
+<script>
+/* Estado compartido de la interfaz: stores de Alpine (panel, datos, toasts, publicacion).
+ *
+ * crearStores(deps) arma objetos planos; al final del archivo se registran en Alpine. Así Vitest los prueba
+ * sin navegador. Dentro de los métodos se usa siempre `this` (en Alpine es el proxy reactivo).
+ */
+(function (P) {
+  var U = P.util;
+  var V = P.validar;
+
+  var RUTAS = [
+    { id: 'resumen', titulo: 'Resumen', icono: 'resumen', principal: true },
+    { id: 'productos', titulo: 'Productos', icono: 'producto', principal: true },
+    { id: 'biblioteca', titulo: 'Fotos', icono: 'foto', principal: true },
+    { id: 'temporadas', titulo: 'Temporadas', icono: 'temporada', principal: true },
+    { id: 'ofertas', titulo: 'Ofertas', icono: 'oferta' },
+    { id: 'secciones', titulo: 'Secciones', icono: 'seccion' },
+    { id: 'portadas', titulo: 'Portadas', icono: 'portada' },
+    { id: 'colores', titulo: 'Colores', icono: 'colores' },
+    { id: 'vendedoras', titulo: 'Vendedoras y WhatsApp', icono: 'chat' },
+    { id: 'textos', titulo: 'Textos de la web', icono: 'texto' },
+    { id: 'documentos', titulo: 'Documentos', icono: 'documento' },
+    { id: 'historial', titulo: 'Historial', icono: 'historial' },
+    { id: 'configuracion', titulo: 'Configuración', icono: 'ajustes' },
+  ];
+  var RUTA_VALIDA = {};
+  RUTAS.forEach(function (r) { RUTA_VALIDA[r.id] = true; });
+
+  var VALIDADOR = { productos: 'producto', ofertas: 'oferta', vendedoras: 'vendedora', temporadas: 'temporada', portadas: 'portada', categorias: 'categoria' };
+  var NUMERICOS = { productos: ['precio_regular', 'stock'], ofertas: ['valor', 'prioridad'], temporadas: ['vigencia_dias'], secciones: ['limite'] };
+
+  function normalizar(entidad, campo, valor) {
+    if ((NUMERICOS[entidad] || []).indexOf(campo) !== -1) {
+      if (valor === '' || valor === null || valor === undefined) return null;
+      var n = Number(valor);
+      return isNaN(n) ? valor : n;
+    }
+    return valor;
+  }
+
+  function crearStores(deps) {
+    var S = deps.servidor;
+    var otro = deps.otro;
+    var ahora = deps.ahora || function () { return new Date(); };
+    var enfocar = deps.enfocar || function () {};
+    var prefs = deps.preferencias || { leer: function () { return null; }, escribir: function () {} };
+    var hash = deps.hash || { leer: function () { return ''; }, escribir: function () {} };
+    var visible = deps.visible || function () { return true; };
+    var intervaloSondeo = deps.intervaloSondeo || 5000;
+    var crearCola = deps.crearCola || P.crearCola;
+    var actividad = 0; // operaciones sueltas en curso (crear, reordenar…)
+
+    /* ---------- toasts ---------- */
+    var toasts = {
+      lista: [],
+      contador: 0,
+      mostrar: function (o) {
+        var self = this;
+        var id = ++this.contador;
+        var t = { id: id, texto: o.texto, tipo: o.tipo || 'info', accion: o.accion || null };
+        this.lista.push(t);
+        var ms = o.duracion || (t.accion ? 9000 : t.tipo === 'error' ? 8000 : 4500);
+        U.esperar(ms).then(function () { self.cerrar(id); });
+        return id;
+      },
+      cerrar: function (id) {
+        this.lista = this.lista.filter(function (t) { return t.id !== id; });
+      },
+    };
+
+    /* ---------- cola de autoguardado ---------- */
+    function ejecutarLote(lote) {
+      var campos = Object.keys(lote.cambios);
+      if (lote.entidad === 'config') return S.llamar('guardarConfig', lote.id, lote.cambios.valor);
+      if (lote.entidad === 'textos') return S.llamar('guardarTexto', lote.id, lote.cambios.valor);
+      if (campos.length === 1) return S.llamar('guardarCampo', lote.entidad, lote.id, campos[0], lote.cambios[campos[0]], lote.version);
+      return S.llamar('guardarCampos', lote.entidad, lote.id, lote.cambios, lote.version);
+    }
+    var cola = crearCola({
+      ejecutar: ejecutarLote,
+      onEstado: function (e) {
+        var p = otro('panel');
+        if (actividad > 0 && (e === 'inactivo' || e === 'guardado')) return;
+        p.guardado.estado = e;
+        if (e === 'guardado') p.guardado.ultimo = ahora().toISOString();
+      },
+      onGuardado: function (g) { otro('datos').alGuardar(g); },
+      onConflicto: function (c) { otro('datos').alConflicto(c); },
+      onRechazo: function (r) { otro('datos').alRechazo(r); },
+      onNoAutorizado: function () { otro('panel').falla = 'no_autorizado'; },
+    });
+
+    function conIndicador(promesa) {
+      var p = otro('panel');
+      actividad++;
+      p.guardado.estado = 'guardando';
+      return Promise.resolve(promesa).then(
+        function (r) {
+          actividad--;
+          if (actividad === 0 && (cola.estado() === 'inactivo' || cola.estado() === 'guardado')) {
+            p.guardado.estado = 'guardado';
+            p.guardado.ultimo = ahora().toISOString();
+          }
+          return r;
+        },
+        function (e) {
+          actividad--;
+          if (actividad === 0) p.guardado.estado = 'error';
+          throw e;
+        }
+      );
+    }
+    function fallar(e, texto) {
+      var t = e && e.amable ? e.amable : 'No pude completarlo.';
+      otro('toasts').mostrar({ tipo: 'error', texto: texto ? texto + ' ' + t : t });
+    }
+
+    /* ---------- panel ---------- */
+    var panel = {
+      rutas: RUTAS,
+      ruta: 'resumen',
+      cargando: true,
+      falla: null,
+      detalleFalla: '',
+      usuario: '',
+      config: {},
+      textos: {},
+      conteos: {},
+      sitioUrl: '',
+      cambiosSinPublicar: false,
+      guardado: { estado: 'inactivo', ultimo: null },
+      token: { configurado: false, repo: '' },
+      erroresConfig: {},
+      menuMas: false,
+
+      get nombreTienda() { return this.config.tienda_nombre || ''; },
+      get textoGuardado() {
+        switch (this.guardado.estado) {
+          case 'pendiente': case 'guardando': return 'Guardando…';
+          case 'reintentando': return 'Sin conexión. Sigo intentando…';
+          case 'error': return 'No se pudo guardar';
+          case 'guardado': return 'Guardado';
+          default: return '';
+        }
+      },
+
+      init: function () {
+        var inicial = hash.leer();
+        if (RUTA_VALIDA[inicial]) this.ruta = inicial;
+        else {
+          var guardada = prefs.leer('ruta');
+          if (RUTA_VALIDA[guardada]) this.ruta = guardada;
+        }
+      },
+
+      iniciar: function () {
+        var self = this;
+        self.cargando = true;
+        return S.llamar('obtenerEstadoInicial').then(
+          function (e) {
+            self.falla = null;
+            self.detalleFalla = '';
+            self.usuario = e.usuario || '';
+            self.config = e.config || {};
+            self.textos = e.textos || {};
+            self.conteos = e.conteos || {};
+            self.sitioUrl = e.sitio_url || e.config.sitio_url || '';
+            self.cambiosSinPublicar = !!e.cambios_sin_publicar;
+            otro('publicacion').iniciar(e.publicacion);
+            self.cargando = false;
+            S.llamar('estadoTokenGithub').then(function (t) { self.token = t; }, function () {});
+          },
+          function (err) {
+            if (err.codigo === 'no_autorizado') self.falla = 'no_autorizado';
+            else if (err.codigo === 'no_encontrado') self.falla = 'no_instalado';
+            else { self.falla = 'error'; self.detalleFalla = err.amable || ''; }
+            self.cargando = false;
+          }
+        );
+      },
+
+      instalar: function () {
+        var self = this;
+        return S.llamar('instalar').then(function (r) {
+          return self.iniciar().then(function () { return r; });
+        });
+      },
+
+      irA: function (ruta) {
+        if (!RUTA_VALIDA[ruta]) return;
+        this.ruta = ruta;
+        this.menuMas = false;
+        hash.escribir(ruta);
+        prefs.escribir('ruta', ruta);
+        enfocar();
+      },
+
+      guardarConfig: function (clave, valor) {
+        var texto = valor === null || valor === undefined ? '' : String(valor);
+        var error = V.config(clave, texto);
+        if (error) {
+          this.erroresConfig[clave] = error;
+          this.config[clave] = texto;
+          return false;
+        }
+        delete this.erroresConfig[clave];
+        this.config[clave] = texto;
+        cola.encolar({ entidad: 'config', id: clave, campo: 'valor', valor: texto });
+        this.cambiosSinPublicar = true;
+        return true;
+      },
+      guardarTexto: function (clave, valor) {
+        this.textos[clave] = valor;
+        cola.encolar({ entidad: 'textos', id: clave, campo: 'valor', valor: valor });
+        this.cambiosSinPublicar = true;
+        return true;
+      },
+      /** El token viaja una vez y no se guarda en ningún estado de la interfaz. */
+      guardarToken: function (token) {
+        var self = this;
+        return S.llamar('guardarTokenGithub', token).then(function (r) {
+          self.token = { configurado: true, repo: r.repo };
+          return r;
+        });
+      },
+      reintentarGuardado: function () { cola.reintentarYa(); },
+    };
+
+    /* ---------- datos ---------- */
+    var pendientesDeCarga = {};
+    var datos = {
+      listas: {},
+
+      init: function () {},
+
+      cargar: function (entidad, forzar) {
+        var self = this;
+        if (!forzar && this.listas[entidad]) return Promise.resolve(this.listas[entidad]);
+        if (!forzar && pendientesDeCarga[entidad]) return pendientesDeCarga[entidad];
+        var p = S.llamar('listar', entidad, { incluir_archivados: entidad === 'productos' }).then(
+          function (r) {
+            self.fusionar(entidad, r.filas);
+            delete pendientesDeCarga[entidad];
+            return self.listas[entidad];
+          },
+          function (e) {
+            delete pendientesDeCarga[entidad];
+            throw e;
+          }
+        );
+        pendientesDeCarga[entidad] = p;
+        return p;
+      },
+
+      /** Actualiza las filas existentes en el sitio (para no romper lo que ya está enlazado en pantalla). */
+      fusionar: function (entidad, nuevas) {
+        var porId = {};
+        (this.listas[entidad] || []).forEach(function (f) { porId[f.id] = f; });
+        this.listas[entidad] = nuevas.map(function (n) {
+          var e = porId[n.id];
+          if (e) { Object.assign(e, n); return e; }
+          return n;
+        });
+        nuevas.forEach(function (n) { cola.registrarVersion(entidad, n.id, n.version); });
+      },
+
+      lista: function (entidad) { return this.listas[entidad] || []; },
+      buscar: function (entidad, id) {
+        var l = this.listas[entidad] || [];
+        for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+        return null;
+      },
+
+      recargarFila: function (entidad, id) {
+        var self = this;
+        return S.llamar('listar', entidad, { incluir_archivados: true }).then(function (r) {
+          var nueva = r.filas.filter(function (f) { return f.id === id; })[0];
+          var actual = self.buscar(entidad, id);
+          if (!nueva) {
+            self.listas[entidad] = self.lista(entidad).filter(function (f) { return f.id !== id; });
+            return null;
+          }
+          cola.registrarVersion(entidad, id, nueva.version);
+          if (actual) { Object.assign(actual, nueva); return actual; }
+          self.lista(entidad);
+          (self.listas[entidad] = self.listas[entidad] || []).push(nueva);
+          return nueva;
+        });
+      },
+
+      /** Guarda un campo: cambia la fila al instante y lo encola. false si no pasa la validación local. */
+      guardar: function (entidad, fila, campo, valor) {
+        if (valor === undefined) valor = fila[campo];
+        valor = normalizar(entidad, campo, valor);
+        fila[campo] = valor;
+        var fn = VALIDADOR[entidad];
+        if (fn) {
+          var errores = V[fn](fila, this.lista(entidad));
+          if (errores[campo]) return false;
+        }
+        cola.encolar({ entidad: entidad, id: fila.id, campo: campo, valor: valor, version: fila.version });
+        otro('panel').cambiosSinPublicar = true;
+        return true;
+      },
+
+      alGuardar: function (g) {
+        if (g.entidad === 'config' || g.entidad === 'textos') return;
+        var fila = this.buscar(g.entidad, g.id);
+        if (fila) {
+          fila.version = g.version;
+          if (g.fila && g.fila.actualizado_en) fila.actualizado_en = g.fila.actualizado_en;
+        }
+        otro('panel').cambiosSinPublicar = true;
+      },
+      alConflicto: function (c) {
+        var self = this;
+        return this.recargarFila(c.entidad, c.id).then(function () {
+          otro('toasts').mostrar({ tipo: 'aviso', texto: P.servidor.mensajeAmable('conflicto') + ' Revisa tu último cambio.' });
+        }, function (e) { fallar(e); });
+      },
+      alRechazo: function (r) {
+        fallar(r.error);
+        return this.recargarFila(r.entidad, r.id).catch(function () {});
+      },
+
+      crear: function (entidad, campos, opciones) {
+        var self = this;
+        opciones = opciones || {};
+        return conIndicador(S.llamar('crear', entidad, campos || {})).then(
+          function (fila) {
+            cola.registrarVersion(entidad, fila.id, fila.version);
+            var lista = self.listas[entidad] || (self.listas[entidad] = []);
+            if (opciones.alInicio) lista.unshift(fila);
+            else lista.push(fila);
+            otro('panel').cambiosSinPublicar = true;
+            return self.buscar(entidad, fila.id);
+          },
+          function (e) { fallar(e, 'No pude crearlo.'); throw e; }
+        );
+      },
+
+      duplicarProducto: function (id) {
+        var self = this;
+        return conIndicador(S.llamar('duplicarProducto', id)).then(
+          function (fila) {
+            cola.registrarVersion('productos', fila.id, fila.version);
+            (self.listas.productos || (self.listas.productos = [])).push(fila);
+            otro('panel').cambiosSinPublicar = true;
+            return self.buscar('productos', fila.id);
+          },
+          function (e) { fallar(e, 'No pude duplicarla.'); throw e; }
+        );
+      },
+
+      /** Productos: se archivan. Lo demás se borra. Siempre queda «Deshacer». */
+      eliminar: function (entidad, fila, opciones) {
+        var self = this;
+        opciones = opciones || {};
+        cola.descartar(entidad, fila.id);
+        return conIndicador(S.llamar('eliminar', entidad, fila.id)).then(
+          function (r) {
+            if (entidad === 'productos') fila.estado = 'archivado';
+            else self.listas[entidad] = self.lista(entidad).filter(function (f) { return f.id !== fila.id; });
+            otro('panel').cambiosSinPublicar = true;
+            return S.llamar('historial', { entidad: entidad, id: fila.id, limite: 1 }).then(
+              function (h) { return h; }, function () { return []; }
+            ).then(function (h) {
+              var ultimo = h[0];
+              var accion = ultimo && ultimo.accion === 'eliminar'
+                ? { texto: 'Deshacer', fn: function () { return self.deshacer(ultimo.id, entidad); } }
+                : null;
+              otro('toasts').mostrar({ tipo: 'ok', texto: opciones.mensaje || (r.archivado ? 'Archivada.' : 'Eliminada.'), accion: accion });
+              return true;
+            });
+          },
+          function (e) { fallar(e, 'No pude hacerlo.'); return false; }
+        );
+      },
+
+      reordenar: function (entidad, ids) {
+        var self = this;
+        var previo = this.lista(entidad).slice();
+        var porId = {};
+        ids.forEach(function (id, i) { porId[id] = i + 1; });
+        previo.forEach(function (f) { if (porId[f.id]) f.orden = porId[f.id]; });
+        this.listas[entidad] = previo.slice().sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
+        otro('panel').cambiosSinPublicar = true;
+        return conIndicador(S.llamar('reordenar', entidad, ids)).then(
+          function () { return true; },
+          function (e) { fallar(e, 'No pude guardar el orden.'); return self.cargar(entidad, true).then(function () { return false; }); }
+        );
+      },
+
+      deshacer: function (historialId, entidad) {
+        var self = this;
+        return conIndicador(S.llamar('deshacer', historialId)).then(
+          function () {
+            otro('panel').cambiosSinPublicar = true;
+            return self.cargar(entidad, true).then(function () {
+              otro('toasts').mostrar({ tipo: 'ok', texto: 'Deshice el cambio.' });
+              return true;
+            });
+          },
+          function (e) { fallar(e, 'No pude deshacerlo.'); return false; }
+        );
+      },
+    };
+
+    /* ---------- publicación ---------- */
+    var temporizador = null;
+    var temporizadorFinal = null;
+    var consultas = 0;
+    var publicacion = {
+      estado: { estado: 'nunca' },
+      enCurso: false,
+      final: false,
+      error: null,
+
+      init: function () {},
+
+      iniciar: function (est) {
+        this.estado = est || { estado: 'nunca' };
+        if (est && (est.estado === 'en_cola' || est.estado === 'publicando')) {
+          this.enCurso = true;
+          this.programar();
+        }
+      },
+
+      get etiquetaBoton() {
+        var e = this.estado.estado;
+        if (this.enCurso) {
+          if (e === 'en_cola') return 'En cola…';
+          if (e === 'publicado') return 'Publicado';
+          return 'Publicando…';
+        }
+        return this.final ? 'Documentos guardados en Drive' : 'Publicar';
+      },
+      get textoEstado() {
+        var e = this.estado;
+        switch (e.estado) {
+          case 'en_cola': return 'En cola en GitHub…';
+          case 'publicando': return 'Publicando. Tarda unos minutos.';
+          case 'publicado': {
+            var cuando = e.terminado_en ? ' ' + U.haceCuanto(e.terminado_en, ahora()) : '';
+            return 'Publicado' + cuando + (e.documentos_guardados ? ' · Documentos guardados en Drive' : ' · Guardando documentos en Drive…');
+          }
+          case 'error': return 'No se pudo publicar.' + (e.mensaje ? ' ' + e.mensaje : '');
+          default: return 'Aún no has publicado.';
+        }
+      },
+
+      programar: function () {
+        var self = this;
+        if (temporizador !== null) clearTimeout(temporizador);
+        temporizador = setTimeout(function () { temporizador = null; self.consultar(); }, intervaloSondeo);
+      },
+
+      consultar: function () {
+        var self = this;
+        if (!visible()) { this.programar(); return Promise.resolve(); }
+        consultas++;
+        return S.llamar('estadoPublicacion').then(
+          function (est) {
+            self.estado = est;
+            if (est.estado === 'error') {
+              self.enCurso = false;
+              otro('panel').cambiosSinPublicar = true;
+              otro('toasts').mostrar({ tipo: 'error', texto: 'No se pudo publicar. Revisa el detalle e inténtalo otra vez.' });
+              return;
+            }
+            if (est.estado === 'publicado' && est.documentos_guardados) {
+              self.enCurso = false;
+              self.final = true;
+              if (temporizadorFinal !== null) clearTimeout(temporizadorFinal);
+              temporizadorFinal = setTimeout(function () { self.final = false; }, 6000);
+              return;
+            }
+            if (consultas > 150) { self.enCurso = false; return; }
+            self.programar();
+          },
+          function () { self.programar(); } // sin conexión: sigue intentando
+        );
+      },
+
+      alVolver: function () {
+        if (this.enCurso) return this.consultar();
+        return Promise.resolve();
+      },
+
+      publicar: function () {
+        var self = this;
+        if (this.enCurso) return Promise.resolve();
+        var previo = this.estado;
+        this.error = null;
+        this.final = false;
+        this.enCurso = true;
+        this.estado = { estado: 'en_cola' };
+        return cola.vaciar().then(function (r) {
+          if (!r.ok) {
+            self.enCurso = false;
+            self.estado = previo;
+            otro('toasts').mostrar({ tipo: 'error', texto: 'No se pudo guardar un cambio, así que no publiqué. Revisa los avisos e inténtalo de nuevo.' });
+            return;
+          }
+          return S.llamar('publicar').then(
+            function (est) {
+              self.estado = est;
+              otro('panel').cambiosSinPublicar = false;
+              consultas = 0;
+              self.programar();
+            },
+            function (e) {
+              self.enCurso = false;
+              self.estado = previo;
+              var enlaceConfig = e.codigo === 'sin_token' || (e.codigo === 'invalido' && /nombre|tienda/i.test(e.detalle || ''));
+              self.error = { codigo: e.codigo, mensaje: e.amable, enlace: enlaceConfig ? 'configuracion' : null };
+            }
+          );
+        });
+      },
+    };
+
+    return { panel: panel, datos: datos, toasts: toasts, publicacion: publicacion, cola: cola };
+  }
+
+  P.crearStores = crearStores;
+  P.RUTAS = RUTAS;
+
+  /* ---------- arranque en el navegador ---------- */
+  if (typeof document !== 'undefined') {
+    document.addEventListener('alpine:init', function () {
+      var Alpine = window.Alpine;
+      var stores;
+      function localStore(accion) { try { return accion(window.localStorage); } catch (e) { return null; } }
+      stores = crearStores({
+        servidor: P.servidor,
+        otro: function (n) { return Alpine.store(n); },
+        hash: {
+          leer: function () { return String(window.location.hash || '').replace(/^#\/?/, ''); },
+          escribir: function (r) { try { window.location.hash = '/' + r; } catch (e) {} },
+        },
+        visible: function () { return document.visibilityState !== 'hidden'; },
+        enfocar: function () {
+          Alpine.nextTick(function () {
+            var t = document.getElementById('titulo-vista');
+            if (t) t.focus({ preventScroll: true });
+            window.scrollTo(0, 0);
+          });
+        },
+        preferencias: {
+          leer: function (k) { return localStore(function (s) { return s.getItem('panel.' + k); }); },
+          escribir: function (k, v) { localStore(function (s) { s.setItem('panel.' + k, v); }); },
+        },
+      });
+      Alpine.store('toasts', stores.toasts);
+      Alpine.store('datos', stores.datos);
+      Alpine.store('panel', stores.panel);
+      Alpine.store('publicacion', stores.publicacion);
+
+      var cacheMiniaturas = Alpine.reactive({});
+      var miniaturas = P.crearMiniaturas({
+        cache: cacheMiniaturas,
+        pedir: function (ids) { return P.servidor.llamar('miniaturas', ids); },
+      });
+      Alpine.store('min', {
+        src: function (id) { return miniaturas.src(id); },
+        pedir: function (ids) { miniaturas.pedir(ids); },
+        agregar: function (id, url) { miniaturas.agregar(id, url); },
+        reintentar: function () { miniaturas.reintentar(); },
+      });
+
+      Alpine.magic('u', function () { return P.util; });
+      Alpine.magic('v', function () { return P.validar; });
+
+      window.addEventListener('hashchange', function () {
+        var r = String(window.location.hash || '').replace(/^#\/?/, '');
+        var p = Alpine.store('panel');
+        if (RUTAS.some(function (x) { return x.id === r; }) && p.ruta !== r) { p.ruta = r; p.menuMas = false; }
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') Alpine.store('publicacion').alVolver();
+      });
+      window.addEventListener('beforeunload', function (e) {
+        if (stores.cola.pendientes() > 0) { e.preventDefault(); e.returnValue = ''; }
+      });
+      window.addEventListener('online', function () { stores.cola.reintentarYa(); });
+
+      Alpine.store('panel').iniciar();
+    });
+  }
+})((window.Panel = window.Panel || {}));
+</script>
