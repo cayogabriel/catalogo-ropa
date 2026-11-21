@@ -6,23 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
     <title>Panel del catálogo</title>
-    <?!= include('ui/estilos') ?>
-    <?!= include('ui/js/util') ?>
-    <?!= include('ui/js/servidor') ?>
-    <?!= include('ui/js/cola') ?>
-    <?!= include('ui/js/fotos') ?>
-    <?!= include('ui/js/miniaturas') ?>
-    <?!= include('ui/js/validar') ?>
-    <?!= include('ui/js/estado') ?>
-    <?!= include('ui/js/arrastre') ?>
-    <?!= include('ui/js/logica') ?>
-    <?!= include('ui/js/biblioteca') ?>
-    <?!= include('ui/componentes/dialogo') ?>
-    <?!= include('ui/componentes/editor') ?>
+    <?!= include_('ui/estilos') ?>
+    <?!= include_('ui/js/util') ?>
+    <?!= include_('ui/js/servidor') ?>
+    <?!= include_('ui/js/cola') ?>
+    <?!= include_('ui/js/fotos') ?>
+    <?!= include_('ui/js/miniaturas') ?>
+    <?!= include_('ui/js/validar') ?>
+    <?!= include_('ui/js/estado') ?>
+    <?!= include_('ui/js/arrastre') ?>
+    <?!= include_('ui/js/logica') ?>
+    <?!= include_('ui/js/biblioteca') ?>
+    <?!= include_('ui/componentes/dialogo') ?>
+    <?!= include_('ui/componentes/editor') ?>
     <script defer crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   </head>
   <body>
-    <?!= include('ui/componentes/iconos') ?>
+    <?!= include_('ui/componentes/iconos') ?>
 
     <button type="button" class="saltar" onclick="document.getElementById('contenido').focus()">Saltar al contenido</button>
     <div id="cargando-inicial" class="cargando-inicial" role="status">Cargando tu panel…</div>
@@ -107,24 +107,24 @@
       <!-- Contenido -->
       <main id="contenido" tabindex="-1" x-show="!$store.panel.falla">
         <p class="suave" x-show="$store.panel.cargando" role="status">Cargando tu panel…</p>
-        <?!= include('ui/vistas/resumen') ?>
-        <?!= include('ui/vistas/productos') ?>
-        <?!= include('ui/vistas/biblioteca') ?>
-        <?!= include('ui/vistas/temporadas') ?>
-        <?!= include('ui/vistas/ofertas') ?>
-        <?!= include('ui/vistas/secciones') ?>
-        <?!= include('ui/vistas/portadas') ?>
-        <?!= include('ui/vistas/colores') ?>
-        <?!= include('ui/vistas/vendedoras') ?>
-        <?!= include('ui/vistas/textos') ?>
-        <?!= include('ui/vistas/configuracion') ?>
-        <?!= include('ui/vistas/historial') ?>
-        <?!= include('ui/vistas/documentos') ?>
+        <?!= include_('ui/vistas/resumen') ?>
+        <?!= include_('ui/vistas/productos') ?>
+        <?!= include_('ui/vistas/biblioteca') ?>
+        <?!= include_('ui/vistas/temporadas') ?>
+        <?!= include_('ui/vistas/ofertas') ?>
+        <?!= include_('ui/vistas/secciones') ?>
+        <?!= include_('ui/vistas/portadas') ?>
+        <?!= include_('ui/vistas/colores') ?>
+        <?!= include_('ui/vistas/vendedoras') ?>
+        <?!= include_('ui/vistas/textos') ?>
+        <?!= include_('ui/vistas/configuracion') ?>
+        <?!= include_('ui/vistas/historial') ?>
+        <?!= include_('ui/vistas/documentos') ?>
       </main>
 
       <!-- Pantallas de problema -->
       <main id="contenido-falla" x-show="$store.panel.falla">
-        <?!= include('ui/vistas/instalacion') ?>
+        <?!= include_('ui/vistas/instalacion') ?>
         <section class="vista tarjeta" x-show="$store.panel.falla === 'no_autorizado'" style="max-width: 32rem; margin: 3rem auto">
           <h1>Esta cuenta no tiene acceso</h1>
           <p>Este panel es solo para quien administra el catálogo. Entra con la cuenta de Google de la tienda.</p>
@@ -136,8 +136,8 @@
         </section>
       </main>
 
-      <?!= include('ui/componentes/selector-fotos') ?>
-      <?!= include('ui/componentes/selector-productos') ?>
+      <?!= include_('ui/componentes/selector-fotos') ?>
+      <?!= include_('ui/componentes/selector-productos') ?>
 
       <!-- Avisos flotantes -->
       <div class="avisos" role="region" aria-label="Avisos" aria-live="polite">

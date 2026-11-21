@@ -1,5 +1,6 @@
-// Arma la página del Panel como lo hace Google: <?!= include('ruta') ?> se reemplaza una sola vez
+// Arma la página del Panel como lo hace Google: <?!= include_('ruta') ?> se reemplaza una sola vez
 // (el contenido incluido no se vuelve a evaluar) y se le inyecta el simulador.
+// El servidor real (S2) solo define include_: cualquier otro scriptlet falla aquí, como fallaría en Google.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,14 +8,16 @@ import { fileURLToPath } from 'node:url';
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 const DEV = fileURLToPath(new URL('./', import.meta.url));
 
-const INCLUDE = /<\?!=\s*include\(\s*(['"])([^'"]+)\1\s*\)\s*\?>/g;
+const INCLUDE = /<\?!=\s*include_\(\s*(['"])([^'"]+)\1\s*\)\s*\?>/g;
 
 export function resolverIncludes(html, raiz) {
+  const otro = html.replace(INCLUDE, '').match(/<\?[^>]*\?>/);
+  if (otro) throw new Error(`scriptlet no soportado: ${otro[0]} (solo existe include_ en el servidor)`);
   return html.replace(INCLUDE, (_, _c, ruta) => {
     try {
       return readFileSync(join(raiz, `${ruta}.html`), 'utf8');
     } catch {
-      throw new Error(`include('${ruta}'): no existe ${ruta}.html en ${raiz}`);
+      throw new Error(`include_('${ruta}'): no existe ${ruta}.html en ${raiz}`);
     }
   });
 }

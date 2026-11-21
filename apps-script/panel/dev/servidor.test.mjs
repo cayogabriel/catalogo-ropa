@@ -20,17 +20,22 @@ function proyectoTemporal(archivos) {
 describe('armarPagina', () => {
   it('reemplaza cada include por el contenido del parcial, en una sola pasada', () => {
     const raiz = proyectoTemporal({
-      'ui/index.html': '<html><head></head><body><?!= include("ui/a") ?>|<?!= include(\'ui/b\') ?></body></html>',
+      'ui/index.html': '<html><head></head><body><?!= include_("ui/a") ?>|<?!= include_(\'ui/b\') ?></body></html>',
       'ui/a.html': '<p>AAA</p>',
-      'ui/b.html': "<p>include('ui/a')</p>",
+      'ui/b.html': "<p>include_('ui/a')</p>",
     });
     const html = armarPagina({ raiz });
-    expect(html).toContain('<p>AAA</p>|<p>include(\'ui/a\')</p>');
+    expect(html).toContain('<p>AAA</p>|<p>include_(\'ui/a\')</p>');
     expect(html).not.toContain('<?!=');
   });
 
+  it('el servidor real solo define include_: un include() suelto falla igual que en Google', () => {
+    const raiz = proyectoTemporal({ 'ui/index.html': '<html><head></head><body><?!= include("ui/a") ?></body></html>', 'ui/a.html': '<p>A</p>' });
+    expect(() => armarPagina({ raiz })).toThrow(/include_/);
+  });
+
   it('falla con el nombre de la ruta si el parcial no existe', () => {
-    const raiz = proyectoTemporal({ 'ui/index.html': '<html><head></head><body><?!= include("ui/falta") ?></body></html>' });
+    const raiz = proyectoTemporal({ 'ui/index.html': '<html><head></head><body><?!= include_("ui/falta") ?></body></html>' });
     expect(() => armarPagina({ raiz })).toThrow(/ui\/falta/);
   });
 

@@ -28,14 +28,14 @@ describe('reglas de HtmlService', () => {
 
   it('todo include de index.html apunta a un archivo que existe', () => {
     const index = texto(join(UI, 'index.html'));
-    const rutas = [...index.matchAll(/<\?!=\s*include\(\s*'([^']+)'\s*\)\s*\?>/g)].map((m) => m[1]);
+    const rutas = [...index.matchAll(/<\?!=\s*include_\(\s*'([^']+)'\s*\)\s*\?>/g)].map((m) => m[1]);
     expect(rutas.length).toBeGreaterThan(10);
     for (const r of rutas) expect(existsSync(join(SRC, `${r}.html`)), r).toBe(true);
   });
 
-  it('index.html no tiene otros scriptlets que include, y los parciales no incluyen más parciales', () => {
+  it('index.html no tiene otros scriptlets que include_, y los parciales no incluyen más parciales', () => {
     const index = texto(join(UI, 'index.html'));
-    const otros = [...index.matchAll(/<\?[^>]*\?>/g)].map((m) => m[0]).filter((s) => !/^<\?!=\s*include\(/.test(s));
+    const otros = [...index.matchAll(/<\?[^>]*\?>/g)].map((m) => m[0]).filter((s) => !/^<\?!=\s*include_\(/.test(s));
     expect(otros).toEqual([]);
     for (const a of html.filter((x) => nombre(x) !== 'index.html')) {
       expect(texto(a), nombre(a)).not.toMatch(/<\?/);
@@ -47,7 +47,7 @@ describe('reglas de HtmlService', () => {
     for (const a of html) {
       const n = nombre(a);
       if (n === 'index.html') continue;
-      expect(index, n).toContain(`include('ui/${n.replace(/\.html$/, '')}')`);
+      expect(index, n).toContain(`include_('ui/${n.replace(/\.html$/, '')}')`);
     }
   });
 
