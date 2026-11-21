@@ -12,6 +12,12 @@
   "dependencies": {
     "@catalogo/contratos": "*",
     "astro": "7.4.13",
+    "pdfjs-dist": "6.5.438",
+    "playwright": "1.65.0",
+    "qrcode": "1.5.4",
     "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "yaml": "2.9.1"
   }
 }
