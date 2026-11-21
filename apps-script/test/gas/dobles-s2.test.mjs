@@ -48,6 +48,15 @@ describe('hojas: formatos, validaciones y filas', () => {
     expect(() => h.deleteRows(2, h.getMaxRows() - 1)).toThrow(/non-frozen/);
   });
 
+  test('insertColumnsAfter agrega columnas y sin ellas no se puede escribir más allá del final', () => {
+    const h = libro().getSheets()[0];
+    const n = h.getMaxColumns();
+    expect(() => h.getRange(1, n + 1).setValue('x')).toThrow(/outside the dimensions/);
+    h.insertColumnsAfter(n, 2);
+    h.getRange(1, n + 1).setValue('x');
+    expect(h.getMaxColumns()).toBe(n + 2);
+  });
+
   test('insertRowsAfter agrega filas al final de la hoja', () => {
     const h = libro().getSheets()[0];
     const antes = h.getMaxRows();

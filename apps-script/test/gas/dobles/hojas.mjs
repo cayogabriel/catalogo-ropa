@@ -132,6 +132,10 @@ function crearPestana(nombreInicial, libro) {
       libro._tocar();
       return pestana;
     },
+    insertColumnsAfter: (_despues, cuantas) => {
+      maxColumnas += cuantas;
+      return pestana;
+    },
     insertRowsAfter: (_despues, cuantas) => {
       maxFilas += cuantas;
       return pestana;
