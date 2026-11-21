@@ -3,43 +3,134 @@
   <head>
     <base target="_top" />
     <meta charset="utf-8" />
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 40rem; padding: 1.5rem; line-height: 1.5; }
-      button { font: inherit; min-height: 44px; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #555; background: #fff; cursor: pointer; }
-      button:disabled { opacity: 0.6; cursor: progress; }
-      li { margin-bottom: 0.75rem; }
-      #estado { white-space: pre-wrap; background: #f5f5f5; padding: 0.75rem; border-radius: 8px; min-height: 1.5em; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <title>Panel del catálogo</title>
+    <?!= include('ui/estilos') ?>
+    <?!= include('ui/js/util') ?>
+    <?!= include('ui/js/servidor') ?>
+    <?!= include('ui/js/cola') ?>
+    <?!= include('ui/js/fotos') ?>
+    <?!= include('ui/js/miniaturas') ?>
+    <?!= include('ui/js/validar') ?>
+    <?!= include('ui/js/estado') ?>
+    <?!= include('ui/js/arrastre') ?>
+    <?!= include('ui/componentes/dialogo') ?>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   </head>
   <body>
-    <!-- Panel provisional de S1. La interfaz completa la construye S4. -->
-    <main id="panel">
-      <h1>Panel del catálogo</h1>
-      <p>La interfaz completa está en construcción. Mientras tanto puedes preparar tu Google y probar la publicación:</p>
-      <ol>
-        <li><button type="button" id="instalar">1. Instalar</button> — crea la hoja «Catálogo Ropa — Base de datos» y sus carpetas en tu Drive.</li>
-        <li><button type="button" id="probar">2. Publicar prueba</button> — sube 3 fotos de ejemplo y deja lista una copia para la web.</li>
-      </ol>
-      <p id="estado" role="status" aria-live="polite"></p>
-    </main>
-    <script>
-      const estado = document.getElementById('estado');
-      const botones = document.querySelectorAll('button');
-      function correr(funcion, texto) {
-        botones.forEach((b) => (b.disabled = true));
-        estado.textContent = texto + '…';
-        google.script.run
-          .withSuccessHandler((r) => {
-            estado.textContent = '✓ Listo: ' + JSON.stringify(r, null, 2);
-            botones.forEach((b) => (b.disabled = false));
-          })
-          .withFailureHandler((e) => {
-            estado.textContent = '✗ ' + e.message;
-            botones.forEach((b) => (b.disabled = false));
-          })[funcion]();
-      }
-      document.getElementById('instalar').addEventListener('click', () => correr('instalar', 'Instalando'));
-      document.getElementById('probar').addEventListener('click', () => correr('publicarPrueba', 'Publicando la prueba'));
-    </script>
+    <?!= include('ui/componentes/iconos') ?>
+
+    <button type="button" class="saltar" onclick="document.getElementById('contenido').focus()">Saltar al contenido</button>
+    <div id="cargando-inicial" class="cargando-inicial" role="status">Cargando tu panel…</div>
+    <noscript><p style="padding:1rem">Para usar el panel necesitas activar JavaScript en tu navegador.</p></noscript>
+    <div id="anuncios" class="solo-lector" role="status" aria-live="polite"></div>
+
+    <div class="app" x-data x-cloak x-init="document.getElementById('cargando-inicial') && document.getElementById('cargando-inicial').remove()">
+      <!-- Barra superior -->
+      <header class="barra" x-show="!$store.panel.falla">
+        <div class="marca">
+          <span x-text="$store.panel.nombreTienda || 'Tu tienda'"></span>
+          <small>· Panel</small>
+        </div>
+        <div class="estado-guardado" :class="{ error: $store.panel.guardado.estado === 'error' }" role="status" aria-live="polite">
+          <svg class="ico" aria-hidden="true" x-show="$store.panel.guardado.estado === 'guardado'"><use href="#i-check"/></svg>
+          <span x-text="$store.panel.textoGuardado"></span>
+          <button type="button" class="boton texto chico" x-show="$store.panel.guardado.estado === 'error'" @click="$store.panel.reintentarGuardado()">Reintentar</button>
+        </div>
+        <div class="fila-botones">
+          <span class="punto" aria-hidden="true" x-show="$store.panel.cambiosSinPublicar && !$store.publicacion.enCurso"></span>
+          <span class="solo-lector" x-show="$store.panel.cambiosSinPublicar && !$store.publicacion.enCurso">Hay cambios sin publicar.</span>
+          <button type="button" class="boton primario" :disabled="$store.publicacion.enCurso" @click="$store.publicacion.publicar()" x-text="$store.publicacion.etiquetaBoton">Publicar</button>
+        </div>
+      </header>
+
+      <!-- Estado de la publicación -->
+      <div class="franja" role="status" aria-live="polite"
+           :class="{ error: $store.publicacion.error || $store.publicacion.estado.estado === 'error', ok: $store.publicacion.final }"
+           x-show="!$store.panel.falla && ($store.publicacion.enCurso || $store.publicacion.final || $store.publicacion.error || $store.publicacion.estado.estado === 'error')">
+        <span x-text="$store.publicacion.error ? $store.publicacion.error.mensaje : $store.publicacion.textoEstado"></span>
+        <button type="button" class="boton texto chico" x-show="$store.publicacion.error && $store.publicacion.error.enlace"
+                @click="$store.panel.irA($store.publicacion.error.enlace)">Ir a Configuración</button>
+        <a class="boton texto chico" target="_blank" rel="noopener" :href="$store.publicacion.estado.url_ejecucion"
+           x-show="$store.publicacion.estado.estado === 'error' && $store.publicacion.estado.url_ejecucion">Ver el detalle</a>
+      </div>
+
+      <!-- Navegación en escritorio -->
+      <nav class="nav-lateral" aria-label="Secciones del panel" x-show="!$store.panel.falla">
+        <template x-for="r in $store.panel.rutas" :key="r.id">
+          <button type="button" class="nav-item" :aria-current="$store.panel.ruta === r.id ? 'page' : null" @click="$store.panel.irA(r.id)">
+            <svg class="ico" aria-hidden="true"><use :href="'#i-' + r.icono"/></svg>
+            <span x-text="r.titulo"></span>
+          </button>
+        </template>
+      </nav>
+
+      <!-- Navegación en celular -->
+      <nav class="nav-inferior" aria-label="Principal" x-show="!$store.panel.falla">
+        <template x-for="r in $store.panel.rutas.filter(function (x) { return x.principal })" :key="r.id">
+          <button type="button" class="nav-item" :aria-current="$store.panel.ruta === r.id ? 'page' : null" @click="$store.panel.irA(r.id)">
+            <svg class="ico" aria-hidden="true"><use :href="'#i-' + r.icono"/></svg>
+            <span x-text="r.titulo"></span>
+          </button>
+        </template>
+        <button type="button" class="nav-item" aria-haspopup="dialog" @click="$store.panel.menuMas = true"
+                :aria-current="$store.panel.rutas.some(function (x) { return !x.principal && x.id === $store.panel.ruta }) ? 'page' : null">
+          <svg class="ico" aria-hidden="true"><use href="#i-mas"/></svg>
+          <span>Más</span>
+        </button>
+      </nav>
+
+      <dialog class="hoja" x-modal="$store.panel.menuMas" aria-labelledby="titulo-mas">
+        <div class="hoja-interior">
+          <div class="hoja-cabecera">
+            <h2 id="titulo-mas">Más secciones</h2>
+            <button type="button" class="boton icono texto" aria-label="Cerrar" @click="$store.panel.menuMas = false"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+          </div>
+          <div class="hoja-cuerpo">
+            <div class="lista">
+              <template x-for="r in $store.panel.rutas.filter(function (x) { return !x.principal })" :key="r.id">
+                <button type="button" class="nav-item" style="flex-direction: row; justify-content: flex-start; gap: 0.75rem; padding: 0.5rem 0.75rem; border-radius: 10px; background: var(--fondo)"
+                        :aria-current="$store.panel.ruta === r.id ? 'page' : null" @click="$store.panel.irA(r.id)">
+                  <svg class="ico" aria-hidden="true"><use :href="'#i-' + r.icono"/></svg>
+                  <span x-text="r.titulo" style="font-size: 1rem"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- Contenido -->
+      <main id="contenido" tabindex="-1" x-show="!$store.panel.falla">
+        <p class="suave" x-show="$store.panel.cargando" role="status">Cargando tu panel…</p>
+      </main>
+
+      <!-- Pantallas de problema -->
+      <main id="contenido-falla" x-show="$store.panel.falla">
+        <section class="vista tarjeta" x-show="$store.panel.falla === 'no_autorizado'" style="max-width: 32rem; margin: 3rem auto">
+          <h1>Esta cuenta no tiene acceso</h1>
+          <p>Este panel es solo para quien administra el catálogo. Entra con la cuenta de Google de la tienda.</p>
+        </section>
+        <section class="vista tarjeta" x-show="$store.panel.falla === 'error'" style="max-width: 32rem; margin: 3rem auto">
+          <h1>No pude abrir el panel</h1>
+          <p x-text="$store.panel.detalleFalla || 'Revisa tu conexión y vuelve a intentarlo.'"></p>
+          <button type="button" class="boton primario" @click="$store.panel.iniciar()">Intentar de nuevo</button>
+        </section>
+      </main>
+
+      <!-- Avisos flotantes -->
+      <div class="avisos" role="region" aria-label="Avisos" aria-live="polite">
+        <template x-for="t in $store.toasts.lista" :key="t.id">
+          <div class="aviso-flotante">
+            <p x-text="t.texto"></p>
+            <button type="button" class="boton" x-show="t.accion" @click="t.accion.fn(); $store.toasts.cerrar(t.id)" x-text="t.accion ? t.accion.texto : ''"></button>
+            <button type="button" class="boton icono texto" aria-label="Cerrar aviso" @click="$store.toasts.cerrar(t.id)">
+              <svg class="ico" aria-hidden="true" style="color: var(--sobre-oscuro)"><use href="#i-cerrar"/></svg>
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
   </body>
 </html>

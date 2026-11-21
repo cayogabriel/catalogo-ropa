@@ -82,7 +82,7 @@
     if (/[a-zA-Z]/.test(t)) return 'Usa solo números, sin letras.';
     var d = limpiarWhatsapp(t);
     if (!/^\d+$/.test(d)) return 'Usa solo números (puedes poner espacios o +).';
-    if (d.length <= 9) return 'Falta el código de país. Ejemplo para Perú: 51987654321.';
+    if (d.length <= 9) return 'Falta el código de país. Ejemplo para Perú: 51 9XX XXX XXX.';
     if (d.length > 15) return 'El número es demasiado largo.';
     return '';
   }

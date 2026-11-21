@@ -1,0 +1,29 @@
+<script>
+/* x-modal="expresion": abre y cierra un <dialog> nativo según una expresión de Alpine.
+ * El diálogo nativo ya atrapa el foco, cierra con Esc y devuelve el foco a quien lo abrió.
+ * Un clic en el fondo oscuro también lo cierra. */
+document.addEventListener('alpine:init', function () {
+  window.Alpine.directive('modal', function (el, o, u) {
+    var leer = u.evaluateLater(o.expression);
+    u.effect(function () {
+      leer(function (abierto) {
+        if (abierto && !el.open) {
+          el.showModal();
+          var foco = el.querySelector('[autofocus]');
+          if (foco) foco.focus();
+        } else if (!abierto && el.open) {
+          el.close();
+        }
+      });
+    });
+    function alCerrar() { u.evaluate(o.expression + ' = false'); }
+    function alFondo(e) { if (e.target === el) el.close(); }
+    el.addEventListener('close', alCerrar);
+    el.addEventListener('click', alFondo);
+    u.cleanup(function () {
+      el.removeEventListener('close', alCerrar);
+      el.removeEventListener('click', alFondo);
+    });
+  });
+});
+</script>

@@ -1,0 +1,107 @@
+<script>
+/* Reordenar arrastrando (con el dedo o el mouse) y con botones ↑ ↓.
+ * La parte pura (índices y desplazamientos) se prueba en Node; la directiva x-reordenar solo toca el DOM.
+ *
+ * Uso:  <ul x-reordenar @reordenado="mover($event.detail.de, $event.detail.a)">
+ *         <li data-item> … <button data-asa aria-label="Mover">…</button> </li>
+ */
+(function (P) {
+  /** Índice cuyo centro queda más cerca de `y`. */
+  function indiceDestino(centros, y) {
+    var mejor = 0;
+    var distancia = Infinity;
+    for (var i = 0; i < centros.length; i++) {
+      var d = Math.abs(centros[i] - y);
+      if (d < distancia) { distancia = d; mejor = i; }
+    }
+    return mejor;
+  }
+  /** Cuánto se corre cada elemento (en filas) mientras `de` se arrastra hasta `a`. */
+  function desplazamientos(n, de, a) {
+    var r = [];
+    for (var i = 0; i < n; i++) {
+      var d = 0;
+      if (i !== de) {
+        if (de < a && i > de && i <= a) d = -1;
+        else if (de > a && i < de && i >= a) d = 1;
+      }
+      r.push(d);
+    }
+    return r;
+  }
+  function destinoBoton(i, n, direccion) {
+    return direccion === 'arriba' ? Math.max(0, i - 1) : Math.min(n - 1, i + 1);
+  }
+  function ordenNuevo(filas, de, a) {
+    return P.util.moverElemento(filas, de, a).map(function (f) { return f.id; });
+  }
+
+  P.arrastre = { indiceDestino: indiceDestino, desplazamientos: desplazamientos, destinoBoton: destinoBoton, ordenNuevo: ordenNuevo };
+
+  if (typeof document === 'undefined') return;
+  document.addEventListener('alpine:init', function () {
+    window.Alpine.directive('reordenar', function (el, _o, utilidades) {
+      function alPresionar(e) {
+        var asa = e.target.closest ? e.target.closest('[data-asa]') : null;
+        if (!asa || (e.button !== undefined && e.button > 0)) return;
+        var item = asa.closest('[data-item]');
+        if (!item || item.parentNode !== el) return;
+        e.preventDefault();
+        var items = Array.prototype.slice.call(el.children).filter(function (c) { return c.hasAttribute('data-item'); });
+        var de = items.indexOf(item);
+        var cajas = items.map(function (i) { return i.getBoundingClientRect(); });
+        var centros = cajas.map(function (c) { return c.top + c.height / 2; });
+        var paso = cajas.length > 1 ? cajas[1].top - cajas[0].top : cajas[0].height;
+        var inicioY = e.clientY;
+        var a = de;
+        item.classList.add('arrastrando');
+        try { asa.setPointerCapture(e.pointerId); } catch (err) {}
+
+        function mover(ev) {
+          var dy = ev.clientY - inicioY;
+          item.style.transform = 'translateY(' + dy + 'px)';
+          a = indiceDestino(centros, centros[de] + dy);
+          var d = desplazamientos(items.length, de, a);
+          items.forEach(function (o, i) {
+            if (o === item) return;
+            o.style.transition = 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)';
+            o.style.transform = d[i] ? 'translateY(' + d[i] * paso + 'px)' : '';
+          });
+          if (ev.clientY < 70) window.scrollBy(0, -12);
+          else if (ev.clientY > window.innerHeight - 90) window.scrollBy(0, 12);
+        }
+        function terminar() {
+          asa.removeEventListener('pointermove', mover);
+          asa.removeEventListener('pointerup', terminar);
+          asa.removeEventListener('pointercancel', cancelar);
+          limpiar();
+          if (a !== de) el.dispatchEvent(new CustomEvent('reordenado', { detail: { de: de, a: a } }));
+        }
+        function cancelar() {
+          asa.removeEventListener('pointermove', mover);
+          asa.removeEventListener('pointerup', terminar);
+          asa.removeEventListener('pointercancel', cancelar);
+          limpiar();
+        }
+        function limpiar() {
+          item.classList.remove('arrastrando');
+          items.forEach(function (o) { o.style.transform = ''; o.style.transition = ''; });
+        }
+        asa.addEventListener('pointermove', mover);
+        asa.addEventListener('pointerup', terminar);
+        asa.addEventListener('pointercancel', cancelar);
+      }
+      el.addEventListener('pointerdown', alPresionar);
+      utilidades.cleanup(function () { el.removeEventListener('pointerdown', alPresionar); });
+    });
+
+    /* Anuncia un cambio a los lectores de pantalla («Moví Vestido a la posición 2 de 5»). */
+    window.Alpine.magic('anunciar', function () {
+      return function (texto) {
+        var r = document.getElementById('anuncios');
+        if (r) { r.textContent = ''; setTimeout(function () { r.textContent = texto; }, 30); }
+      };
+    });
+  });
+})((window.Panel = window.Panel || {}));
+</script>
