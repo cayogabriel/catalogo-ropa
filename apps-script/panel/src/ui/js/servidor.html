@@ -1,0 +1,53 @@
+<script>
+/* Cliente de google.script.run: Promesas y errores con código (docs/contracts/api-panel.md). */
+(function (P) {
+  var CODIGOS = ['no_autorizado', 'no_encontrado', 'conflicto', 'invalido', 'limite', 'github', 'sin_token', 'foto_no_disponible'];
+  var RE = new RegExp('(?:^|[\\s:])(' + CODIGOS.join('|') + ')\\s*:\\s*([\\s\\S]*)$');
+
+  /** Error de Google → { codigo, detalle, crudo }. Sin código conocido: 'desconocido'. */
+  function analizarError(e) {
+    var crudo = e && e.message !== undefined ? String(e.message) : e === null || e === undefined ? '' : String(e);
+    var m = RE.exec(crudo);
+    if (m) return { codigo: m[1], detalle: m[2].trim(), crudo: crudo };
+    return { codigo: 'desconocido', detalle: crudo, crudo: crudo };
+  }
+
+  function mayuscula(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+  function conPunto(t) { return /[.!?…]$/.test(t) ? t : t + '.'; }
+
+  /** Texto para la dueña: sin jerga, qué pasó y qué hacer. */
+  function mensajeAmable(codigo, detalle) {
+    switch (codigo) {
+      case 'no_autorizado': return 'Esta cuenta no tiene permiso para usar el panel.';
+      case 'no_encontrado': return 'No encontré lo que buscas. Puede que ya no exista.';
+      case 'conflicto': return 'Alguien cambió esto en otra pestaña. Cargué la versión más reciente.';
+      case 'invalido': return detalle ? conPunto(mayuscula(detalle)) : 'Un dato no es válido. Revísalo.';
+      case 'limite': return detalle ? 'Pasaste el límite: ' + detalle.charAt(0).toLowerCase() + detalle.slice(1).replace(/\.$/, '') + '.' : 'Pasaste el tamaño o la cantidad máxima.';
+      case 'github': return 'No pude conectar con GitHub. Prueba de nuevo en un momento.';
+      case 'sin_token': return 'Falta conectar con GitHub. Pega el token en Configuración.';
+      case 'foto_no_disponible': return 'Una foto ya no está en Drive. Cámbiala por otra.';
+      default: return 'No hay conexión con Google o algo falló. Reintento solo.';
+    }
+  }
+
+  /** Llama a una función del Panel. Rechaza con Error { codigo, detalle, amable }. */
+  function llamar(nombre) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolver, rechazar) {
+      var run = window.google.script.run
+        .withSuccessHandler(resolver)
+        .withFailureHandler(function (e) {
+          var a = analizarError(e);
+          var err = new Error(a.crudo);
+          err.codigo = a.codigo;
+          err.detalle = a.detalle;
+          err.amable = mensajeAmable(a.codigo, a.detalle);
+          rechazar(err);
+        });
+      run[nombre].apply(run, args);
+    });
+  }
+
+  P.servidor = { llamar: llamar, analizarError: analizarError, mensajeAmable: mensajeAmable, CODIGOS: CODIGOS };
+})((window.Panel = window.Panel || {}));
+</script>
