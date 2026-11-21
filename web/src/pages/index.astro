@@ -26,7 +26,7 @@ const categorias = [...catalogo.categorias]
 <Base titulo={t('inicio.meta.titulo')} descripcion={t('inicio.meta.descripcion')} ruta="" actual="inicio">
   {!primeroTemporada && <h1 class="sr">{catalogo.tienda.nombre}{catalogo.tienda.eslogan ? `: ${catalogo.tienda.eslogan}` : ''}</h1>}
 
-  {primeroTemporada && activa && <BloqueTemporada temporada={activa} modo="inicio" />}
+  {primeroTemporada && activa && <BloqueTemporada temporada={activa} modo="inicio" principal />}
 
   {portadas.map((p, i) => <Portada portada={p} prioridad={!primeroTemporada && i === 0} />)}
 

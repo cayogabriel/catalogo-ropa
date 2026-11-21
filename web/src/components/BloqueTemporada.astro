@@ -13,12 +13,13 @@ import { rutaProducto, rutaTemporada } from '../compartido/enlaces.mjs';
 interface Props {
   temporada: any;
   modo: 'pagina' | 'inicio';
+  principal?: boolean; // su título es el h1 de la página
 }
-const { temporada: tem, modo } = Astro.props;
+const { temporada: tem, modo, principal = modo === 'pagina' } = Astro.props;
 const buscar = productoPorId(catalogo);
 const fotos = tem.fotos.map((f: any) => ({ ...f, prendas: f.productos.map(buscar).filter(Boolean) }));
 const enHojas = [...new Map(fotos.flatMap((f: any) => f.prendas).map((p: any) => [p.id, p])).values()];
-const Titulo = modo === 'pagina' ? 'h1' : 'h2';
+const Titulo = principal ? 'h1' : 'h2';
 const idTitulo = `temporada-${tem.slug}`;
 const rutaPdf = url(`${rutaTemporada(tem.slug)}revista-${tem.slug}.pdf`);
 ---
@@ -185,6 +186,37 @@ const rutaPdf = url(`${rutaTemporada(tem.slug)}revista-${tem.slug}.pdf`);
     }
     .foto-temporada.destacada {
       width: 100%;
+    }
+  }
+
+  /* Escritorio: foto a un lado y texto con etiquetas al otro, alternando como en una revista. */
+  @media (min-width: 64rem) {
+    .foto-temporada:not(.destacada) {
+      width: 100%;
+    }
+    .foto-temporada:not(.destacada) figure {
+      display: grid;
+      grid-template-columns: minmax(0, 34rem) minmax(0, 1fr);
+      gap: 3rem;
+      align-items: end;
+    }
+    .foto-temporada:nth-child(even):not(.destacada) figure {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 34rem);
+    }
+    .foto-temporada:nth-child(even):not(.destacada) .foto-temporada-marco {
+      order: 2;
+    }
+    .foto-temporada:not(.destacada) figcaption {
+      padding-bottom: 2rem;
+      gap: 1.25rem;
+    }
+    .foto-temporada:not(.destacada) figcaption .etiquetas-prenda {
+      order: 2;
+      margin-top: 0;
+      padding: 0;
+    }
+    .foto-temporada:not(.destacada) .foto-temporada-texto {
+      font-size: 2rem;
     }
   }
 
