@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crearLista, CLAVE_LISTA } from '../../src/lib/lista.mjs';
+import { crearLista, resolverLista, CLAVE_LISTA } from '../../src/lib/lista.mjs';
 
 const almacenMemoria = (inicial = {}) => {
   const datos = { ...inicial };
@@ -24,6 +24,30 @@ const bloqueado = {
     throw new Error('SecurityError');
   },
 };
+
+describe('resolverLista', () => {
+  const productos = [
+    { codigo: 'VES-001', tallas: ['S', 'M'], tallas_agotadas: ['S'], colores: ['Coral', 'Azul'], estado: 'publicado' },
+    { codigo: 'PAN-005', tallas: ['M'], tallas_agotadas: [], colores: ['Lila'], estado: 'agotado' },
+  ];
+  it('ignora códigos que ya no existen y limpia talla agotada o color que no existe', () => {
+    const r = resolverLista(
+      [
+        { codigo: 'VES-001', talla: 'S', color: 'Verde' },
+        { codigo: 'XXX-999', talla: null, color: null },
+        { codigo: 'PAN-005', talla: 'M', color: null },
+      ],
+      productos,
+    );
+    expect(r.map((i) => [i.producto.codigo, i.talla, i.color, i.agotado])).toEqual([
+      ['VES-001', null, null, false],
+      ['PAN-005', 'M', 'Lila', true],
+    ]);
+  });
+  it('un solo color se completa solo', () => {
+    expect(resolverLista([{ codigo: 'PAN-005', talla: null, color: null }], productos)[0].color).toBe('Lila');
+  });
+});
 
 describe('crearLista', () => {
   it('usa la clave del contrato y guarda { codigo, talla, color }', () => {

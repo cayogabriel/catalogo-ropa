@@ -1,0 +1,34 @@
+---
+// Página no encontrada (GitHub Pages la sirve para cualquier ruta que no existe).
+import Base from '../layouts/Base.astro';
+import { catalogo, t, url } from '../lib/sitio.mjs';
+---
+
+<Base titulo={`Página no encontrada · ${catalogo.tienda.nombre}`} descripcion={t('inicio.meta.descripcion')} ruta="404.html">
+  <div class="contenedor no-encontrada">
+    <h1>No encontramos esta página</h1>
+    <p>Puede que la prenda ya no esté o que el enlace tenga un error. Mira el catálogo o escríbenos.</p>
+    <div class="acciones">
+      <a class="boton boton-primario" href={url('catalogo/')}>{t('catalogo.titulo')}</a>
+      <a class="boton boton-secundario" href={url('contacto/')}>{t('contacto.titulo')}</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .no-encontrada {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    padding-block: 3rem;
+    max-width: 40rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+</style>

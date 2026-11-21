@@ -1,0 +1,58 @@
+---
+// Contacto e información: WhatsApp, redes, horario y envíos.
+import Base from '../../layouts/Base.astro';
+import Contacto from '../../components/Contacto.astro';
+import { catalogo, t } from '../../lib/sitio.mjs';
+
+const { tienda } = catalogo;
+---
+
+<Base titulo={`${t('contacto.titulo')} · ${tienda.nombre}`} descripcion={t('contacto.subtitulo')} ruta="contacto/" actual="contacto">
+  <div class="contenedor contacto-pagina">
+    <h1>{t('contacto.titulo')}</h1>
+    <p class="contacto-sub">{t('contacto.subtitulo')}</p>
+    <Contacto />
+    <dl class="datos">
+      <div>
+        <dt>Horario de atención</dt>
+        <dd>{tienda.horario || t('pie.horario')}</dd>
+      </div>
+      <div>
+        <dt>Envíos</dt>
+        <dd>{tienda.envios || t('pie.envios')}</dd>
+      </div>
+    </dl>
+    <p class="texto-suave nota">{t('pie.precios_nota')}</p>
+  </div>
+</Base>
+
+<style>
+  .contacto-pagina {
+    display: grid;
+    gap: 1.25rem;
+    padding-block: 1.5rem 2rem;
+    max-width: 44rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .contacto-sub {
+    font-size: 1.125rem;
+  }
+  .datos {
+    display: grid;
+    gap: 1.25rem;
+    margin: 1rem 0 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-borde);
+  }
+  dt {
+    font-weight: 700;
+  }
+  dd {
+    margin: 0.25rem 0 0;
+  }
+  .nota {
+    font-size: 0.875rem;
+  }
+</style>

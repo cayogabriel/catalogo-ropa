@@ -11,6 +11,19 @@ const normalizar = (datos) =>
         .map((i) => ({ codigo: i.codigo, talla: texto(i.talla), color: texto(i.color) }))
     : [];
 
+// Cruza lo guardado con el catálogo actual: descarta códigos que ya no existen y
+// limpia tallas agotadas o colores que ya no están. Un solo color se completa solo.
+export function resolverLista(guardados, productos) {
+  const porCodigo = new Map(productos.map((p) => [p.codigo, p]));
+  return guardados.flatMap(({ codigo, talla, color }) => {
+    const producto = porCodigo.get(codigo);
+    if (!producto) return [];
+    const tallaOk = talla && producto.tallas.includes(talla) && !producto.tallas_agotadas.includes(talla) ? talla : null;
+    const colorOk = color && producto.colores.includes(color) ? color : producto.colores.length === 1 ? producto.colores[0] : null;
+    return [{ producto, talla: tallaOk, color: colorOk, agotado: producto.estado === 'agotado' }];
+  });
+}
+
 export function crearLista(almacen) {
   let memoria = null;
 
