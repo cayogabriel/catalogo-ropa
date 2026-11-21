@@ -1,6 +1,6 @@
 {
   "version_esquema": 1,
-  "generado_en": "2026-11-21T10:53:04-05:00",
+  "generado_en": "2026-11-21T11:52:16-05:00",
   "tienda": {
     "nombre": "Tienda de ejemplo",
     "eslogan": "Ropa para mujer y niñas, con envío desde Ayacucho.",
@@ -518,7 +518,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 89,
             "antes": null,
             "descuento_pct": null,
@@ -528,8 +528,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 66.75,
             "antes": 89,
             "descuento_pct": 25,
@@ -539,7 +539,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 89,
             "antes": null,
@@ -586,7 +586,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 119,
             "antes": null,
             "descuento_pct": null,
@@ -596,8 +596,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 89.25,
             "antes": 119,
             "descuento_pct": 25,
@@ -607,7 +607,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 119,
             "antes": null,
@@ -655,7 +655,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 99,
             "antes": null,
             "descuento_pct": null,
@@ -665,8 +665,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 74.25,
             "antes": 99,
             "descuento_pct": 25,
@@ -676,7 +676,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 99,
             "antes": null,
@@ -723,7 +723,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 129,
             "antes": null,
             "descuento_pct": null,
@@ -733,8 +733,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 96.75,
             "antes": 129,
             "descuento_pct": 25,
@@ -744,7 +744,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 129,
             "antes": null,
@@ -797,7 +797,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 69,
             "antes": null,
             "descuento_pct": null,
@@ -807,8 +807,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 51.75,
             "antes": 69,
             "descuento_pct": 25,
@@ -818,7 +818,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 69,
             "antes": null,
@@ -863,7 +863,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-11-19T11:52:16-05:00",
             "precio": 149,
             "antes": null,
             "descuento_pct": null,
@@ -873,8 +873,8 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-19T10:53:04-05:00",
-            "hasta": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-11-19T11:52:16-05:00",
+            "hasta": "2026-12-01T11:52:16-05:00",
             "precio": 111.75,
             "antes": 149,
             "descuento_pct": 25,
@@ -884,7 +884,7 @@
             "oferta_id": "ofe_00000001"
           },
           {
-            "desde": "2026-12-01T10:53:04-05:00",
+            "desde": "2026-12-01T11:52:16-05:00",
             "hasta": null,
             "precio": 149,
             "antes": null,
@@ -1116,7 +1116,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-16T10:53:04-05:00",
+            "hasta": "2026-11-16T11:52:16-05:00",
             "precio": 49,
             "antes": null,
             "descuento_pct": null,
@@ -1126,11 +1126,11 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-16T10:53:04-05:00",
+            "desde": "2026-11-16T11:52:16-05:00",
             "hasta": null,
             "precio": 29,
             "antes": 49,
-            "descuento_pct": 41,
+            "descuento_pct": 40,
             "etiqueta": "Liquidación",
             "liquidacion": true,
             "cuenta_regresiva": false,
@@ -1314,7 +1314,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-16T10:53:04-05:00",
+            "hasta": "2026-11-16T11:52:16-05:00",
             "precio": 89,
             "antes": null,
             "descuento_pct": null,
@@ -1324,11 +1324,11 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-16T10:53:04-05:00",
+            "desde": "2026-11-16T11:52:16-05:00",
             "hasta": null,
             "precio": 49,
             "antes": 89,
-            "descuento_pct": 45,
+            "descuento_pct": 44,
             "etiqueta": "Liquidación",
             "liquidacion": true,
             "cuenta_regresiva": false,
@@ -1505,7 +1505,7 @@
         "ventanas": [
           {
             "desde": null,
-            "hasta": "2026-11-16T10:53:04-05:00",
+            "hasta": "2026-11-16T11:52:16-05:00",
             "precio": 59,
             "antes": null,
             "descuento_pct": null,
@@ -1515,11 +1515,11 @@
             "oferta_id": null
           },
           {
-            "desde": "2026-11-16T10:53:04-05:00",
+            "desde": "2026-11-16T11:52:16-05:00",
             "hasta": null,
             "precio": 35,
             "antes": 59,
-            "descuento_pct": 41,
+            "descuento_pct": 40,
             "etiqueta": "Liquidación",
             "liquidacion": true,
             "cuenta_regresiva": false,
@@ -1681,7 +1681,7 @@
         "id": "fx_00000023",
         "alt": "Portada de liquidación"
       },
-      "desde": "2026-11-16T10:53:04-05:00",
+      "desde": "2026-11-16T11:52:16-05:00",
       "hasta": null,
       "orden": 2,
       "temporada_id": null
@@ -1701,8 +1701,8 @@
         "id": "fx_0000001f",
         "alt": "Portada de la temporada Verano 2027"
       },
-      "desde": "2026-11-01T10:53:04-05:00",
-      "hasta": "2027-03-01T10:53:04-05:00",
+      "desde": "2026-11-01T11:52:16-05:00",
+      "hasta": "2027-03-01T11:52:16-05:00",
       "visible_en_web": true,
       "revista": true,
       "vigencia_hasta": "2026-12-01",
@@ -1846,109 +1846,109 @@
   "temporada_activa_id": "tem_00000001",
   "fotos": {
     "fx_00000001": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000002": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000003": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000004": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000005": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000006": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000007": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000008": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000009": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000a": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000b": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000c": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000d": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000e": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000000f": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000010": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000011": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000012": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000013": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000014": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000015": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000016": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000017": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000018": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000019": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000020": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000021": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000022": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_00000023": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001f": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001a": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001b": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001c": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001d": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     },
     "fx_0000001e": {
-      "actualizado": "2026-11-20T10:53:04-05:00"
+      "actualizado": "2026-11-20T11:52:16-05:00"
     }
   }
 }

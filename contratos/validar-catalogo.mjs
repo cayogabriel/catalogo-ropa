@@ -25,6 +25,35 @@ function instante(valor, extremo) {
   return Date.parse(valor);
 }
 
+// % de descuento honesto: redondeado hacia abajo (nunca se exagera).
+export const porcentajeDescuento = (regular, precio) => Math.floor(((regular - precio) / regular) * 100 + 1e-9);
+
+// Marketing honesto: sin oferta, el precio es el regular y no hay «antes», % ni
+// insignias; con oferta, el precio baja, el «antes» es el regular real y el %
+// sale de los precios; una cuenta regresiva necesita fecha de fin.
+function revisarHonestidad(ventana, i, regular, etiqueta, errores) {
+  if (ventana.oferta_id === null) {
+    const conAdornos = ventana.antes !== null || ventana.descuento_pct !== null || ventana.liquidacion || ventana.cuenta_regresiva;
+    if (ventana.precio !== regular || conAdornos) {
+      errores.push(`${etiqueta}: la ventana ${i} no tiene oferta, así que su precio debe ser el regular (${regular}), sin «antes», % ni insignias`);
+    }
+    return;
+  }
+  if (!(ventana.precio < regular)) {
+    errores.push(`${etiqueta}: la oferta de la ventana ${i} no baja el precio (${ventana.precio} frente al regular ${regular})`);
+  }
+  if (ventana.antes !== null && ventana.antes !== regular) {
+    errores.push(`${etiqueta}: en la ventana ${i} el precio «antes» (${ventana.antes}) debe ser el precio regular (${regular})`);
+  }
+  const pct = porcentajeDescuento(regular, ventana.precio);
+  if (ventana.descuento_pct !== null && ventana.descuento_pct !== pct) {
+    errores.push(`${etiqueta}: en la ventana ${i} el descuento debe ser ${pct}% (redondeado hacia abajo), no ${ventana.descuento_pct}%`);
+  }
+  if (ventana.cuenta_regresiva && ventana.hasta === null) {
+    errores.push(`${etiqueta}: la ventana ${i} tiene cuenta regresiva pero no tiene fecha de fin`);
+  }
+}
+
 function revisarVentanas(producto, errores) {
   const etiqueta = `productos ${producto.codigo}`;
   const v = producto.precio.ventanas;
@@ -34,14 +63,36 @@ function revisarVentanas(producto, errores) {
     const desde = instante(ventana.desde, -Infinity);
     const hasta = instante(ventana.hasta, Infinity);
     if (!(desde < hasta)) errores.push(`${etiqueta}: la ventana ${i} termina antes de empezar`);
-    if (ventana.antes !== null && !(ventana.antes > ventana.precio)) {
-      errores.push(`${etiqueta}: en la ventana ${i} el precio «antes» (${ventana.antes}) no es mayor que el precio (${ventana.precio})`);
-    }
+    revisarHonestidad(ventana, i, producto.precio.regular, etiqueta, errores);
     if (i === 0) return;
     const finAnterior = instante(v[i - 1].hasta, Infinity);
     if (desde < finAnterior) errores.push(`${etiqueta}: las ventanas ${i - 1} y ${i} se solapan`);
     if (desde > finAnterior) errores.push(`${etiqueta}: hay un hueco entre las ventanas ${i - 1} y ${i}`);
   });
+}
+
+// Fecha de calendario en Lima (UTC-5 todo el año) de un instante en ms.
+const diaLima = (ms) => new Date(ms - 5 * 3_600_000).toISOString().slice(0, 10);
+
+// La revista imprime «Precios válidos hasta el …»: esa fecha no puede pasar el
+// último día de la oferta vigente (al publicar) de ninguna prenda de la temporada.
+function revisarVigencias(c, errores) {
+  const ahora = Date.parse(c.generado_en);
+  const porId = new Map(c.productos.map((p) => [p.id, p]));
+  for (const t of c.temporadas) {
+    if (!t.revista) continue;
+    const ids = new Set(t.fotos.flatMap((f) => f.productos));
+    for (const id of ids) {
+      const p = porId.get(id);
+      if (!p) continue;
+      const vigente = p.precio.ventanas.find((v) => instante(v.desde, -Infinity) <= ahora && ahora < instante(v.hasta, Infinity));
+      if (!vigente || vigente.hasta === null) continue;
+      const ultimoDia = diaLima(Date.parse(vigente.hasta) - 1);
+      if (t.vigencia_hasta > ultimoDia) {
+        errores.push(`temporadas ${t.slug}: la vigencia de la revista (${t.vigencia_hasta}) pasa el último día de la oferta de ${p.codigo} (${ultimoDia})`);
+      }
+    }
+  }
 }
 
 function fotosReferenciadas(c) {
@@ -128,6 +179,7 @@ function revisarReglas(c) {
       }
     }
   }
+  revisarVigencias(c, errores);
   if (!idsPaleta.has(c.tema_paleta_id)) errores.push(`tema_paleta_id: la paleta ${c.tema_paleta_id} no existe`);
   if (c.temporada_activa_id !== null && !idsTemporada.has(c.temporada_activa_id)) {
     errores.push(`temporada_activa_id: la temporada ${c.temporada_activa_id} no existe`);

@@ -111,8 +111,8 @@ describe('validarCatalogo', () => {
       ventana(null, '2026-12-05T00:00:00-05:00', 89),
       ventana('2026-12-05T00:00:00-05:00', '2026-12-15T00:00:00-05:00', 59, {
         antes: 89,
-        descuento_pct: 34,
-        etiqueta: '-34%',
+        descuento_pct: 33,
+        etiqueta: '-33%',
         cuenta_regresiva: true,
         oferta_id: 'ofe_00000001',
       }),
@@ -159,5 +159,63 @@ describe('validarCatalogo', () => {
     const r = validarCatalogo(c);
     expect(r.ok).toBe(false);
     expect(r.errores.join('\n')).toContain('VES-001');
+  });
+});
+
+describe('validarCatalogo: precios honestos', () => {
+  const conOferta = (c, ventanas) => {
+    c.productos[0].precio.ventanas = ventanas;
+    return validarCatalogo(c);
+  };
+  const oferta = (extra) => ({ oferta_id: 'ofe_00000001', ...extra });
+
+  test('el precio «antes» tiene que ser el precio regular', () => {
+    const r = conOferta(catalogoMinimo(), [ventana(null, null, 59, oferta({ antes: 199, descuento_pct: 70 }))]);
+    expect(r.errores.join('\n')).toMatch(/VES-001.*regular/);
+  });
+
+  test('el % de descuento sale de los precios, redondeado hacia abajo', () => {
+    const c = catalogoMinimo();
+    c.productos[0].precio.regular = 49;
+    expect(conOferta(c, [ventana(null, null, 29, oferta({ antes: 49, descuento_pct: 41 }))]).errores.join('\n')).toMatch(/VES-001.*40%/);
+    expect(conOferta(c, [ventana(null, null, 29, oferta({ antes: 49, descuento_pct: 40 }))]).errores).toEqual([]);
+  });
+
+  test('sin oferta, el precio es el regular, sin «antes», % ni insignias', () => {
+    const r = conOferta(catalogoMinimo(), [ventana(null, null, 79)]);
+    expect(r.errores.join('\n')).toMatch(/VES-001.*regular/);
+  });
+
+  test('una oferta no puede subir el precio', () => {
+    const r = conOferta(catalogoMinimo(), [ventana(null, null, 99, oferta())]);
+    expect(r.errores.join('\n')).toMatch(/VES-001.*no baja el precio/);
+  });
+
+  test('una cuenta regresiva necesita fecha de fin', () => {
+    const r = conOferta(catalogoMinimo(), [ventana(null, null, 59, oferta({ cuenta_regresiva: true }))]);
+    expect(r.errores.join('\n')).toMatch(/VES-001.*cuenta regresiva/);
+  });
+
+  test('una liquidación necesita una oferta', () => {
+    const r = conOferta(catalogoMinimo(), [ventana(null, null, 89, { liquidacion: true })]);
+    expect(r.ok).toBe(false);
+  });
+
+  test('la vigencia impresa en la revista no pasa el fin de la oferta de sus prendas', () => {
+    const c = catalogoMinimo();
+    c.productos[0].precio.ventanas = [
+      ventana(null, '2026-12-10T00:00:00-05:00', 59, oferta({ antes: 89, descuento_pct: 33 })),
+      ventana('2026-12-10T00:00:00-05:00', null, 89),
+    ];
+    const temporada = {
+      id: 'tem_00000001', slug: 'verano', nombre: 'Verano', titulo: '', subtitulo: '', intro: '', cierre: '',
+      paleta_id: 'neutra-minimal', foto_portada: { id: 'fx_00000001', alt: 'Portada' }, desde: null, hasta: null,
+      visible_en_web: true, revista: true, vigencia_hasta: '2026-12-15',
+      fotos: [{ id: 'tfo_00000001', foto: { id: 'fx_00000001', alt: 'Foto' }, tipo: 'producto', productos: ['prd_00000001'], texto: '', destacada: false }],
+    };
+    c.temporadas = [temporada];
+    expect(validarCatalogo(c).errores.join('\n')).toMatch(/verano.*VES-001/);
+    temporada.vigencia_hasta = '2026-12-09';
+    expect(validarCatalogo(c).errores).toEqual([]);
   });
 });

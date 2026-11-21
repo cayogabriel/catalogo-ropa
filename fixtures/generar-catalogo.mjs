@@ -2,7 +2,7 @@
 // Uso: node fixtures/generar-catalogo.mjs [--ahora=2026-12-01T12:00:00-05:00]
 // Usa las paletas, textos y plantillas reales de content/ (S5).
 import { readFileSync, writeFileSync } from 'node:fs';
-import { validarCatalogo } from '@catalogo/contratos';
+import { validarCatalogo, porcentajeDescuento } from '@catalogo/contratos';
 import { CATEGORIAS, PRODUCTOS, AMBIENTES, planDeFotos, codigos, idDe } from './definicion.mjs';
 
 const arg = process.argv.find((a) => a.startsWith('--ahora='));
@@ -41,7 +41,7 @@ const inicioLiquidacion = lima(enDias(-5));
 function ventana(desde, hasta, precio, extra = {}) {
   return { desde, hasta, precio, antes: null, descuento_pct: null, etiqueta: null, liquidacion: false, cuenta_regresiva: false, oferta_id: null, ...extra };
 }
-const pct = (antes, ahora) => Math.round(((antes - ahora) / antes) * 100);
+const pct = porcentajeDescuento; // hacia abajo, como exige el contrato
 
 function ventanas(p) {
   if (p.liquidacion) {
