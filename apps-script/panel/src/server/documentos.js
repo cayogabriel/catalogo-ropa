@@ -111,26 +111,35 @@ function guardarDocumentos_() {
   } catch (e) {
     return fallar_('invalido', 'documentos.json no se puede leer');
   }
+  // Primero se valida todo el manifiesto: una ruta rara no deja la copia a medias.
+  const revistas = (manifiesto.revistas || []).map(function (r) {
+    return {
+      temporada_id: r.temporada_id,
+      slug: r.slug,
+      pdf: rutaDeDocumento_(r.pdf, 'pdf'),
+      carrusel: (r.carrusel || []).map(function (ruta) {
+        return rutaDeDocumento_(ruta, 'jpg');
+      }),
+    };
+  });
+  const catalogo = manifiesto.catalogo && manifiesto.catalogo.pdf ? rutaDeDocumento_(manifiesto.catalogo.pdf, 'pdf') : null;
+
   const temporadas = {};
   leerTabla_('temporadas').filas.forEach(function (t) {
     temporadas[t.id] = t;
   });
   let guardados = 0;
-  (manifiesto.revistas || []).forEach(function (r) {
+  revistas.forEach(function (r) {
     const t = temporadas[r.temporada_id];
     const carpetaTemporada = subcarpeta_(carpeta_('revistas'), nombreDeCarpeta_(t ? t.nombre : r.slug));
-    const pdf = rutaDeDocumento_(r.pdf, 'pdf');
-    copiarArchivo_(carpetaTemporada, base, pdf, pdf.split('/').pop(), 'application/pdf');
+    copiarArchivo_(carpetaTemporada, base, r.pdf, r.pdf.split('/').pop(), 'application/pdf');
     guardados++;
-    const imagenes = (r.carrusel || []).map(function (ruta) {
-      return rutaDeDocumento_(ruta, 'jpg');
-    });
-    if (imagenes.length) {
+    if (r.carrusel.length) {
       const carpetaCarrusel = subcarpeta_(carpetaTemporada, 'carrusel');
-      const nombres = imagenes.map(function (ruta) {
+      const nombres = r.carrusel.map(function (ruta) {
         return ruta.split('/').pop();
       });
-      imagenes.forEach(function (ruta, i) {
+      r.carrusel.forEach(function (ruta, i) {
         copiarArchivo_(carpetaCarrusel, base, ruta, nombres[i], 'image/jpeg');
         guardados++;
       });
@@ -140,9 +149,8 @@ function guardarDocumentos_() {
       });
     }
   });
-  if (manifiesto.catalogo && manifiesto.catalogo.pdf) {
-    const ruta = rutaDeDocumento_(manifiesto.catalogo.pdf, 'pdf');
-    copiarArchivo_(carpeta_('catalogos'), base, ruta, 'catalogo.pdf', 'application/pdf');
+  if (catalogo) {
+    copiarArchivo_(carpeta_('catalogos'), base, catalogo, 'catalogo.pdf', 'application/pdf');
     guardados++;
   }
   return { guardados: guardados };
