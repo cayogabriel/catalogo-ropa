@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cayogabriel.github.io/catalogo-ropa/catalog.schema.json",
+  "title": "Catálogo publicado",
+  "description": "Copia publicada que arma el Panel al pulsar «Publicar», sirve la API (?r=catalogo) y consume la web. Ver docs/contracts/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version_esquema",
+    "generado_en",
+    "tienda",
+    "tema_paleta_id",
+    "paletas",
+    "textos",
+    "vendedoras",
+    "categorias",
+    "productos",
+    "secciones",
+    "portadas",
+    "temporadas",
+    "temporada_activa_id",
+    "fotos"
+  ],
+  "properties": {
+    "version_esquema": { "const": 1 },
+    "generado_en": { "$ref": "#/$defs/fechaHora" },
+    "tienda": { "$ref": "#/$defs/tienda" },
+    "tema_paleta_id": { "$ref": "#/$defs/paletaId" },
+    "paletas": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/paletaId" },
+      "additionalProperties": { "$ref": "#/$defs/paleta" }
+    },
+    "textos": { "type": "object", "additionalProperties": { "type": "string" } },
+    "vendedoras": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/vendedora" } },
+    "categorias": { "type": "array", "items": { "$ref": "#/$defs/categoria" } },
+    "productos": { "type": "array", "items": { "$ref": "#/$defs/producto" } },
+    "secciones": { "type": "array", "items": { "$ref": "#/$defs/seccion" } },
+    "portadas": { "type": "array", "items": { "$ref": "#/$defs/portada" } },
+    "temporadas": { "type": "array", "items": { "$ref": "#/$defs/temporada" } },
+    "temporada_activa_id": { "$ref": "#/$defs/idONull" },
+    "fotos": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/fotoId" },
+      "additionalProperties": { "$ref": "#/$defs/fotoIndice" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z]{3}_[0-9a-f]{8}$" },
+    "idONull": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+    "paletaId": { "type": "string", "pattern": "^([a-z0-9]+(-[a-z0-9]+)*|pal_[0-9a-f]{8})$", "maxLength": 40 },
+    "fotoId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{10,100}$" },
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 60 },
+    "fechaHora": { "type": "string", "format": "date-time" },
+    "fechaHoraONull": { "anyOf": [{ "$ref": "#/$defs/fechaHora" }, { "type": "null" }] },
+    "fecha": { "type": "string", "format": "date" },
+    "monto": { "type": "number", "exclusiveMinimum": 0 },
+    "colorHex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "listaTextos": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "usuarioRed": { "anyOf": [{ "type": "string", "pattern": "^[A-Za-z0-9._]{1,60}$" }, { "type": "null" }] },
+    "foto": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "alt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/fotoId" },
+        "alt": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "fotoONull": { "anyOf": [{ "$ref": "#/$defs/foto" }, { "type": "null" }] },
+    "fotoIndice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actualizado"],
+      "properties": { "actualizado": { "$ref": "#/$defs/fechaHora" } }
+    },
+    "tienda": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nombre",
+        "eslogan",
+        "logo",
+        "moneda",
+        "pais_codigo",
+        "zona_horaria",
+        "redes",
+        "horario",
+        "envios",
+        "sitio_url",
+        "inicio_modo"
+      ],
+      "properties": {
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "eslogan": { "type": "string", "maxLength": 160 },
+        "logo": { "$ref": "#/$defs/fotoONull" },
+        "moneda": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["simbolo", "codigo"],
+          "properties": {
+            "simbolo": { "type": "string", "minLength": 1, "maxLength": 4 },
+            "codigo": { "type": "string", "pattern": "^[A-Z]{3}$" }
+          }
+        },
+        "pais_codigo": { "type": "string", "pattern": "^[0-9]{1,3}$" },
+        "zona_horaria": { "type": "string", "minLength": 3 },
+        "redes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instagram", "facebook", "tiktok"],
+          "properties": {
+            "instagram": { "$ref": "#/$defs/usuarioRed" },
+            "facebook": { "$ref": "#/$defs/usuarioRed" },
+            "tiktok": { "$ref": "#/$defs/usuarioRed" }
+          }
+        },
+        "horario": { "type": "string", "maxLength": 200 },
+        "envios": { "type": "string", "maxLength": 400 },
+        "sitio_url": { "type": "string", "format": "uri", "pattern": "^https://.*/$" },
+        "inicio_modo": { "enum": ["temporada", "secciones"] }
+      }
+    },
+    "paleta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nombre", "tokens", "fuentes", "radio"],
+      "properties": {
+        "nombre": { "type": "string", "minLength": 1 },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "--color-fondo",
+            "--color-superficie",
+            "--color-texto",
+            "--color-texto-suave",
+            "--color-borde",
+            "--color-control",
+            "--color-primario",
+            "--color-sobre-primario",
+            "--color-acento",
+            "--color-sobre-acento",
+            "--color-oferta",
+            "--color-sobre-oferta",
+            "--color-liquidacion",
+            "--color-sobre-liquidacion",
+            "--color-exito",
+            "--color-foco"
+          ],
+          "properties": {
+            "--color-fondo": { "$ref": "#/$defs/colorHex" },
+            "--color-superficie": { "$ref": "#/$defs/colorHex" },
+            "--color-texto": { "$ref": "#/$defs/colorHex" },
+            "--color-texto-suave": { "$ref": "#/$defs/colorHex" },
+            "--color-borde": { "$ref": "#/$defs/colorHex" },
+            "--color-control": { "$ref": "#/$defs/colorHex" },
+            "--color-primario": { "$ref": "#/$defs/colorHex" },
+            "--color-sobre-primario": { "$ref": "#/$defs/colorHex" },
+            "--color-acento": { "$ref": "#/$defs/colorHex" },
+            "--color-sobre-acento": { "$ref": "#/$defs/colorHex" },
+            "--color-oferta": { "$ref": "#/$defs/colorHex" },
+            "--color-sobre-oferta": { "$ref": "#/$defs/colorHex" },
+            "--color-liquidacion": { "$ref": "#/$defs/colorHex" },
+            "--color-sobre-liquidacion": { "$ref": "#/$defs/colorHex" },
+            "--color-exito": { "$ref": "#/$defs/colorHex" },
+            "--color-foco": { "$ref": "#/$defs/colorHex" }
+          }
+        },
+        "fuentes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["titulos", "texto"],
+          "properties": {
+            "titulos": { "type": "string", "minLength": 1, "maxLength": 60 },
+            "texto": { "type": "string", "minLength": 1, "maxLength": 60 }
+          }
+        },
+        "radio": { "type": "string", "pattern": "^[0-9]{1,3}(px|rem)$" }
+      }
+    },
+    "vendedora": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "nombre", "whatsapp", "por_defecto"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "whatsapp": { "type": "string", "pattern": "^[0-9]{8,15}$" },
+        "por_defecto": { "type": "boolean" }
+      }
+    },
+    "categoria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "nombre", "slug", "orden", "foto"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "slug": { "$ref": "#/$defs/slug" },
+        "orden": { "type": "number" },
+        "foto": { "$ref": "#/$defs/fotoONull" }
+      }
+    },
+    "ventana": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "desde",
+        "hasta",
+        "precio",
+        "antes",
+        "descuento_pct",
+        "etiqueta",
+        "liquidacion",
+        "cuenta_regresiva",
+        "oferta_id"
+      ],
+      "properties": {
+        "desde": { "$ref": "#/$defs/fechaHoraONull" },
+        "hasta": { "$ref": "#/$defs/fechaHoraONull" },
+        "precio": { "$ref": "#/$defs/monto" },
+        "antes": { "anyOf": [{ "$ref": "#/$defs/monto" }, { "type": "null" }] },
+        "descuento_pct": { "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 99 }, { "type": "null" }] },
+        "etiqueta": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 24 }, { "type": "null" }] },
+        "liquidacion": { "type": "boolean" },
+        "cuenta_regresiva": { "type": "boolean" },
+        "oferta_id": { "$ref": "#/$defs/idONull" }
+      }
+    },
+    "producto": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "codigo",
+        "nombre",
+        "descripcion",
+        "categoria_id",
+        "tallas",
+        "tallas_agotadas",
+        "colores",
+        "fotos",
+        "etiquetas",
+        "estado",
+        "vendedora_id",
+        "orden",
+        "nuevo",
+        "ultimas_unidades",
+        "popularidad",
+        "precio"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "codigo": { "type": "string", "pattern": "^[A-Z]{3}-[0-9]{3,4}$" },
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "descripcion": { "type": "string", "maxLength": 600 },
+        "categoria_id": { "$ref": "#/$defs/id" },
+        "tallas": { "$ref": "#/$defs/listaTextos" },
+        "tallas_agotadas": { "$ref": "#/$defs/listaTextos" },
+        "colores": { "$ref": "#/$defs/listaTextos" },
+        "fotos": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/foto" } },
+        "etiquetas": { "$ref": "#/$defs/listaTextos" },
+        "estado": { "enum": ["publicado", "agotado"] },
+        "vendedora_id": { "$ref": "#/$defs/idONull" },
+        "orden": { "type": "number" },
+        "nuevo": { "type": "boolean" },
+        "ultimas_unidades": { "type": "boolean" },
+        "popularidad": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] },
+        "precio": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["regular", "ventanas"],
+          "properties": {
+            "regular": { "$ref": "#/$defs/monto" },
+            "ventanas": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ventana" } }
+          }
+        }
+      }
+    },
+    "seccion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "titulo", "subtitulo", "tipo", "diseno", "orden", "productos"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "titulo": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "subtitulo": { "type": "string", "maxLength": 160 },
+        "tipo": { "enum": ["manual", "novedades", "ofertas", "liquidacion", "mas_consultados", "categoria", "etiqueta"] },
+        "diseno": { "enum": ["carrusel", "grilla", "destacado"] },
+        "orden": { "type": "number" },
+        "productos": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "portada": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "titulo",
+        "subtitulo",
+        "boton_texto",
+        "boton_destino",
+        "foto_escritorio",
+        "foto_movil",
+        "desde",
+        "hasta",
+        "orden",
+        "temporada_id"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "titulo": { "type": "string", "maxLength": 80 },
+        "subtitulo": { "type": "string", "maxLength": 160 },
+        "boton_texto": { "type": "string", "maxLength": 30 },
+        "boton_destino": { "type": "string", "pattern": "^/" },
+        "foto_escritorio": { "$ref": "#/$defs/foto" },
+        "foto_movil": { "$ref": "#/$defs/fotoONull" },
+        "desde": { "$ref": "#/$defs/fechaHoraONull" },
+        "hasta": { "$ref": "#/$defs/fechaHoraONull" },
+        "orden": { "type": "number" },
+        "temporada_id": { "$ref": "#/$defs/idONull" }
+      }
+    },
+    "temporadaFoto": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "foto", "tipo", "productos", "texto", "destacada"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "foto": { "$ref": "#/$defs/foto" },
+        "tipo": { "enum": ["producto", "ambiente"] },
+        "productos": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "texto": { "type": "string", "maxLength": 300 },
+        "destacada": { "type": "boolean" }
+      }
+    },
+    "temporada": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "nombre",
+        "titulo",
+        "subtitulo",
+        "intro",
+        "cierre",
+        "paleta_id",
+        "foto_portada",
+        "desde",
+        "hasta",
+        "visible_en_web",
+        "revista",
+        "vigencia_hasta",
+        "fotos"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "slug": { "$ref": "#/$defs/slug" },
+        "nombre": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "titulo": { "type": "string", "maxLength": 80 },
+        "subtitulo": { "type": "string", "maxLength": 160 },
+        "intro": { "type": "string", "maxLength": 1200 },
+        "cierre": { "type": "string", "maxLength": 1200 },
+        "paleta_id": { "$ref": "#/$defs/paletaId" },
+        "foto_portada": { "$ref": "#/$defs/foto" },
+        "desde": { "$ref": "#/$defs/fechaHoraONull" },
+        "hasta": { "$ref": "#/$defs/fechaHoraONull" },
+        "visible_en_web": { "type": "boolean" },
+        "revista": { "type": "boolean" },
+        "vigencia_hasta": { "$ref": "#/$defs/fecha" },
+        "fotos": { "type": "array", "items": { "$ref": "#/$defs/temporadaFoto" } }
+      }
+    }
+  }
+}
