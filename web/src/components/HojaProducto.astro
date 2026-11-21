@@ -1,0 +1,90 @@
+---
+// Hoja inferior de una prenda (temporada): foto, precio vigente, tallas y «Pedir por WhatsApp».
+import Icono from './Icono.astro';
+import Imagen from './Imagen.astro';
+import Precio from './Precio.astro';
+import Insignias from './Insignias.astro';
+import SelectorPedido from './SelectorPedido.astro';
+import { t, url, datosPrecio } from '../lib/sitio.mjs';
+import { rutaProducto } from '../compartido/enlaces.mjs';
+
+interface Props {
+  producto: any;
+}
+const { producto: p } = Astro.props;
+const id = `hoja-${p.codigo.toLowerCase()}`;
+---
+
+<dialog class="hoja" id={id} aria-labelledby={`${id}-titulo`}>
+  <div class="hoja-barra">
+    <h2 id={`${id}-titulo`}>{p.nombre}</h2>
+    <button type="button" class="cerrar" data-cerrar>
+      <Icono nombre="cerrar" />
+      <span class="sr">{t('accesibilidad.cerrar')}</span>
+    </button>
+  </div>
+  <div class="hoja-cuerpo" data-precio={JSON.stringify(datosPrecio(p))}>
+    <div class="marco-foto hoja-foto">
+      <Imagen foto={p.fotos[0]} sizes="(min-width: 48rem) 20rem, 40vw" />
+      <Insignias producto={p} />
+    </div>
+    <div class="hoja-info">
+      <Precio producto={p} clase="hoja-precio" />
+      <p class="texto-suave hoja-codigo">{t('producto.codigo', { codigo: p.codigo })}</p>
+      <SelectorPedido producto={p} prefijo={id} />
+      <a class="enlace" href={url(rutaProducto(p.codigo))}>Ver detalles de la prenda</a>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .hoja-cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1rem;
+    padding: 1rem var(--margen) max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .hoja-foto {
+    align-self: start;
+  }
+  .hoja-foto :global(.insignias) {
+    position: absolute;
+    top: 0.375rem;
+    left: 0.375rem;
+  }
+  .hoja-info {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+  }
+  .hoja-info :global(.pedido) {
+    grid-column: 1 / -1;
+  }
+  .hoja-info :global(.hoja-precio) {
+    font-size: 1.25rem;
+  }
+  .hoja-codigo {
+    font-size: 0.875rem;
+  }
+  @media (max-width: 30rem) {
+    .hoja-cuerpo {
+      grid-template-columns: 7rem minmax(0, 1fr);
+    }
+    .hoja-foto {
+      grid-row: span 2;
+    }
+    .hoja-foto :global(.insignias) {
+      display: none;
+    }
+    .hoja-info {
+      display: contents;
+    }
+    .hoja-info > :global(*) {
+      grid-column: 2;
+    }
+    .hoja-info > :global(.pedido),
+    .hoja-info > .enlace {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

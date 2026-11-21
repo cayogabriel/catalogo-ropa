@@ -1,0 +1,275 @@
+---
+// Temporada: portada a todo el ancho, intro y sus fotos en scroll vertical. Las prendas de
+// cada foto son etiquetas colgantes: enlazan a la ficha y, con JS, abren su hoja inferior.
+import Imagen from './Imagen.astro';
+import Precio from './Precio.astro';
+import HojaProducto from './HojaProducto.astro';
+import Contacto from './Contacto.astro';
+import Icono from './Icono.astro';
+import { catalogo, t, url, datosPrecio } from '../lib/sitio.mjs';
+import { productoPorId } from '../lib/datos.mjs';
+import { rutaProducto, rutaTemporada } from '../compartido/enlaces.mjs';
+
+interface Props {
+  temporada: any;
+  modo: 'pagina' | 'inicio';
+}
+const { temporada: tem, modo } = Astro.props;
+const buscar = productoPorId(catalogo);
+const fotos = tem.fotos.map((f: any) => ({ ...f, prendas: f.productos.map(buscar).filter(Boolean) }));
+const enHojas = [...new Map(fotos.flatMap((f: any) => f.prendas).map((p: any) => [p.id, p])).values()];
+const Titulo = modo === 'pagina' ? 'h1' : 'h2';
+const idTitulo = `temporada-${tem.slug}`;
+const rutaPdf = url(`${rutaTemporada(tem.slug)}revista-${tem.slug}.pdf`);
+---
+
+<section class="temporada" aria-labelledby={idTitulo}>
+  <div class="temporada-portada">
+    <Imagen foto={tem.foto_portada} sizes="100vw" prioridad />
+  </div>
+  <div class="contenedor temporada-cabecera">
+    <Titulo id={idTitulo} class="temporada-titulo">{tem.titulo || tem.nombre}</Titulo>
+    {tem.subtitulo && <p class="temporada-subtitulo">{tem.subtitulo}</p>}
+    {tem.intro && <p class="temporada-intro">{tem.intro}</p>}
+    {enHojas.length > 0 && <p class="texto-suave temporada-ayuda">{t('temporada.toca_prenda')}</p>}
+  </div>
+
+  <ul class="contenedor fotos-temporada" data-fotos-temporada>
+    {
+      fotos.map((f: any) => (
+        <li class:list={['foto-temporada', { destacada: f.destacada }]}>
+          <figure>
+            <div class="foto-temporada-marco">
+              <Imagen foto={f.foto} sizes={f.destacada ? '(min-width: 72rem) 70rem, 100vw' : '(min-width: 48rem) 36rem, 100vw'} />
+            </div>
+            {(f.texto || f.prendas.length > 0) && (
+              <figcaption>
+                {f.prendas.length > 0 && (
+                  <ul class="etiquetas-prenda" aria-label="Prendas de esta foto">
+                    {f.prendas.map((p: any) => (
+                      <li>
+                        <a class="etiqueta-prenda" href={url(rutaProducto(p.codigo))} data-hoja={`hoja-${p.codigo.toLowerCase()}`} aria-haspopup="dialog" data-precio={JSON.stringify(datosPrecio(p))}>
+                          <span class="etiqueta-nombre">{p.nombre}</span>
+                          <Precio producto={p} clase="etiqueta-precio" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {f.texto && <p class="foto-temporada-texto">{f.texto}</p>}
+              </figcaption>
+            )}
+          </figure>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="contenedor temporada-cierre">
+    {
+      modo === 'pagina' ? (
+        <>
+          {tem.cierre && <p class="temporada-intro">{tem.cierre}</p>}
+          <h2 class="temporada-contacto-titulo">{t('temporada.contacto_titulo')}</h2>
+          <Contacto />
+          {tem.revista && (
+            <a class="boton boton-secundario" href={rutaPdf} download data-evento="revista_descarga" data-s={tem.id}>
+              <Icono nombre="descarga" />
+              {t('temporada.descargar_revista')}
+            </a>
+          )}
+        </>
+      ) : (
+        <div class="temporada-acciones">
+          <a class="boton boton-primario" href={url(rutaTemporada(tem.slug))}>
+            {t('temporada.ver_revista')}
+          </a>
+          {tem.revista && (
+            <a class="boton boton-secundario" href={rutaPdf} download data-evento="revista_descarga" data-s={tem.id}>
+              <Icono nombre="descarga" />
+              {t('temporada.descargar_revista')}
+            </a>
+          )}
+        </div>
+      )
+    }
+  </div>
+
+  {enHojas.map((p: any) => <HojaProducto producto={p} />)}
+</section>
+
+<script>
+  import { iniciarTemporada } from '../cliente/temporada.mjs';
+  iniciarTemporada();
+</script>
+
+<style>
+  .temporada-portada :global(.foto) {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    max-height: 88vh;
+  }
+  @media (min-width: 48rem) {
+    .temporada-portada :global(.foto) {
+      aspect-ratio: 16 / 8;
+    }
+  }
+  .temporada-cabecera {
+    display: grid;
+    gap: 0.875rem;
+    padding-block: 2rem 2.5rem;
+  }
+  .temporada-titulo {
+    font-size: clamp(2.5rem, 12vw, 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    max-width: 14ch;
+  }
+  .temporada-subtitulo {
+    font-size: 1.1875rem;
+    max-width: var(--ancho-lectura);
+  }
+  .temporada-intro {
+    max-width: var(--ancho-lectura);
+    color: var(--color-texto-suave);
+    font-size: 1.0625rem;
+  }
+  .temporada-ayuda {
+    font-size: 0.9375rem;
+  }
+
+  .fotos-temporada {
+    list-style: none;
+    margin: 0 auto;
+    display: grid;
+    gap: clamp(2.5rem, 8vw, 5rem);
+  }
+  .foto-temporada figure {
+    margin: 0;
+  }
+  .foto-temporada-marco {
+    border-radius: var(--radio-chico);
+    overflow: hidden;
+    background: var(--color-borde);
+  }
+  .foto-temporada-marco :global(.foto) {
+    width: 100%;
+  }
+  .foto-temporada figcaption {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .foto-temporada-texto {
+    font-family: var(--t-titulos);
+    font-size: clamp(1.25rem, 4.5vw, 1.625rem);
+    line-height: 1.2;
+    max-width: 30ch;
+  }
+  @media (max-width: 47.99rem) {
+    .fotos-temporada {
+      padding-inline: 0;
+    }
+    .foto-temporada-marco {
+      border-radius: 0;
+    }
+    .foto-temporada figcaption {
+      padding-inline: var(--margen);
+    }
+  }
+  @media (min-width: 48rem) {
+    .foto-temporada {
+      width: min(36rem, 100%);
+    }
+    .foto-temporada:nth-child(even):not(.destacada) {
+      justify-self: end;
+    }
+    .foto-temporada.destacada {
+      width: 100%;
+    }
+  }
+
+  /* Etiqueta colgante: el cartoncito de precio de una prenda. */
+  .etiquetas-prenda {
+    list-style: none;
+    margin: -1.75rem 0 0;
+    padding: 0 0.75rem;
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .etiqueta-prenda {
+    position: relative;
+    display: grid;
+    gap: 0.125rem;
+    min-height: 44px;
+    padding: 0.5rem 0.875rem 0.5rem 1.75rem;
+    background: var(--color-superficie);
+    color: var(--color-texto);
+    border: 1px solid var(--color-control);
+    border-radius: var(--radio-chico) var(--radio) var(--radio) var(--radio-chico);
+    text-decoration: none;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    rotate: -1.5deg;
+    transition: rotate 200ms var(--ease-out), transform 160ms var(--ease-out);
+    touch-action: manipulation;
+  }
+  .etiquetas-prenda li:nth-child(even) .etiqueta-prenda {
+    rotate: 1deg;
+  }
+  .etiqueta-prenda::before {
+    content: '';
+    position: absolute;
+    left: 0.625rem;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: -0.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-control);
+    background: var(--color-fondo);
+  }
+  .etiqueta-nombre {
+    font-weight: 700;
+  }
+  .etiqueta-prenda :global(.etiqueta-precio) {
+    font-size: 0.875rem;
+  }
+  .etiqueta-prenda:active {
+    transform: scale(0.97);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .etiqueta-prenda:hover,
+    .etiquetas-prenda li:nth-child(even) .etiqueta-prenda:hover {
+      rotate: 0deg;
+    }
+  }
+
+  .temporada-cierre {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+    padding-block: clamp(3rem, 8vw, 5rem) 1rem;
+  }
+  .temporada-contacto-titulo {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    max-width: 18ch;
+  }
+  .temporada-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Fundido corto al entrar en pantalla (solo con JS y sin movimiento reducido). */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.anim-fotos) .foto-temporada:not(.visible) {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+    .foto-temporada {
+      transition: opacity 300ms ease, transform 300ms var(--ease-out);
+    }
+  }
+</style>

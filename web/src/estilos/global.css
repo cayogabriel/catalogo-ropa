@@ -226,12 +226,12 @@ main {
 }
 
 .marca {
+  min-width: 0;
   font-family: var(--t-titulos);
   font-size: 1.25rem;
   text-decoration: none;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
+  display: block;
+  line-height: 2.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -280,6 +280,12 @@ main {
 }
 
 @media (max-width: 26rem) {
+  .marca {
+    font-size: 1.0625rem;
+  }
+  .nav a {
+    padding-inline: 0.375rem;
+  }
   .nav .nav-texto-opcional {
     position: absolute;
     width: 1px;
@@ -443,6 +449,11 @@ main {
   right: 0.5rem;
 }
 
+/* En la tarjeta el descuento ya va en la insignia. */
+.tarjeta .precio-pct {
+  display: none;
+}
+
 .tarjeta-nombre {
   font-size: 0.9375rem;
   line-height: 1.35;
@@ -456,7 +467,12 @@ main {
   .tarjeta:hover .foto {
     transform: scale(1.03);
   }
-  .tarjeta:hover .tarjeta-nombre {
+  .tarjeta:hover /* En la tarjeta el descuento ya va en la insignia. */
+.tarjeta .precio-pct {
+  display: none;
+}
+
+.tarjeta-nombre {
     text-decoration: underline;
   }
 }
@@ -770,4 +786,14 @@ dialog.cajon.abierta::backdrop {
     animation-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Una tarjeta oculta (filtro u oferta que no aplica) no deja un hueco en la grilla. */
+.grilla > li:has(> .tarjeta[hidden]),
+.carrusel > li:has(> .tarjeta[hidden]) {
+  display: none;
+}
+
+main:focus {
+  outline: none;
 }

@@ -1,13 +1,132 @@
 ---
+// Inicio. inicio_modo = temporada: temporada activa → portadas → secciones.
+// inicio_modo = secciones (o sin temporada activa): portadas → secciones → temporada.
 import Base from '../layouts/Base.astro';
-import TarjetaProducto from '../components/TarjetaProducto.astro';
-import { catalogo, t } from '../lib/sitio.mjs';
+import BloqueTemporada from '../components/BloqueTemporada.astro';
+import Portada from '../components/Portada.astro';
+import Seccion from '../components/Seccion.astro';
+import Imagen from '../components/Imagen.astro';
+import { catalogo, t, url, ahora } from '../lib/sitio.mjs';
+import { temporadaActiva, temporadasArchivo, portadasVigentes, seccionesInicio } from '../lib/datos.mjs';
+import { rutaTemporada } from '../compartido/enlaces.mjs';
+
+const activa = temporadaActiva(catalogo);
+const primeroTemporada = catalogo.tienda.inicio_modo === 'temporada' && activa !== null;
+const portadas = portadasVigentes(catalogo, ahora).filter((p) => !(primeroTemporada && activa && p.temporada_id === activa.id));
+const secciones = seccionesInicio(catalogo, ahora);
+const archivo = temporadasArchivo(catalogo);
+const visibles = catalogo.productos;
+const categorias = [...catalogo.categorias]
+  .sort((a, b) => a.orden - b.orden)
+  .map((c) => ({ ...c, cantidad: visibles.filter((p) => p.categoria_id === c.id).length }))
+  .filter((c) => c.cantidad > 0);
 ---
 
 <Base titulo={t('inicio.meta.titulo')} descripcion={t('inicio.meta.descripcion')} ruta="" actual="inicio">
-  <div class="contenedor bloque">
-    <ul class="grilla">
-      {catalogo.productos.map((p) => <li><TarjetaProducto producto={p} /></li>)}
-    </ul>
-  </div>
+  {!primeroTemporada && <h1 class="sr">{catalogo.tienda.nombre}{catalogo.tienda.eslogan ? `: ${catalogo.tienda.eslogan}` : ''}</h1>}
+
+  {primeroTemporada && activa && <BloqueTemporada temporada={activa} modo="inicio" />}
+
+  {portadas.map((p, i) => <Portada portada={p} prioridad={!primeroTemporada && i === 0} />)}
+
+  {secciones.map((s) => <Seccion datos={s} />)}
+
+  {
+    categorias.length > 0 && (
+      <section class="contenedor bloque" aria-labelledby="titulo-categorias">
+        <div class="cabecera-bloque">
+          <div>
+            <h2 id="titulo-categorias">{t('seccion.categorias.titulo')}</h2>
+            <p>{t('seccion.categorias.subtitulo')}</p>
+          </div>
+        </div>
+        <ul class="categorias">
+          {categorias.map((c) => (
+            <li>
+              <a class="categoria" href={url(`catalogo/?categoria=${c.slug}`)}>
+                {c.foto && (
+                  <span class="marco-foto categoria-foto">
+                    <Imagen foto={c.foto} alt="" sizes="(min-width: 48rem) 20vw, 45vw" />
+                  </span>
+                )}
+                <span class="categoria-nombre">{c.nombre}</span>
+                <span class="texto-suave categoria-cantidad">{t('catalogo.resultados', { cantidad: c.cantidad })}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {!primeroTemporada && activa && <BloqueTemporada temporada={activa} modo="inicio" />}
+
+  {
+    archivo.length > 0 && (
+      <section class="contenedor bloque" aria-labelledby="titulo-archivo">
+        <div class="cabecera-bloque">
+          <div>
+            <h2 id="titulo-archivo">{t('temporada.archivo_titulo')}</h2>
+            <p>{t('temporada.archivo_subtitulo')}</p>
+          </div>
+        </div>
+        <ul class="grilla">
+          {archivo.map((tem) => (
+            <li class="tarjeta">
+              <div class="marco-foto">
+                <Imagen foto={tem.foto_portada} sizes="(min-width: 48rem) 25vw, 46vw" />
+              </div>
+              <h3 class="tarjeta-nombre">
+                <a class="tarjeta-enlace" href={url(rutaTemporada(tem.slug))}>
+                  {tem.nombre}
+                </a>
+              </h3>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 </Base>
+
+<style>
+  .categorias {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(10rem, 45%), 1fr));
+    gap: 0.75rem;
+  }
+  .categoria {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 44px;
+    padding: 1rem;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-chico);
+    background: var(--color-superficie);
+    text-decoration: none;
+    transition: transform 160ms var(--ease-out);
+  }
+  .categoria:active {
+    transform: scale(0.98);
+  }
+  .categoria-foto {
+    margin: -1rem -1rem 0.5rem;
+    border-radius: var(--radio-chico) var(--radio-chico) 0 0;
+  }
+  .categoria-nombre {
+    font-family: var(--t-titulos);
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+  .categoria-cantidad {
+    font-size: 0.875rem;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .categoria:hover .categoria-nombre {
+      text-decoration: underline;
+    }
+  }
+</style>

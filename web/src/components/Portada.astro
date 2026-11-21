@@ -1,0 +1,88 @@
+---
+// Portada (banner) con foto para celular y escritorio. Las que aún no empiezan salen ocultas
+// y el navegador las muestra a su hora ([data-vigencia]).
+import { base, imagen, url } from '../lib/sitio.mjs';
+import { srcset, srcMenor } from '../lib/imagenes.mjs';
+
+interface Props {
+  portada: any;
+  prioridad?: boolean;
+}
+const { portada: p, prioridad = false } = Astro.props;
+const escritorio = imagen(p.foto_escritorio.id);
+const movil = p.foto_movil ? imagen(p.foto_movil.id) : null;
+const principal = movil ?? escritorio;
+---
+
+<section class="portada" hidden={p.pendiente} data-vigencia={JSON.stringify({ desde: p.desde, hasta: p.hasta })} aria-label={p.titulo || undefined}>
+  <picture>
+    {movil && <source media="(min-width: 48rem)" srcset={srcset(escritorio, base)} sizes="100vw" width={escritorio.ancho} height={escritorio.alto} />}
+    <img
+      class="foto portada-foto"
+      src={srcMenor(principal, base)}
+      srcset={srcset(principal, base)}
+      sizes="100vw"
+      width={principal.ancho}
+      height={principal.alto}
+      alt={(p.foto_movil ?? p.foto_escritorio).alt}
+      loading={prioridad ? 'eager' : 'lazy'}
+      fetchpriority={prioridad ? 'high' : undefined}
+      style={`background-image:url(${principal.lqip})`}
+    />
+  </picture>
+  {
+    (p.titulo || p.subtitulo || p.boton_texto) && (
+      <div class="portada-texto">
+        {p.titulo && <h2>{p.titulo}</h2>}
+        {p.subtitulo && <p>{p.subtitulo}</p>}
+        {p.boton_texto && (
+          <a class="boton boton-primario" href={url(p.boton_destino)}>
+            {p.boton_texto}
+          </a>
+        )}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .portada {
+    position: relative;
+    display: grid;
+  }
+  .portada-foto {
+    aspect-ratio: 4 / 5;
+    max-height: 80vh;
+  }
+  .portada-texto {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+    padding: 1.25rem var(--margen) 0;
+  }
+  .portada-texto h2 {
+    font-size: clamp(1.75rem, 7vw, 3rem);
+  }
+  .portada-texto p {
+    color: var(--color-texto-suave);
+    max-width: var(--ancho-lectura);
+  }
+  .portada-texto .boton {
+    margin-top: 0.5rem;
+  }
+  @media (min-width: 48rem) {
+    .portada-foto {
+      aspect-ratio: 16 / 7;
+      max-height: none;
+    }
+    .portada-texto {
+      position: absolute;
+      left: var(--margen);
+      bottom: var(--margen);
+      max-width: 28rem;
+      padding: 1.5rem;
+      background: var(--color-superficie);
+      border-radius: var(--radio);
+    }
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+// Revista web de una temporada: su propia paleta y eventos con origen revista_web.
+import Base from '../../../layouts/Base.astro';
+import BloqueTemporada from '../../../components/BloqueTemporada.astro';
+import { catalogo, paletaDe } from '../../../lib/sitio.mjs';
+import { temporadasPublicadas } from '../../../lib/datos.mjs';
+import { rutaTemporada } from '../../../compartido/enlaces.mjs';
+
+export function getStaticPaths() {
+  return temporadasPublicadas(catalogo).map((temporada) => ({ params: { slug: temporada.slug }, props: { temporada } }));
+}
+
+const { temporada } = Astro.props;
+const descripcion = temporada.subtitulo || temporada.intro.slice(0, 160) || catalogo.tienda.eslogan;
+---
+
+<Base
+  titulo={`${temporada.titulo || temporada.nombre} · ${catalogo.tienda.nombre}`}
+  descripcion={descripcion}
+  ruta={rutaTemporada(temporada.slug)}
+  ogFoto={temporada.foto_portada}
+  ogTipo="article"
+  paleta={paletaDe(temporada.paleta_id)}
+  origen="revista_web"
+  temporadaId={temporada.id}
+>
+  <BloqueTemporada temporada={temporada} modo="pagina" />
+</Base>

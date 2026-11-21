@@ -1,0 +1,106 @@
+---
+// Tallas, colores, «Pedir por WhatsApp» y Mi lista. Lo usan la ficha y la hoja de la temporada.
+// Sin JS, el botón de WhatsApp ya abre el mensaje sin talla.
+import Icono from './Icono.astro';
+import { catalogo, t, datosPedido } from '../lib/sitio.mjs';
+import { mensajeProducto, vendedoraPara } from '../compartido/mensajes.mjs';
+import { enlaceWhatsApp } from '../compartido/enlaces.mjs';
+
+interface Props {
+  producto: any;
+  prefijo: string;
+}
+const { producto: p, prefijo } = Astro.props;
+const agotado = p.estado === 'agotado';
+const tallaUnica = p.tallas.length === 1 && !p.tallas_agotadas.includes(p.tallas[0]) ? p.tallas[0] : null;
+const colorUnico = p.colores.length === 1 ? p.colores[0] : null;
+const vendedora = vendedoraPara(p, catalogo.vendedoras);
+const href = enlaceWhatsApp(vendedora.whatsapp, mensajeProducto({ catalogo, producto: p, talla: tallaUnica, color: colorUnico }));
+---
+
+<div class="pedido" data-pedido={JSON.stringify(datosPedido(p))} data-color-unico={colorUnico ?? undefined}>
+  {
+    agotado ? (
+      <p class="pedido-agotado">{t('producto.agotado')}</p>
+    ) : (
+      <>
+        <fieldset class="chips">
+          <legend>{t('producto.elige_talla')}</legend>
+          <div class="chips-opciones">
+            {p.tallas.map((talla: string) => {
+              const sinStock = p.tallas_agotadas.includes(talla);
+              return (
+                <label class="chip">
+                  <input type="radio" name={`${prefijo}-talla`} value={talla} disabled={sinStock} checked={talla === tallaUnica} />
+                  <span>
+                    {talla}
+                    {sinStock && <span class="sr">, {t('producto.talla_agotada')}</span>}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+        {p.colores.length > 1 ? (
+          <fieldset class="chips">
+            <legend>{t('producto.elige_color')}</legend>
+            <div class="chips-opciones">
+              {p.colores.map((color: string) => (
+                <label class="chip">
+                  <input type="radio" name={`${prefijo}-color`} value={color} />
+                  <span>{color}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : (
+          colorUnico && (
+            <p class="pedido-color">
+              <span class="texto-suave">Color:</span> {colorUnico}
+            </p>
+          )
+        )}
+        <p class="pedido-nota texto-suave">{t('producto.guia_tallas')}</p>
+      </>
+    )
+  }
+  <div class="pedido-acciones">
+    {
+      !agotado && (
+        <a class="boton boton-primario boton-ancho" href={href} target="_blank" rel="noopener" data-whatsapp data-evento="whatsapp" data-p={p.id}>
+          <Icono nombre="whatsapp" />
+          {t('producto.boton_whatsapp')}
+          <span class="sr">({t('accesibilidad.abrir_whatsapp')})</span>
+        </a>
+      )
+    }
+    <button type="button" class="boton boton-secundario boton-ancho boton-lista" data-lista data-codigo={p.codigo}>
+      <Icono nombre="corazon" />
+      <span data-lista-texto>{t('producto.agregar_lista')}</span>
+    </button>
+  </div>
+</div>
+
+<style>
+  .pedido {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .pedido-nota {
+    font-size: 0.875rem;
+    margin-top: -0.5rem;
+  }
+  .pedido-agotado {
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    border: 1px dashed var(--color-control);
+    border-radius: var(--radio-chico);
+  }
+  .pedido-acciones {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .boton-lista[data-en-lista] :global(svg path) {
+    fill: currentColor;
+  }
+</style>
