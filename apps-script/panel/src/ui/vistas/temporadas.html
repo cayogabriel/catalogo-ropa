@@ -1,0 +1,358 @@
+<!-- Temporadas: datos, fechas, colores con vista previa, portada, textos de la revista y fotos de la temporada -->
+<template x-if="$store.panel.ruta === 'temporadas' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaTemporadas()">
+
+    <!-- Lista -->
+    <template x-if="!edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <h1 id="titulo-vista" tabindex="-1">Temporadas</h1>
+          <button type="button" class="boton primario" @click="nueva()" :disabled="creando"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Nueva temporada</button>
+        </div>
+        <p class="vista-intro">Cada temporada tiene su página con portada y fotos en scroll, sus colores y su revista en PDF.</p>
+        <p class="nota error" x-show="error" x-text="error"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando…</p>
+        <div class="vacio tarjeta" x-show="listo && !temporadas.length">
+          <svg class="ico" aria-hidden="true"><use href="#i-temporada"/></svg>
+          <h2>Aún no tienes temporadas</h2>
+          <p>Crea la primera: elige un nombre, los colores y las fotos que quieres mostrar.</p>
+          <button type="button" class="boton primario" @click="nueva()">Nueva temporada</button>
+        </div>
+        <ul class="lista">
+          <template x-for="t in temporadas" :key="t.id">
+            <li class="fila" style="grid-template-columns: auto minmax(0, 1fr) auto">
+              <div class="miniatura" :class="{ cargando: t.foto_portada && !$foto(t.foto_portada) }"><img :src="$foto(t.foto_portada)" :alt="t.foto_portada ? 'Portada de ' + t.nombre : ''" /></div>
+              <button type="button" class="fila-principal" @click="abrir(t.id)">
+                <strong x-text="t.nombre || 'Sin nombre'"></strong>
+                <span class="fila-sub" x-text="rangoFechas(t)"></span>
+              </button>
+              <span class="chip" :class="estado(t).clase" x-text="estado(t).texto"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <!-- Editor -->
+    <template x-if="edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <div>
+            <button type="button" class="boton texto chico" @click="cerrar()"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg> Todas las temporadas</button>
+            <h1 id="titulo-vista" tabindex="-1" x-text="edit.nombre || 'Temporada sin nombre'"></h1>
+          </div>
+          <span class="chip" :class="estado(edit).clase" x-text="estado(edit).texto"></span>
+        </div>
+
+        <article class="tarjeta" aria-labelledby="t-datos">
+          <h2 id="t-datos">Datos</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Nombre (para ti)</span>
+              <input type="text" :value="edit.nombre" @input="g(edit, 'nombre', $event)" :aria-invalid="errores.nombre ? 'true' : 'false'" />
+              <span class="campo-error" x-show="errores.nombre" x-text="errores.nombre"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Dirección de la página</span>
+              <input type="text" :value="edit.slug" @input="g(edit, 'slug', $event)" :aria-invalid="errores.slug ? 'true' : 'false'" autocapitalize="none" spellcheck="false" />
+              <span class="campo-ayuda num" x-text="'…/temporada/' + edit.slug + '/'"></span>
+              <span class="campo-error" x-show="errores.slug" x-text="errores.slug"></span>
+              <button type="button" class="boton texto chico" style="align-self: flex-start" @click="gv(edit, 'slug', $u.slug(edit.nombre))">Usar el nombre</button>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Título de la portada</span>
+              <input type="text" :value="edit.titulo" @input="g(edit, 'titulo', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Subtítulo</span>
+              <input type="text" :value="edit.subtitulo" @input="g(edit, 'subtitulo', $event)" />
+            </label>
+          </div>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="t-fechas">
+          <h2 id="t-fechas">Fechas y cuándo se muestra</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Empieza</span>
+              <input type="datetime-local" :value="fecha(edit, 'desde')" @change="gf(edit, 'desde', $event)" />
+              <span class="campo-ayuda">Hora de Lima. Vacío: desde ya.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Termina</span>
+              <input type="datetime-local" :value="fecha(edit, 'hasta')" @change="gf(edit, 'hasta', $event)" :aria-invalid="errores.hasta ? 'true' : 'false'" />
+              <span class="campo-ayuda">Vacío: sin fin.</span>
+              <span class="campo-error" x-show="errores.hasta" x-text="errores.hasta"></span>
+            </label>
+          </div>
+          <fieldset>
+            <legend>¿Cuándo está activa?</legend>
+            <div class="grupo-opciones">
+              <label class="pastilla"><input type="radio" name="activa-manual" value="" :checked="edit.activa_manual === ''" @change="gv(edit, 'activa_manual', '')" /><span>Según las fechas</span></label>
+              <label class="pastilla"><input type="radio" name="activa-manual" value="si" :checked="edit.activa_manual === 'si'" @change="gv(edit, 'activa_manual', 'si')" /><span>Mostrarla ya</span></label>
+              <label class="pastilla"><input type="radio" name="activa-manual" value="no" :checked="edit.activa_manual === 'no'" @change="gv(edit, 'activa_manual', 'no')" /><span>Apagarla</span></label>
+            </div>
+            <p class="campo-ayuda" style="margin-top: 0.375rem">«Mostrarla ya» y «Apagarla» ignoran las fechas. La temporada activa es la que ven tus clientas al entrar.</p>
+          </fieldset>
+          <label class="opcion"><input type="checkbox" :checked="edit.visible_en_web" @change="g(edit, 'visible_en_web', $event)" /><span>Que se siga viendo como archivo cuando termine</span></label>
+          <label class="opcion"><input type="checkbox" :checked="edit.revista" @change="g(edit, 'revista', $event)" /><span>Crear la revista de esta temporada (web y PDF)</span></label>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="t-colores">
+          <h2 id="t-colores">Colores</h2>
+          <div class="rejilla-campos dos" style="align-items: start">
+            <div>
+              <label class="campo">
+                <span class="campo-etiqueta">Paleta</span>
+                <select :value="edit.paleta_id" @change="g(edit, 'paleta_id', $event)">
+                  <template x-for="p in paletas" :key="p.id"><option :value="p.id" :selected="edit.paleta_id === p.id" x-text="p.nombre + (p.origen === 'propia' ? ' (mía)' : '')"></option></template>
+                </select>
+                <span class="campo-ayuda" x-text="usoPaleta"></span>
+              </label>
+              <p class="campo-ayuda" style="margin-top: 0.75rem">Así se verían los colores en la página. Para crear tu propia paleta, entra a «Colores».</p>
+              <button type="button" class="boton chico" style="margin-top: 0.5rem" @click="$store.panel.irA('colores')">Ir a Colores</button>
+            </div>
+            <div class="vista-paleta" x-effect="aplicarPaleta($el)" aria-label="Vista previa de la paleta" role="img">
+              <div class="vp-barra"><span x-text="$store.panel.nombreTienda || 'Tu tienda'"></span><span class="vp-suave">Mi lista</span></div>
+              <div class="vp-cuerpo">
+                <strong x-text="edit.titulo || edit.nombre || 'Título de la temporada'"></strong>
+                <span class="vp-suave" x-text="edit.subtitulo || 'Subtítulo de ejemplo'"></span>
+                <div style="display: flex; gap: 0.375rem; flex-wrap: wrap">
+                  <span class="vp-insignia vp-oferta">-25%</span>
+                  <span class="vp-insignia vp-liquidacion">Liquidación</span>
+                  <span class="vp-insignia vp-acento">Nuevo</span>
+                </div>
+                <span class="vp-suave">Precio regular S/ 89 · Ahora S/ 66.75</span>
+                <span class="vp-boton" style="justify-self: start">Pedir por WhatsApp</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="t-portada">
+          <h2 id="t-portada">Portada y textos de la revista</h2>
+          <div class="subida" style="grid-template-columns: 6rem minmax(0, 1fr); align-items: start">
+            <div class="miniatura grande" :class="{ cargando: edit.foto_portada && !$foto(edit.foto_portada) }"><img :src="$foto(edit.foto_portada)" :alt="edit.foto_portada ? 'Foto de portada' : ''" /></div>
+            <div>
+              <p class="campo-etiqueta">Foto de portada</p>
+              <p class="campo-ayuda" x-text="edit.foto_portada ? 'Es la primera foto que ven tus clientas.' : 'Todavía no elegiste una foto de portada.'"></p>
+              <div class="fila-botones" style="margin-top: 0.5rem">
+                <button type="button" class="boton chico" @click="elegirPortada()" x-text="edit.foto_portada ? 'Cambiar foto' : 'Elegir foto'"></button>
+                <button type="button" class="boton chico texto" x-show="edit.foto_portada" @click="gv(edit, 'foto_portada', '')">Quitar</button>
+              </div>
+            </div>
+          </div>
+          <label class="campo">
+            <span class="campo-etiqueta">Introducción</span>
+            <textarea :value="edit.intro" @input="g(edit, 'intro', $event)"></textarea>
+            <span class="campo-ayuda">Se ve en la página de la temporada y en la revista.</span>
+          </label>
+          <label class="campo">
+            <span class="campo-etiqueta">Cierre de la revista</span>
+            <textarea :value="edit.cierre" @input="g(edit, 'cierre', $event)"></textarea>
+            <span class="campo-ayuda">Va en la última página, antes de los contactos.</span>
+          </label>
+          <label class="campo" style="max-width: 16rem">
+            <span class="campo-etiqueta">Días de validez de los precios</span>
+            <input type="text" inputmode="numeric" placeholder="Los de siempre" :value="edit.vigencia_dias === null ? '' : edit.vigencia_dias" @input="g(edit, 'vigencia_dias', $event)" :aria-invalid="errores.vigencia_dias ? 'true' : 'false'" />
+            <span class="campo-ayuda" x-text="vigenciaTexto"></span>
+            <span class="campo-error" x-show="errores.vigencia_dias" x-text="errores.vigencia_dias"></span>
+          </label>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="t-fotos">
+          <div class="tarjeta-cabecera">
+            <h2 id="t-fotos">Fotos de la temporada</h2>
+            <button type="button" class="boton chico primario" @click="agregarFotos()"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Agregar fotos</button>
+          </div>
+          <p class="campo-ayuda" x-text="'Se ven en este orden, una tras otra. Sugerencia: entre 8 y 20 fotos. Ahora hay ' + fotos.length + '.'"></p>
+          <div class="vacio" x-show="!fotos.length">
+            <svg class="ico" aria-hidden="true"><use href="#i-foto"/></svg>
+            <h3>Todavía no hay fotos</h3>
+            <p>Elige fotos de tu biblioteca o sube nuevas.</p>
+          </div>
+          <ul class="lista" x-reordenar @reordenado="moverFoto($event.detail.de, $event.detail.a)">
+            <template x-for="(tf, i) in fotos" :key="tf.id">
+              <li class="fila" data-item style="grid-template-columns: 1fr; align-items: start">
+                <div class="tfoto">
+                  <div class="miniatura" :class="{ cargando: !$foto(tf.foto) }"><img :src="$foto(tf.foto)" :alt="'Foto ' + (i + 1) + ' de la temporada'" /></div>
+                  <div style="min-width: 0; display: grid; gap: 0.625rem">
+                    <label class="campo">
+                      <span class="campo-etiqueta" x-text="'Texto de la foto ' + (i + 1)"></span>
+                      <input type="text" placeholder="Una frase corta" :value="tf.texto" @input="gf2(tf, 'texto', $event)" />
+                    </label>
+                    <div class="rejilla-campos dos">
+                      <label class="campo">
+                        <span class="campo-etiqueta">Tipo de foto</span>
+                        <select :value="tf.tipo" @change="gf2(tf, 'tipo', $event)">
+                          <option value="producto" :selected="tf.tipo === 'producto'">De una prenda</option>
+                          <option value="ambiente" :selected="tf.tipo === 'ambiente'">Ambiente o modelo</option>
+                        </select>
+                      </label>
+                      <label class="opcion" style="align-self: end"><input type="checkbox" :checked="tf.destacada" @change="gf2(tf, 'destacada', $event)" /><span>Destacada (página completa en la revista)</span></label>
+                    </div>
+                    <div>
+                      <p class="campo-etiqueta">Prendas que aparecen</p>
+                      <p class="campo-ayuda" x-text="prendasTexto(tf)"></p>
+                      <button type="button" class="boton chico" style="margin-top: 0.375rem" @click="elegirPrendas(tf)">Elegir prendas</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="fila-botones">
+                  <button type="button" class="boton asa" data-asa :aria-label="'Mover la foto ' + (i + 1) + ' arrastrando'"><svg class="ico" aria-hidden="true"><use href="#i-asa"/></svg></button>
+                  <button type="button" class="boton icono" :disabled="i === 0" :aria-label="'Subir la foto ' + (i + 1)" @click="moverFoto(i, i - 1)"><svg class="ico" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                  <button type="button" class="boton icono" :disabled="i === fotos.length - 1" :aria-label="'Bajar la foto ' + (i + 1)" @click="moverFoto(i, i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-abajo"/></svg></button>
+                  <span class="espaciado"></span>
+                  <button type="button" class="boton chico peligro" @click="quitarFoto(tf)"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Quitar</button>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="t-previa">
+          <h2 id="t-previa">Ver la revista</h2>
+          <p>La revista web es la página de la temporada. Ahí ves lo último que publicaste: si cambiaste algo, pulsa «Publicar» y espera unos minutos.</p>
+          <div class="fila-botones">
+            <a class="boton" target="_blank" rel="noopener" :href="urlPrevia" x-show="urlPrevia">Abrir la página de la temporada <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+            <button type="button" class="boton texto" @click="$store.panel.irA('documentos')">Ver los PDF guardados</button>
+          </div>
+        </article>
+
+        <div class="fila-botones" style="justify-content: space-between">
+          <button type="button" class="boton peligro" @click="eliminar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Eliminar esta temporada</button>
+          <button type="button" class="boton primario" @click="cerrar()">Listo</button>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var L = P.logica;
+  var U = P.util;
+
+  A.data('vistaTemporadas', function () {
+    var base = P.mixinEditor('temporadas');
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      editId: null,
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('temporadas'), d.cargar('temporada_fotos'), d.cargar('paletas'), d.cargar('productos')]).then(
+          function () {
+            self.listo = true;
+            A.store('min').pedir(self.temporadas.map(function (t) { return t.foto_portada; }));
+          },
+          function (e) { self.error = e.amable || 'No pude cargar las temporadas.'; self.listo = true; }
+        );
+      },
+
+      get temporadas() { return A.store('datos').lista('temporadas').slice().sort(function (a, b) { return (b.desde || '').localeCompare(a.desde || ''); }); },
+      get edit() { return this.editId ? A.store('datos').buscar('temporadas', this.editId) : null; },
+      get paletas() { return A.store('datos').lista('paletas'); },
+      get errores() { return this.edit ? P.validar.temporada(this.edit, A.store('datos').lista('temporadas')) : {}; },
+      get fotos() {
+        var id = this.editId;
+        return A.store('datos').lista('temporada_fotos').filter(function (f) { return f.temporada_id === id; }).sort(function (a, b) { return a.orden - b.orden; });
+      },
+      get usoPaleta() {
+        var p = this.edit && A.store('datos').buscar('paletas', this.edit.paleta_id);
+        var meses = p && L.mesesDeUso(p.uso);
+        return meses ? 'Pensada para: ' + meses + '.' : '';
+      },
+      get vigenciaTexto() { return this.edit ? L.vigenciaTexto(this.edit, A.store('panel').config.vigencia_dias_defecto) : ''; },
+      get urlPrevia() { return this.edit ? L.urlVistaPrevia(A.store('panel').sitioUrl, this.edit.slug) : ''; },
+
+      estado: function (t) { return L.estadoTemporada(t, new Date()); },
+      rangoFechas: function (t) {
+        var d = U.formatoFecha(t.desde);
+        var h = U.formatoFecha(t.hasta);
+        if (d && h) return d + ' al ' + h;
+        if (d) return 'Desde el ' + d;
+        if (h) return 'Hasta el ' + h;
+        return 'Sin fechas';
+      },
+      aplicarPaleta: function (el) {
+        var p = this.edit && A.store('datos').buscar('paletas', this.edit.paleta_id);
+        var vars = p ? L.variablesPaleta(p.tokens, p.radio) : {};
+        Object.keys(vars).forEach(function (k) { el.style.setProperty(k, vars[k]); });
+      },
+
+      abrir: function (id) {
+        this.editId = id;
+        var t = this.edit;
+        A.store('min').pedir([t.foto_portada].concat(this.fotos.map(function (f) { return f.foto; })));
+      },
+      cerrar: function () { this.editId = null; },
+      nueva: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('temporadas', { nombre: 'Nueva temporada' }, { alInicio: true }).then(
+          function (t) { self.creando = false; self.abrir(t.id); },
+          function () { self.creando = false; }
+        );
+      },
+      eliminar: function () {
+        var t = this.edit;
+        this.cerrar();
+        return A.store('datos').eliminar('temporadas', t, { mensaje: 'Eliminé la temporada «' + (t.nombre || 'sin nombre') + '».' });
+      },
+
+      elegirPortada: function () {
+        var t = this.edit;
+        return P.elegirFotos({ multiple: false, destino: 'temporada', temporada_id: t.id, titulo: 'Foto de portada' }).then(function (ids) {
+          if (ids && ids[0]) { A.store('datos').guardar('temporadas', t, 'foto_portada', ids[0]); A.store('min').pedir(ids); }
+        });
+      },
+
+      /** Cambios en una foto de la temporada (otra entidad: temporada_fotos). */
+      gf2: function (tf, campo, e) {
+        var t = e.target;
+        return A.store('datos').guardar('temporada_fotos', tf, campo, t.type === 'checkbox' ? t.checked : t.value);
+      },
+      agregarFotos: function () {
+        var self = this;
+        var t = this.edit;
+        return P.elegirFotos({ multiple: true, destino: 'temporada', temporada_id: t.id, titulo: 'Agregar fotos a la temporada' }).then(function (ids) {
+          if (!ids || !ids.length) return;
+          A.store('min').pedir(ids);
+          return ids.reduce(function (p, id) {
+            return p.then(function () { return A.store('datos').crear('temporada_fotos', { temporada_id: t.id, foto: id, tipo: 'ambiente' }); });
+          }, Promise.resolve()).then(function () {
+            A.store('toasts').mostrar({ tipo: 'ok', texto: ids.length === 1 ? 'Agregué la foto.' : 'Agregué ' + ids.length + ' fotos.' });
+          }, function () {});
+        });
+      },
+      moverFoto: function (de, a) {
+        var lista = this.fotos;
+        if (a < 0 || a >= lista.length || de === a) return;
+        var ids = P.arrastre.ordenNuevo(lista, de, a);
+        A.store('datos').reordenar('temporada_fotos', ids);
+        if (this.$anunciar) this.$anunciar('Moví la foto a la posición ' + (a + 1) + ' de ' + lista.length + '.');
+      },
+      quitarFoto: function (tf) {
+        return A.store('datos').eliminar('temporada_fotos', tf, { mensaje: 'Quité la foto de la temporada.' });
+      },
+      prendasTexto: function (tf) {
+        var d = A.store('datos');
+        var cods = (tf.productos || []).map(function (id) { var p = d.buscar('productos', id); return p ? p.codigo + (p.nombre ? ' · ' + p.nombre : '') : id; });
+        if (!cods.length) return tf.tipo === 'producto' ? 'Ninguna elegida. Elige la prenda que se ve en la foto.' : 'Ninguna. Si en la foto se ven prendas, elígelas para que tus clientas las pidan con un toque.';
+        return cods.join(' · ');
+      },
+      elegirPrendas: function (tf) {
+        return P.elegirProductos({ seleccion: tf.productos || [], titulo: 'Prendas que aparecen en la foto', ayuda: 'Tus clientas las verán al tocar la foto, con su precio y el botón de WhatsApp.' }).then(function (ids) {
+          if (ids) A.store('datos').guardar('temporada_fotos', tf, 'productos', ids);
+        });
+      },
+    }, base);
+  });
+});
+</script>

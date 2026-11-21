@@ -1,0 +1,70 @@
+<!-- Textos de la web: todo lo que dice tu catálogo, agrupado por lugar -->
+<template x-if="$store.panel.ruta === 'textos' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaTextos()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Textos de la web</h1>
+    </div>
+    <p class="vista-intro">Aquí cambias lo que dice tu catálogo: títulos, botones y avisos. Las palabras entre llaves, como {tienda} o {fecha}, se reemplazan solas: no las borres.</p>
+
+    <label class="campo" style="max-width: 28rem">
+      <span class="campo-etiqueta">Buscar un texto</span>
+      <input type="search" placeholder="Por ejemplo: botón, envío, lista" x-model="busqueda" autocomplete="off" />
+    </label>
+    <p class="contador" role="status" aria-live="polite" x-text="busqueda ? (total === 1 ? '1 texto' : total + ' textos') : ''"></p>
+
+    <div class="vacio tarjeta" x-show="!grupos.length && !busqueda">
+      <svg class="ico" aria-hidden="true"><use href="#i-texto"/></svg>
+      <h2>Aún no hay textos cargados</h2>
+      <p>Se cargan al completar la instalación, en Configuración.</p>
+      <button type="button" class="boton" @click="$store.panel.irA('configuracion')">Ir a Configuración</button>
+    </div>
+    <p class="suave" x-show="!grupos.length && busqueda">No encontré textos con esa búsqueda.</p>
+
+    <template x-for="g in grupos" :key="g.id">
+      <details class="tarjeta" :open="!!busqueda || g.id === 'tienda'">
+        <summary style="cursor: pointer; min-height: var(--alto-toque); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 650">
+          <span x-text="g.titulo"></span>
+          <span class="chip" x-text="g.claves.length"></span>
+        </summary>
+        <div class="vista" style="margin-top: 0.75rem">
+          <template x-for="c in g.claves" :key="c.clave">
+            <label class="campo">
+              <span class="campo-etiqueta" x-text="c.etiqueta"></span>
+              <textarea style="min-height: 3.5rem" :value="$store.panel.textos[c.clave]" @input="$store.panel.guardarTexto(c.clave, $event.target.value)"></textarea>
+              <span class="campo-ayuda" x-show="variables(c.clave).length" x-text="'Usa: ' + variables(c.clave).join(', ')"></span>
+            </label>
+          </template>
+        </div>
+      </details>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+
+  A.data('vistaTextos', function () {
+    return {
+      busqueda: '',
+      get grupos() {
+        var q = this.busqueda;
+        var textos = A.store('panel').textos;
+        var todos = P.logica.agruparTextos(textos);
+        if (!q) return todos;
+        return todos
+          .map(function (g) {
+            return Object.assign({}, g, { claves: g.claves.filter(function (c) { return P.util.coincide(c.etiqueta + ' ' + g.titulo + ' ' + c.valor, q); }) });
+          })
+          .filter(function (g) { return g.claves.length; });
+      },
+      get total() { return this.grupos.reduce(function (n, g) { return n + g.claves.length; }, 0); },
+      variables: function (clave) {
+        var v = String(A.store('panel').textos[clave] || '').match(/\{\w+\}/g) || [];
+        return v.filter(function (x, i) { return v.indexOf(x) === i; });
+      },
+    };
+  });
+});
+</script>

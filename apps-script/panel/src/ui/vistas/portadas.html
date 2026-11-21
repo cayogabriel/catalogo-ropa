@@ -1,0 +1,201 @@
+<!-- Portadas del inicio: imagen para escritorio y para celular, botón y fechas. Se ordenan arrastrando -->
+<template x-if="$store.panel.ruta === 'portadas' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaPortadas()">
+
+    <template x-if="!edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <h1 id="titulo-vista" tabindex="-1">Portadas</h1>
+          <button type="button" class="boton primario" @click="nueva()" :disabled="creando"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Nueva portada</button>
+        </div>
+        <p class="vista-intro">Son las imágenes grandes que ven tus clientas al entrar. Si hay varias, se muestran en este orden.</p>
+        <p class="nota error" x-show="error" x-text="error"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando…</p>
+        <div class="vacio tarjeta" x-show="listo && !portadas.length">
+          <svg class="ico" aria-hidden="true"><use href="#i-portada"/></svg>
+          <h2>Aún no tienes portadas</h2>
+          <p>Crea una con una foto grande, un título y un botón.</p>
+          <button type="button" class="boton primario" @click="nueva()">Nueva portada</button>
+        </div>
+        <ul class="lista" x-reordenar @reordenado="mover($event.detail.de, $event.detail.a)">
+          <template x-for="(p, i) in portadas" :key="p.id">
+            <li class="fila" data-item style="grid-template-columns: auto auto minmax(0, 1fr) auto">
+              <button type="button" class="boton asa icono texto" data-asa :aria-label="'Mover la portada ' + (p.titulo || i + 1) + ' arrastrando'"><svg class="ico" aria-hidden="true"><use href="#i-asa"/></svg></button>
+              <div class="miniatura" :class="{ cargando: p.foto_escritorio && !$foto(p.foto_escritorio) }"><img :src="$foto(p.foto_escritorio)" :alt="p.foto_escritorio ? 'Portada ' + p.titulo : ''" /></div>
+              <button type="button" class="fila-principal" @click="abrir(p.id)">
+                <strong x-text="p.titulo || 'Portada sin título'"></strong>
+                <span class="fila-sub" x-text="(p.activa ? 'Activa' : 'Apagada') + ' · ' + rango(p)"></span>
+              </button>
+              <div class="fila-acciones">
+                <button type="button" class="boton icono texto" :disabled="i === 0" :aria-label="'Subir ' + (p.titulo || 'la portada')" @click="mover(i, i - 1)"><svg class="ico" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                <button type="button" class="boton icono texto" :disabled="i === portadas.length - 1" :aria-label="'Bajar ' + (p.titulo || 'la portada')" @click="mover(i, i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-abajo"/></svg></button>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <template x-if="edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <div>
+            <button type="button" class="boton texto chico" @click="cerrar()"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg> Todas las portadas</button>
+            <h1 id="titulo-vista" tabindex="-1" x-text="edit.titulo || 'Portada sin título'"></h1>
+          </div>
+        </div>
+        <article class="tarjeta" aria-labelledby="p-fotos">
+          <h2 id="p-fotos">Imágenes</h2>
+          <div class="cuadricula dos">
+            <div>
+              <p class="campo-etiqueta">Para computadora</p>
+              <div class="miniatura grande" style="aspect-ratio: 16 / 9; margin-top: 0.375rem" :class="{ cargando: edit.foto_escritorio && !$foto(edit.foto_escritorio) }"><img :src="$foto(edit.foto_escritorio)" :alt="edit.foto_escritorio ? 'Imagen de portada para computadora' : ''" /></div>
+              <button type="button" class="boton chico" style="margin-top: 0.5rem" @click="elegir('foto_escritorio')" x-text="edit.foto_escritorio ? 'Cambiar imagen' : 'Elegir imagen'"></button>
+            </div>
+            <div>
+              <p class="campo-etiqueta">Para celular (opcional)</p>
+              <div class="miniatura grande" style="aspect-ratio: 4 / 5; max-width: 12rem; margin-top: 0.375rem" :class="{ cargando: edit.foto_movil && !$foto(edit.foto_movil) }"><img :src="$foto(edit.foto_movil)" :alt="edit.foto_movil ? 'Imagen de portada para celular' : ''" /></div>
+              <p class="campo-ayuda" x-show="!edit.foto_movil">Si no eliges una, en el celular se usa la de computadora.</p>
+              <div class="fila-botones" style="margin-top: 0.5rem">
+                <button type="button" class="boton chico" @click="elegir('foto_movil')" x-text="edit.foto_movil ? 'Cambiar imagen' : 'Elegir imagen'"></button>
+                <button type="button" class="boton chico texto" x-show="edit.foto_movil" @click="gv(edit, 'foto_movil', '')">Quitar</button>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="tarjeta" aria-labelledby="p-textos">
+          <h2 id="p-textos">Texto y botón</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Título</span>
+              <input type="text" :value="edit.titulo" @input="g(edit, 'titulo', $event)" :aria-invalid="errores.titulo ? 'true' : 'false'" />
+              <span class="campo-error" x-show="errores.titulo" x-text="errores.titulo"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Subtítulo</span>
+              <input type="text" :value="edit.subtitulo" @input="g(edit, 'subtitulo', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Texto del botón</span>
+              <input type="text" placeholder="Ver temporada" :value="edit.boton_texto" @input="g(edit, 'boton_texto', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">A dónde lleva el botón</span>
+              <select :value="edit.boton_destino" @change="g(edit, 'boton_destino', $event)">
+                <option value="" :selected="!edit.boton_destino">A ningún lado</option>
+                <template x-for="r in rutas" :key="r.valor"><option :value="r.valor" :selected="edit.boton_destino === r.valor" x-text="r.texto"></option></template>
+                <option :value="edit.boton_destino" selected x-show="edit.boton_destino && !rutas.some(function (r) { return r.valor === edit.boton_destino })" x-text="'Otra página: ' + edit.boton_destino"></option>
+              </select>
+            </label>
+          </div>
+        </article>
+        <article class="tarjeta" aria-labelledby="p-cuando">
+          <h2 id="p-cuando">Cuándo se ve</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Desde</span>
+              <input type="datetime-local" :value="fecha(edit, 'desde')" @change="gf(edit, 'desde', $event)" />
+              <span class="campo-ayuda">Hora de Lima. Vacío: desde ya.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Hasta</span>
+              <input type="datetime-local" :value="fecha(edit, 'hasta')" @change="gf(edit, 'hasta', $event)" :aria-invalid="errores.hasta ? 'true' : 'false'" />
+              <span class="campo-ayuda">Vacío: sin fin.</span>
+              <span class="campo-error" x-show="errores.hasta" x-text="errores.hasta"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">¿En qué temporada se ve?</span>
+              <select :value="edit.temporada_id" @change="g(edit, 'temporada_id', $event)">
+                <option value="" :selected="!edit.temporada_id">En todas</option>
+                <template x-for="t in temporadas" :key="t.id"><option :value="t.id" :selected="edit.temporada_id === t.id" x-text="t.nombre"></option></template>
+              </select>
+            </label>
+          </div>
+          <label class="opcion"><input type="checkbox" :checked="edit.activa" @change="g(edit, 'activa', $event)" /><span><strong>Mostrar esta portada</strong><br /><span class="campo-ayuda">Si la apagas, se guarda pero no se ve.</span></span></label>
+        </article>
+        <div class="fila-botones" style="justify-content: space-between">
+          <button type="button" class="boton peligro" @click="eliminar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Eliminar esta portada</button>
+          <button type="button" class="boton primario" @click="cerrar()">Listo</button>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var U = P.util;
+
+  A.data('vistaPortadas', function () {
+    var base = P.mixinEditor('portadas');
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      editId: null,
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('portadas'), d.cargar('temporadas'), d.cargar('categorias'), d.cargar('productos')]).then(
+          function () {
+            self.listo = true;
+            A.store('min').pedir(self.portadas.map(function (p) { return p.foto_escritorio; }));
+          },
+          function (e) { self.error = e.amable || 'No pude cargar las portadas.'; self.listo = true; }
+        );
+      },
+      get portadas() { return A.store('datos').lista('portadas').slice().sort(function (a, b) { return a.orden - b.orden; }); },
+      get edit() { return this.editId ? A.store('datos').buscar('portadas', this.editId) : null; },
+      get errores() { return this.edit ? P.validar.portada(this.edit) : {}; },
+      get temporadas() { return A.store('datos').lista('temporadas'); },
+      get rutas() {
+        var d = A.store('datos');
+        return P.logica.rutasDeDestino(d.lista('categorias'), d.lista('temporadas'), d.lista('productos'));
+      },
+
+      rango: function (p) {
+        var d = U.formatoFecha(p.desde);
+        var h = U.formatoFecha(p.hasta);
+        if (d && h) return 'del ' + d + ' al ' + h;
+        if (d) return 'desde el ' + d;
+        if (h) return 'hasta el ' + h;
+        return 'sin fechas';
+      },
+      abrir: function (id) {
+        this.editId = id;
+        var p = this.edit;
+        A.store('min').pedir([p.foto_escritorio, p.foto_movil]);
+      },
+      cerrar: function () { this.editId = null; },
+      nueva: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('portadas', {}).then(
+          function (p) { self.creando = false; self.abrir(p.id); },
+          function () { self.creando = false; }
+        );
+      },
+      eliminar: function () {
+        var p = this.edit;
+        this.cerrar();
+        return A.store('datos').eliminar('portadas', p, { mensaje: 'Eliminé la portada «' + (p.titulo || 'sin título') + '».' });
+      },
+      mover: function (de, a) {
+        var lista = this.portadas;
+        if (a < 0 || a >= lista.length || de === a) return;
+        A.store('datos').reordenar('portadas', P.arrastre.ordenNuevo(lista, de, a));
+        if (this.$anunciar) this.$anunciar('Moví la portada a la posición ' + (a + 1) + ' de ' + lista.length + '.');
+      },
+      elegir: function (campo) {
+        var p = this.edit;
+        return P.elegirFotos({ multiple: false, destino: 'portada', titulo: campo === 'foto_movil' ? 'Imagen para celular' : 'Imagen para computadora' }).then(function (ids) {
+          if (ids && ids[0]) { A.store('datos').guardar('portadas', p, campo, ids[0]); A.store('min').pedir(ids); }
+        });
+      },
+    }, base);
+  });
+});
+</script>

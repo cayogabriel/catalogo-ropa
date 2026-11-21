@@ -1,0 +1,285 @@
+<!-- Colores: elegir la paleta y crear una propia (avisa si un color no se lee bien) -->
+<template x-if="$store.panel.ruta === 'colores' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaColores()">
+
+    <template x-if="!edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <h1 id="titulo-vista" tabindex="-1">Colores</h1>
+        </div>
+        <p class="vista-intro">Cada temporada puede tener sus colores. La paleta de la tienda se usa cuando una temporada no elige la suya. Todas las paletas que ya vienen se leen bien: contraste revisado.</p>
+        <p class="nota error" x-show="error" x-text="error"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando…</p>
+
+        <article class="tarjeta" aria-labelledby="c-tienda" x-show="listo && defecto">
+          <h2 id="c-tienda">Paleta de tu tienda</h2>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap">
+            <div class="muestras" aria-hidden="true">
+              <template x-for="t in claves" :key="t"><span class="muestra" :style="'background:' + (defecto ? defecto.tokens[t] : '#fff')"></span></template>
+            </div>
+            <strong x-text="defecto ? defecto.nombre : ''"></strong>
+          </div>
+        </article>
+
+        <section aria-labelledby="c-propias" x-show="listo">
+          <div class="tarjeta-cabecera">
+            <h2 id="c-propias">Mis paletas</h2>
+          </div>
+          <p class="suave" style="margin-top: 0.5rem" x-show="!grupos.propias.length">Todavía no creaste ninguna. Elige una de abajo y pulsa «Hacer una copia para editar».</p>
+          <ul class="lista" style="margin-top: 0.75rem">
+            <template x-for="p in grupos.propias" :key="p.id">
+              <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+                <div style="min-width: 0">
+                  <strong class="fila-titulo" x-text="p.nombre"></strong>
+                  <div class="muestras" style="margin-top: 0.25rem" aria-hidden="true"><template x-for="t in claves" :key="t"><span class="muestra" :style="'background:' + p.tokens[t]"></span></template></div>
+                </div>
+                <div class="fila-acciones">
+                  <button type="button" class="boton chico" @click="usarEnTienda(p)" :disabled="esDefecto(p)" x-text="esDefecto(p) ? 'Es la de tu tienda' : 'Usar para la tienda'"></button>
+                  <button type="button" class="boton chico primario" @click="abrir(p.id)">Editar</button>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </section>
+
+        <section aria-labelledby="c-hechas" x-show="listo">
+          <h2 id="c-hechas">Paletas que ya vienen</h2>
+          <div class="cuadricula dos" style="margin-top: 0.75rem">
+            <template x-for="p in grupos.predefinidas" :key="p.id">
+              <article class="tarjeta" style="padding: 0.875rem">
+                <div style="display: flex; justify-content: space-between; gap: 0.5rem; align-items: start">
+                  <div style="min-width: 0">
+                    <h3 x-text="p.nombre"></h3>
+                    <p class="campo-ayuda" x-text="mesesTexto(p)"></p>
+                  </div>
+                  <span class="chip ok" x-show="esDefecto(p)">De tu tienda</span>
+                </div>
+                <div class="muestras" aria-hidden="true"><template x-for="t in claves" :key="t"><span class="muestra" :style="'background:' + p.tokens[t]"></span></template></div>
+                <div class="fila-botones">
+                  <button type="button" class="boton chico" @click="usarEnTienda(p)" :disabled="esDefecto(p)">Usar para la tienda</button>
+                  <button type="button" class="boton chico" @click="copiar(p)" :disabled="creando">Hacer una copia para editar</button>
+                </div>
+              </article>
+            </template>
+          </div>
+        </section>
+      </div>
+    </template>
+
+    <template x-if="edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <div>
+            <button type="button" class="boton texto chico" @click="cerrar()"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg> Todas las paletas</button>
+            <h1 id="titulo-vista" tabindex="-1" x-text="edit.nombre || 'Paleta sin nombre'"></h1>
+          </div>
+          <span class="chip" :class="revision.ok ? 'ok' : 'error'" x-text="revision.ok ? 'Se lee bien' : 'Hay colores que no se leen bien'"></span>
+        </div>
+
+        <article class="tarjeta" aria-labelledby="pe-datos">
+          <h2 id="pe-datos">Datos</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Nombre</span>
+              <input type="text" :value="edit.nombre" @input="g(edit, 'nombre', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Meses en que la usas</span>
+              <input type="text" placeholder="12, 1, 2, 3" :value="edit.uso" @input="g(edit, 'uso', $event)" />
+              <span class="campo-ayuda">Los números de los meses, separados por comas. Es solo una guía para ti.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Letra de los títulos</span>
+              <input type="text" :value="edit.fuente_titulos" @input="g(edit, 'fuente_titulos', $event)" />
+              <span class="campo-ayuda">Escríbela como aparece en Google Fonts, por ejemplo Poppins.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Letra del texto</span>
+              <input type="text" :value="edit.fuente_texto" @input="g(edit, 'fuente_texto', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Esquinas de botones y tarjetas</span>
+              <select :value="edit.radio" @change="g(edit, 'radio', $event)">
+                <template x-for="r in radios" :key="r[0]"><option :value="r[0]" :selected="edit.radio === r[0]" x-text="r[1]"></option></template>
+              </select>
+            </label>
+          </div>
+        </article>
+
+        <div class="cuadricula dos" style="align-items: start">
+          <article class="tarjeta" aria-labelledby="pe-colores">
+            <h2 id="pe-colores">Colores</h2>
+            <p class="campo-ayuda">Cambia un color y mira la vista previa. Si algún color no se lee bien, te avisamos y no lo guardamos hasta que lo arregles.</p>
+            <ul class="lista">
+              <template x-for="t in todosTokens" :key="t">
+                <li class="fila" style="grid-template-columns: auto minmax(0, 1fr) 7.5rem; padding: 0.5rem 0.625rem">
+                  <input type="color" :value="borrador[t] || '#000000'" :aria-label="'Color: ' + nombreToken(t)" @input="cambiarColor(t, $event.target.value)" />
+                  <div style="min-width: 0"><span class="fila-titulo" x-text="nombreToken(t)"></span><span class="fila-sub" x-text="ayudaToken(t)" style="white-space: normal"></span></div>
+                  <label class="campo">
+                    <span class="solo-lector" x-text="'Código del color: ' + nombreToken(t)"></span>
+                    <input type="text" class="num" maxlength="7" :value="borrador[t]" @input="cambiarColor(t, $event.target.value)" :aria-invalid="$v.hex(borrador[t]) ? 'true' : 'false'" spellcheck="false" autocapitalize="characters" />
+                  </label>
+                </li>
+              </template>
+            </ul>
+          </article>
+          <div class="vista">
+            <article class="tarjeta" aria-labelledby="pe-previa" style="position: sticky; top: calc(var(--alto-barra) + 0.5rem)">
+              <h2 id="pe-previa">Vista previa</h2>
+              <div class="vista-paleta" x-effect="aplicarPaleta($el)" role="img" aria-label="Vista previa de la paleta">
+                <div class="vp-barra"><span x-text="$store.panel.nombreTienda || 'Tu tienda'"></span><span class="vp-suave">Mi lista</span></div>
+                <div class="vp-cuerpo">
+                  <strong>Nueva temporada</strong>
+                  <span class="vp-suave">Mira las prendas y pídelas por WhatsApp.</span>
+                  <div style="display: flex; gap: 0.375rem; flex-wrap: wrap">
+                    <span class="vp-insignia vp-oferta">-25%</span>
+                    <span class="vp-insignia vp-liquidacion">Liquidación</span>
+                    <span class="vp-insignia vp-acento">Nuevo</span>
+                  </div>
+                  <span class="vp-suave">Precio regular S/ 89 · Ahora S/ 66.75</span>
+                  <span class="vp-boton" style="justify-self: start">Pedir por WhatsApp</span>
+                </div>
+              </div>
+              <div class="nota error" x-show="frases.length" role="status" aria-live="polite">
+                <strong>Esto no se lee bien:</strong>
+                <ul style="margin: 0.375rem 0 0; padding-left: 1.125rem">
+                  <template x-for="f in frases" :key="f"><li x-text="f"></li></template>
+                </ul>
+                <p style="margin-top: 0.5rem">Mientras tanto, la paleta guardada sigue siendo la anterior.</p>
+              </div>
+              <div class="nota ok" x-show="!frases.length && guardadoTokens" role="status">Los colores se guardaron.</div>
+            </article>
+          </div>
+        </div>
+
+        <div class="fila-botones" style="justify-content: space-between">
+          <button type="button" class="boton peligro" @click="eliminar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Eliminar esta paleta</button>
+          <button type="button" class="boton primario" @click="cerrar()">Listo</button>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var L = P.logica;
+  var V = P.validar;
+  var U = P.util;
+
+  var AYUDA_TOKEN = {
+    '--color-fondo': 'El fondo de las páginas.', '--color-superficie': 'Tarjetas y cajones.', '--color-texto': 'El texto principal.',
+    '--color-texto-suave': 'Textos secundarios; deben leerse bien.', '--color-borde': 'Líneas que separan, solo decorativas.',
+    '--color-control': 'Bordes de los campos y botones.', '--color-primario': 'Botones principales y enlaces.',
+    '--color-sobre-primario': 'Texto sobre los botones principales.', '--color-acento': 'Detalles de marca.',
+    '--color-sobre-acento': 'Texto sobre el color de acento.', '--color-oferta': 'Insignias de descuento y precio en oferta.',
+    '--color-sobre-oferta': 'Texto sobre las insignias de oferta.', '--color-liquidacion': 'Sección e insignias de liquidación.',
+    '--color-sobre-liquidacion': 'Texto sobre la liquidación.', '--color-exito': 'Confirmaciones, como «Agregado a tu lista».',
+    '--color-foco': 'El borde que marca dónde está el teclado.',
+  };
+
+  A.data('vistaColores', function () {
+    var base = P.mixinEditor('paletas');
+    var temporizador = null;
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      editId: null,
+      borrador: {},
+      frases: [],
+      guardadoTokens: false,
+      pedido: 0,
+      claves: ['--color-fondo', '--color-primario', '--color-acento', '--color-oferta', '--color-texto'],
+      todosTokens: V.TOKENS,
+      radios: [['4px', 'Casi rectas'], ['8px', 'Suaves'], ['12px', 'Redondeadas'], ['16px', 'Muy redondeadas'], ['24px', 'Como píldora']],
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('paletas'), d.cargar('temporadas')]).then(
+          function () { self.listo = true; },
+          function (e) { self.error = e.amable || 'No pude cargar las paletas.'; self.listo = true; }
+        );
+      },
+      get paletas() { return A.store('datos').lista('paletas'); },
+      get grupos() { return L.agruparPaletas(this.paletas); },
+      get defecto() { return A.store('datos').buscar('paletas', A.store('panel').config.paleta_defecto); },
+      get edit() { return this.editId ? A.store('datos').buscar('paletas', this.editId) : null; },
+      get revision() { return V.revisarPaletaLocal(this.borrador); },
+
+      esDefecto: function (p) { return A.store('panel').config.paleta_defecto === p.id; },
+      mesesTexto: function (p) { var m = L.mesesDeUso(p.uso); return m ? 'Pensada para: ' + m : ''; },
+      nombreToken: function (t) { return V.nombreToken(t).replace(/^./, function (c) { return c.toUpperCase(); }); },
+      ayudaToken: function (t) { return AYUDA_TOKEN[t] || ''; },
+      usarEnTienda: function (p) {
+        A.store('panel').guardarConfig('paleta_defecto', p.id);
+        A.store('toasts').mostrar({ tipo: 'ok', texto: 'Ahora «' + p.nombre + '» es la paleta de tu tienda.' });
+      },
+      copiar: function (p) {
+        var self = this;
+        var propias = this.grupos.propias;
+        this.creando = true;
+        return A.store('datos').crear('paletas', {
+          nombre: L.nombreDeCopia(p.nombre, propias), temporada: p.temporada, uso: p.uso, tokens: U.copiar(p.tokens),
+          fuente_titulos: p.fuente_titulos, fuente_texto: p.fuente_texto, radio: p.radio, origen: 'propia',
+        }).then(
+          function (n) { self.creando = false; self.abrir(n.id); },
+          function () { self.creando = false; }
+        );
+      },
+      abrir: function (id) {
+        this.editId = id;
+        this.borrador = U.copiar(this.edit.tokens);
+        this.frases = V.describirFallos(V.revisarPaletaLocal(this.borrador));
+        this.guardadoTokens = false;
+      },
+      cerrar: function () { this.editId = null; this.borrador = {}; },
+      eliminar: function () {
+        var p = this.edit;
+        var usos = A.store('datos').lista('temporadas').filter(function (t) { return t.paleta_id === p.id; });
+        if (usos.length) {
+          A.store('toasts').mostrar({ tipo: 'aviso', texto: 'La temporada «' + usos[0].nombre + '» usa esta paleta. Cámbiale la paleta primero.' });
+          return Promise.resolve();
+        }
+        if (A.store('panel').config.paleta_defecto === p.id) {
+          A.store('toasts').mostrar({ tipo: 'aviso', texto: 'Es la paleta de tu tienda. Elige otra para la tienda y vuelve a intentarlo.' });
+          return Promise.resolve();
+        }
+        this.cerrar();
+        return A.store('datos').eliminar('paletas', p, { mensaje: 'Eliminé la paleta «' + p.nombre + '».' });
+      },
+      aplicarPaleta: function (el) {
+        var vars = L.variablesPaleta(this.borrador, this.edit && this.edit.radio);
+        Object.keys(vars).forEach(function (k) { el.style.setProperty(k, vars[k]); });
+      },
+
+      /** Un color cambió: se revisa al instante y solo se guarda si toda la paleta se lee bien. */
+      cambiarColor: function (token, valor) {
+        var self = this;
+        var v = String(valor).trim();
+        if (v && v.charAt(0) !== '#') v = '#' + v;
+        this.borrador[token] = v;
+        this.guardadoTokens = false;
+        if (V.hex(v)) { this.frases = ['Escribe el color como #RRGGBB, por ejemplo #1B2B34.']; return; }
+        var r = V.revisarPaletaLocal(this.borrador);
+        this.frases = V.describirFallos(r);
+        if (!r.ok) return;
+        if (temporizador) clearTimeout(temporizador);
+        var n = ++this.pedido;
+        temporizador = setTimeout(function () {
+          // El servidor vuelve a revisar con las mismas reglas antes de guardar.
+          P.servidor.llamar('validarPaleta', U.copiar(self.borrador)).then(function (res) {
+            if (n !== self.pedido || !self.edit) return;
+            if (!res.ok) { self.frases = V.describirFallos(res); return; }
+            A.store('datos').guardar('paletas', self.edit, 'tokens', U.copiar(self.borrador));
+            self.guardadoTokens = true;
+          }, function (e) { self.frases = [e.amable]; });
+        }, 400);
+      },
+    }, base);
+  });
+});
+</script>

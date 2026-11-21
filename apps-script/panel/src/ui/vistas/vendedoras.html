@@ -1,0 +1,166 @@
+<!-- Vendedoras y WhatsApp: números con código de país y plantillas de mensaje con vista previa -->
+<template x-if="$store.panel.ruta === 'vendedoras' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaVendedoras()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Vendedoras y WhatsApp</h1>
+      <button type="button" class="boton primario" @click="nueva()" :disabled="creando"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Agregar vendedora</button>
+    </div>
+    <p class="vista-intro">Cuando una clienta pide por WhatsApp, el mensaje llega al número de la vendedora de esa prenda o, si no tiene, al de la vendedora por defecto.</p>
+    <p class="nota error" x-show="error" x-text="error"></p>
+    <p class="suave" x-show="!listo" role="status">Cargando…</p>
+
+    <div class="vacio tarjeta" x-show="listo && !vendedoras.length">
+      <svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>
+      <h2>Aún no tienes ningún número</h2>
+      <p>Agrega el WhatsApp donde quieres recibir los pedidos.</p>
+      <button type="button" class="boton primario" @click="nueva()">Agregar vendedora</button>
+    </div>
+
+    <ul class="lista">
+      <template x-for="v in vendedoras" :key="v.id">
+        <li class="tarjeta">
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Nombre</span>
+              <input type="text" :value="v.nombre" @input="g(v, 'nombre', $event)" :aria-invalid="err(v).nombre ? 'true' : 'false'" />
+              <span class="campo-error" x-show="err(v).nombre" x-text="err(v).nombre"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">WhatsApp</span>
+              <input type="tel" inputmode="tel" placeholder="51 9XX XXX XXX" :value="v.whatsapp" @input="cambiarNumero(v, $event)" :aria-invalid="err(v).whatsapp ? 'true' : 'false'" autocomplete="off" />
+              <span class="campo-ayuda" x-show="!err(v).whatsapp && v.whatsapp" x-text="'Los pedidos llegan al +' + v.whatsapp + '.'"></span>
+              <span class="campo-ayuda" x-show="!v.whatsapp">Con el código de país y sin símbolos. Para Perú empieza con 51.</span>
+              <span class="campo-error" x-show="err(v).whatsapp && v.whatsapp" x-text="err(v).whatsapp"></span>
+            </label>
+          </div>
+          <div class="fila-botones" style="margin-top: 0.75rem">
+            <label class="opcion"><input type="checkbox" :checked="v.activa" @change="cambiarActiva(v, $event)" /><span>Atiende pedidos</span></label>
+            <label class="opcion"><input type="radio" name="vendedora-defecto" :checked="v.por_defecto" :disabled="!v.activa" @change="hacerPrincipal(v)" /><span>Es la de siempre (por defecto)</span></label>
+            <span class="espaciado"></span>
+            <button type="button" class="boton chico peligro" @click="eliminar(v)"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Quitar</button>
+          </div>
+        </li>
+      </template>
+    </ul>
+
+    <article class="tarjeta" aria-labelledby="v-mensajes">
+      <h2 id="v-mensajes">Mensajes de WhatsApp</h2>
+      <p class="campo-ayuda">Es el texto que ya sale escrito cuando tu clienta toca «Pedir por WhatsApp». Las palabras entre llaves se reemplazan solas.</p>
+      <template x-for="p in plantillas" :key="p.clave">
+        <div class="vista" style="margin-top: 1rem">
+          <label class="campo">
+            <span class="campo-etiqueta" x-text="p.titulo"></span>
+            <textarea :id="'tpl-' + p.id" :value="textos[p.clave]" @input="$store.panel.guardarTexto(p.clave, $event.target.value)"></textarea>
+            <span class="campo-ayuda" x-text="p.ayuda"></span>
+          </label>
+          <div class="grupo-opciones" role="group" :aria-label="'Insertar una palabra en: ' + p.titulo">
+            <template x-for="v in p.variables" :key="v">
+              <button type="button" class="boton chico" @click="insertar(p, v)" x-text="'{' + v + '}'"></button>
+            </template>
+          </div>
+          <div>
+            <p class="campo-etiqueta">Así lo recibiría la vendedora</p>
+            <pre class="globo-whatsapp" x-text="previa[p.id]"></pre>
+          </div>
+        </div>
+      </template>
+      <p class="campo-ayuda" x-show="previa.ejemplo">La vista previa usa una prenda de ejemplo porque todavía no tienes prendas con precio.</p>
+    </article>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var L = P.logica;
+
+  var PLANTILLAS = [
+    { id: 'producto', clave: 'whatsapp.producto', titulo: 'Cuando piden una prenda desde su ficha', ayuda: 'Si la clienta no eligió talla o color, esas líneas se quitan solas.', variables: ['vendedora', 'producto', 'codigo', 'talla', 'color', 'precio', 'enlace'] },
+    { id: 'lista', clave: 'whatsapp.lista', titulo: 'Cuando envían su lista de favoritos', ayuda: '{lista} trae una línea por prenda.', variables: ['vendedora', 'lista', 'total'] },
+    { id: 'revista', clave: 'whatsapp.revista', titulo: 'Cuando piden desde la revista', ayuda: 'No lleva talla porque en la revista todavía no la eligieron.', variables: ['vendedora', 'producto', 'codigo', 'precio', 'enlace'] },
+  ];
+
+  A.data('vistaVendedoras', function () {
+    var base = P.mixinEditor('vendedoras');
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      plantillas: PLANTILLAS,
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('vendedoras'), d.cargar('productos')]).then(
+          function () { self.listo = true; },
+          function (e) { self.error = e.amable || 'No pude cargar las vendedoras.'; self.listo = true; }
+        );
+      },
+      get vendedoras() { return A.store('datos').lista('vendedoras'); },
+      get textos() { return A.store('panel').textos; },
+      get previa() {
+        var panel = A.store('panel');
+        var principal = this.vendedoras.filter(function (v) { return v.por_defecto; })[0] || this.vendedoras[0];
+        return L.vistaPreviaWhatsapp(panel.textos, {
+          vendedora: principal ? principal.nombre : '',
+          productos: A.store('datos').lista('productos').filter(function (p) { return p.estado === 'publicado'; }),
+          sitioUrl: panel.sitioUrl,
+          simbolo: panel.config.moneda_simbolo,
+        });
+      },
+      err: function (v) { return P.validar.vendedora(v); },
+
+      nueva: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('vendedoras', { nombre: '', whatsapp: '', activa: true, por_defecto: !this.vendedoras.length }).then(
+          function () { self.creando = false; },
+          function () { self.creando = false; }
+        );
+      },
+      /** Solo dígitos: se aceptan espacios, + y guiones al escribir, pero se guarda limpio. */
+      cambiarNumero: function (v, e) {
+        var limpio = P.validar.limpiarWhatsapp(e.target.value);
+        A.store('datos').guardar('vendedoras', v, 'whatsapp', limpio);
+      },
+      cambiarActiva: function (v, e) {
+        var d = A.store('datos');
+        if (!e.target.checked && v.por_defecto && this.vendedoras.some(function (o) { return o.id !== v.id && o.activa; })) {
+          A.store('toasts').mostrar({ tipo: 'aviso', texto: 'Esta es la vendedora por defecto. Elige otra como la de siempre y luego apágala.' });
+          e.target.checked = true;
+          return;
+        }
+        d.guardar('vendedoras', v, 'activa', e.target.checked);
+      },
+      /** Primero se marca la nueva y después se desmarca la anterior: nunca queda la tienda sin vendedora por defecto. */
+      hacerPrincipal: function (v) {
+        var d = A.store('datos');
+        d.guardar('vendedoras', v, 'por_defecto', true);
+        this.vendedoras.forEach(function (o) { if (o.id !== v.id && o.por_defecto) d.guardar('vendedoras', o, 'por_defecto', false); });
+      },
+      eliminar: function (v) {
+        if (v.por_defecto && this.vendedoras.length > 1) {
+          A.store('toasts').mostrar({ tipo: 'aviso', texto: 'Es la vendedora por defecto. Elige otra como la de siempre antes de quitarla.' });
+          return Promise.resolve();
+        }
+        return A.store('datos').eliminar('vendedoras', v, { mensaje: 'Quité a ' + (v.nombre || 'la vendedora') + '.' });
+      },
+      insertar: function (p, variable) {
+        var el = document.getElementById('tpl-' + p.id);
+        var texto = '{' + variable + '}';
+        var actual = this.textos[p.clave] || '';
+        var i = el && el.selectionStart !== undefined ? el.selectionStart : actual.length;
+        var f = el && el.selectionEnd !== undefined ? el.selectionEnd : i;
+        var nuevo = actual.slice(0, i) + texto + actual.slice(f);
+        A.store('panel').guardarTexto(p.clave, nuevo);
+        if (el) {
+          el.value = nuevo;
+          el.focus();
+          el.setSelectionRange(i + texto.length, i + texto.length);
+        }
+      },
+    }, base);
+  });
+});
+</script>

@@ -155,7 +155,7 @@
 
       iniciar: function () {
         var self = this;
-        self.cargando = true;
+        if (!self.usuario) self.cargando = true; // al reintentar tras instalar() no se vuelve a pintar todo
         return S.llamar('obtenerEstadoInicial').then(
           function (e) {
             self.falla = null;

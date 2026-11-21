@@ -1,0 +1,256 @@
+<!-- Configuración: tienda, moneda, redes, horario, envíos, inicio, token de GitHub e instalación -->
+<template x-if="$store.panel.ruta === 'configuracion' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaConfiguracion()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Configuración</h1>
+    </div>
+    <p class="vista-intro">Los cambios se guardan solos. Para que tus clientas los vean, pulsa «Publicar».</p>
+
+    <article class="tarjeta" aria-labelledby="c-tienda">
+      <h2 id="c-tienda">Tu tienda</h2>
+      <label class="campo">
+        <span class="campo-etiqueta">Nombre de la tienda</span>
+        <input type="text" :value="c('tienda_nombre')" @input="s('tienda_nombre', $event)" :aria-invalid="e('tienda_nombre') ? 'true' : 'false'" autocomplete="off" />
+        <span class="campo-ayuda">Sale en el encabezado, en los mensajes y en la revista. Sin nombre no se puede publicar.</span>
+        <span class="campo-error" x-show="e('tienda_nombre')" x-text="e('tienda_nombre')"></span>
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Frase corta</span>
+        <input type="text" :value="c('tienda_eslogan')" @input="s('tienda_eslogan', $event)" />
+        <span class="campo-ayuda">Una línea que cuente qué vendes. Es opcional.</span>
+      </label>
+      <div class="subida" style="grid-template-columns: 5rem minmax(0, 1fr); align-items: center">
+        <div class="miniatura" :class="{ cargando: c('logo') && !$foto(c('logo')) }" style="width: 5rem; aspect-ratio: 1"><img :src="$foto(c('logo'))" :alt="c('logo') ? 'Logo de la tienda' : ''" style="object-fit: contain" /></div>
+        <div>
+          <p class="campo-etiqueta">Logo</p>
+          <div class="fila-botones" style="margin-top: 0.375rem">
+            <button type="button" class="boton chico" @click="elegirLogo()" x-text="c('logo') ? 'Cambiar logo' : 'Elegir logo'"></button>
+            <button type="button" class="boton chico texto" x-show="c('logo')" @click="$store.panel.guardarConfig('logo', '')">Quitar</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-precios">
+      <h2 id="c-precios">Precios</h2>
+      <div class="rejilla-campos tres">
+        <label class="campo">
+          <span class="campo-etiqueta">Símbolo de la moneda</span>
+          <input type="text" maxlength="4" :value="c('moneda_simbolo')" @input="s('moneda_simbolo', $event)" :aria-invalid="e('moneda_simbolo') ? 'true' : 'false'" />
+          <span class="campo-error" x-show="e('moneda_simbolo')" x-text="e('moneda_simbolo')"></span>
+        </label>
+        <label class="campo">
+          <span class="campo-etiqueta">Código de la moneda</span>
+          <input type="text" maxlength="3" :value="c('moneda_codigo')" @input="s('moneda_codigo', $event)" :aria-invalid="e('moneda_codigo') ? 'true' : 'false'" autocapitalize="characters" />
+          <span class="campo-ayuda">Perú: PEN.</span>
+          <span class="campo-error" x-show="e('moneda_codigo')" x-text="e('moneda_codigo')"></span>
+        </label>
+        <label class="campo">
+          <span class="campo-etiqueta">Código de país</span>
+          <input type="text" inputmode="numeric" maxlength="3" :value="c('pais_codigo')" @input="s('pais_codigo', $event)" :aria-invalid="e('pais_codigo') ? 'true' : 'false'" />
+          <span class="campo-ayuda">Perú: 51, sin el +.</span>
+          <span class="campo-error" x-show="e('pais_codigo')" x-text="e('pais_codigo')"></span>
+        </label>
+      </div>
+      <fieldset>
+        <legend>Redondeo de los precios con oferta</legend>
+        <template x-for="r in redondeos" :key="r[0]">
+          <label class="opcion"><input type="radio" name="redondeo" :value="r[0]" :checked="c('redondeo') === r[0]" @change="$store.panel.guardarConfig('redondeo', r[0])" /><span><strong x-text="r[1]"></strong><br /><span class="campo-ayuda" x-text="r[2]"></span></span></label>
+        </template>
+      </fieldset>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-redes">
+      <h2 id="c-redes">Redes y contacto</h2>
+      <p class="campo-ayuda">Aparecen al final de cada página y en la revista. Deja vacías las que no uses.</p>
+      <div class="rejilla-campos dos">
+        <label class="campo">
+          <span class="campo-etiqueta">Instagram</span>
+          <input type="text" placeholder="@mitienda" :value="c('instagram')" @input="s('instagram', $event)" autocomplete="off" autocapitalize="none" />
+        </label>
+        <label class="campo">
+          <span class="campo-etiqueta">Facebook</span>
+          <input type="text" placeholder="mitienda" :value="c('facebook')" @input="s('facebook', $event)" autocomplete="off" autocapitalize="none" />
+        </label>
+        <label class="campo">
+          <span class="campo-etiqueta">TikTok</span>
+          <input type="text" placeholder="@mitienda" :value="c('tiktok')" @input="s('tiktok', $event)" autocomplete="off" autocapitalize="none" />
+        </label>
+      </div>
+      <p class="campo-ayuda">Tu usuario o el enlace de tu perfil. El número de WhatsApp se agrega en «Vendedoras y WhatsApp».</p>
+      <label class="campo">
+        <span class="campo-etiqueta">Horario de atención</span>
+        <input type="text" :value="c('horario')" @input="s('horario', $event)" />
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Envíos</span>
+        <textarea :value="c('envios')" @input="s('envios', $event)"></textarea>
+        <span class="campo-ayuda">Cuéntales cómo envías, a dónde y cómo coordinan.</span>
+      </label>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-inicio">
+      <h2 id="c-inicio">Qué ven primero tus clientas</h2>
+      <fieldset>
+        <legend class="solo-lector">Inicio del catálogo</legend>
+        <label class="opcion"><input type="radio" name="inicio" value="temporada" :checked="c('inicio_modo') === 'temporada'" @change="$store.panel.guardarConfig('inicio_modo', 'temporada')" /><span><strong>La temporada activa</strong><br /><span class="campo-ayuda">Portada y fotos en scroll; debajo, las secciones.</span></span></label>
+        <label class="opcion"><input type="radio" name="inicio" value="secciones" :checked="c('inicio_modo') === 'secciones'" @change="$store.panel.guardarConfig('inicio_modo', 'secciones')" /><span><strong>Las secciones</strong><br /><span class="campo-ayuda">Novedades, ofertas y demás, sin la temporada arriba.</span></span></label>
+      </fieldset>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-github">
+      <h2 id="c-github">Conexión con GitHub</h2>
+      <p>
+        <span class="chip ok" x-show="$store.panel.token.configurado">Conectado</span>
+        <span class="chip aviso" x-show="!$store.panel.token.configurado">Falta conectar</span>
+        <span class="suave" x-show="$store.panel.token.configurado" x-text="'  Repositorio: ' + $store.panel.token.repo"></span>
+      </p>
+      <p class="campo-ayuda">«Publicar» necesita un token de GitHub. Créalo una sola vez, de un solo repositorio, con los permisos <em>Contents: write</em> y <em>Actions: read</em>. Se guarda en un lugar privado y no se vuelve a mostrar.</p>
+      <form @submit.prevent="enviarToken()" autocomplete="off">
+        <label class="campo">
+          <span class="campo-etiqueta" x-text="$store.panel.token.configurado ? 'Reemplazar el token' : 'Pega aquí el token'"></span>
+          <input type="password" x-ref="token" autocomplete="new-password" autocapitalize="none" spellcheck="false" />
+        </label>
+        <div class="fila-botones" style="margin-top: 0.75rem">
+          <button type="submit" class="boton primario" :disabled="guardandoToken" x-text="guardandoToken ? 'Comprobando…' : 'Guardar token'"></button>
+        </div>
+      </form>
+      <p class="nota error" x-show="errorToken" role="alert" x-text="errorToken"></p>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-avanzado">
+      <details>
+        <summary style="cursor: pointer; min-height: var(--alto-toque); display: flex; align-items: center"><h2 id="c-avanzado">Ajustes avanzados</h2></summary>
+        <div class="vista" style="margin-top: 0.75rem">
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Paleta de la tienda</span>
+              <select :value="c('paleta_defecto')" @change="$store.panel.guardarConfig('paleta_defecto', $event.target.value)">
+                <template x-for="p in paletas" :key="p.id"><option :value="p.id" :selected="c('paleta_defecto') === p.id" x-text="p.nombre"></option></template>
+              </select>
+              <span class="campo-ayuda">Se usa cuando una temporada no elige la suya.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Días de validez de los precios de la revista</span>
+              <input type="text" inputmode="numeric" :value="c('vigencia_dias_defecto')" @input="s('vigencia_dias_defecto', $event)" :aria-invalid="e('vigencia_dias_defecto') ? 'true' : 'false'" />
+              <span class="campo-ayuda">Te comprometes a respetar esos precios hasta la fecha impresa.</span>
+              <span class="campo-error" x-show="e('vigencia_dias_defecto')" x-text="e('vigencia_dias_defecto')"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">«Últimas unidades» desde</span>
+              <input type="text" inputmode="numeric" :value="c('umbral_ultimas_unidades')" @input="s('umbral_ultimas_unidades', $event)" :aria-invalid="e('umbral_ultimas_unidades') ? 'true' : 'false'" />
+              <span class="campo-ayuda">Se muestra cuando el stock que cargaste es esta cantidad o menos.</span>
+              <span class="campo-error" x-show="e('umbral_ultimas_unidades')" x-text="e('umbral_ultimas_unidades')"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Días que una prenda es «Nuevo»</span>
+              <input type="text" inputmode="numeric" :value="c('dias_nuevo')" @input="s('dias_nuevo', $event)" :aria-invalid="e('dias_nuevo') ? 'true' : 'false'" />
+              <span class="campo-error" x-show="e('dias_nuevo')" x-text="e('dias_nuevo')"></span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Clics mínimos para «Más consultados»</span>
+              <input type="text" inputmode="numeric" :value="c('min_clics_mas_consultados')" @input="s('min_clics_mas_consultados', $event)" :aria-invalid="e('min_clics_mas_consultados') ? 'true' : 'false'" />
+              <span class="campo-ayuda">En los últimos 30 días. Solo cuentan clics reales.</span>
+              <span class="campo-error" x-show="e('min_clics_mas_consultados')" x-text="e('min_clics_mas_consultados')"></span>
+            </label>
+          </div>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Dirección de tu catálogo</span>
+              <input type="text" :value="c('sitio_url')" readonly />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Repositorio de GitHub</span>
+              <input type="text" :value="c('github_repo')" readonly />
+            </label>
+          </div>
+          <p class="campo-ayuda">Estos dos datos se cambian al configurar un dominio propio; por ahora son solo de lectura.</p>
+        </div>
+      </details>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="c-instalar">
+      <h2 id="c-instalar">Instalación en tu Google</h2>
+      <p>Crea o repara tu hoja «Catálogo Ropa — Base de datos» y las carpetas de fotos en tu Drive. Puedes pulsarlo las veces que quieras: no borra nada.</p>
+      <div class="fila-botones">
+        <button type="button" class="boton" :disabled="instalando" @click="instalar()" x-text="instalando ? 'Instalando…' : 'Completar instalación'"></button>
+        <a class="boton" target="_blank" rel="noopener" :href="instalado.hojaUrl" x-show="instalado && instalado.hojaUrl">Abrir mi hoja <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg></a>
+      </div>
+      <p class="nota ok" role="status" x-show="instalado" x-text="textoInstalado"></p>
+      <p class="nota error" x-show="errorInstalar" x-text="errorInstalar"></p>
+    </article>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+
+  A.data('vistaConfiguracion', function () {
+    return {
+      guardandoToken: false,
+      errorToken: '',
+      instalando: false,
+      instalado: null,
+      errorInstalar: '',
+      redondeos: [
+        ['ninguno', 'Sin redondeo', 'Se muestra el precio exacto, por ejemplo S/ 66.75.'],
+        ['entero', 'Al sol entero', 'Los precios con oferta quedan en soles enteros.'],
+        ['90', 'Terminar en .90', 'Los precios con oferta terminan en 90 céntimos.'],
+      ],
+
+      init: function () { A.store('datos').cargar('paletas').catch(function () {}); },
+      get paletas() { return A.store('datos').lista('paletas'); },
+      get textoInstalado() {
+        var i = this.instalado;
+        if (!i) return '';
+        return i.restaurado ? 'Listo: recuperé tu hoja o tu carpeta de la papelera.' : i.nueva ? 'Listo: creé tu hoja y tus carpetas.' : 'Todo estaba en orden. No cambié nada.';
+      },
+
+      c: function (k) { var v = A.store('panel').config[k]; return v === undefined || v === null ? '' : v; },
+      e: function (k) { return A.store('panel').erroresConfig[k] || ''; },
+      s: function (k, ev) { return A.store('panel').guardarConfig(k, ev.target.value); },
+
+      elegirLogo: function () {
+        return P.elegirFotos({ multiple: false, destino: 'marca', titulo: 'Logo de la tienda' }).then(function (ids) {
+          if (ids && ids[0]) { A.store('panel').guardarConfig('logo', ids[0]); A.store('min').pedir(ids); }
+        });
+      },
+
+      /** El token se lee, se borra del campo al instante y viaja una sola vez. Nunca se guarda en pantalla. */
+      enviarToken: function () {
+        var self = this;
+        var campo = this.$refs.token;
+        var valor = campo.value.trim();
+        campo.value = '';
+        this.errorToken = '';
+        if (!valor) { this.errorToken = 'Pega primero el token.'; return Promise.resolve(); }
+        this.guardandoToken = true;
+        return A.store('panel').guardarToken(valor).then(
+          function () {
+            self.guardandoToken = false;
+            A.store('toasts').mostrar({ tipo: 'ok', texto: 'Listo: GitHub quedó conectado.' });
+          },
+          function (err) {
+            self.guardandoToken = false;
+            self.errorToken = err.codigo === 'github' || err.codigo === 'invalido'
+              ? 'GitHub no aceptó ese token. Revisa que sea de este repositorio y que tenga los permisos indicados. ' + (err.codigo === 'invalido' ? err.amable : '')
+              : err.amable;
+          }
+        );
+      },
+
+      instalar: function () {
+        var self = this;
+        this.instalando = true;
+        this.errorInstalar = '';
+        return A.store('panel').instalar().then(
+          function (r) { self.instalado = r; self.instalando = false; },
+          function (e) { self.errorInstalar = e.amable || 'No pude terminar la instalación.'; self.instalando = false; }
+        );
+      },
+    };
+  });
+});
+</script>
