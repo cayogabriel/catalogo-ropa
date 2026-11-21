@@ -183,6 +183,7 @@ document.addEventListener('alpine:init', function () {
   A.data('vistaColores', function () {
     var base = P.mixinEditor('paletas');
     var temporizador = null;
+    var guardarPendiente = null;
     return Object.assign({
       listo: false,
       error: '',
@@ -236,7 +237,13 @@ document.addEventListener('alpine:init', function () {
         this.frases = V.describirFallos(V.revisarPaletaLocal(this.borrador));
         this.guardadoTokens = false;
       },
-      cerrar: function () { this.editId = null; this.borrador = {}; },
+      /** Si hay un color a medio guardar, se termina de guardar antes de cerrar. */
+      cerrar: function () {
+        var self = this;
+        var fin = Promise.resolve();
+        if (guardarPendiente) { clearTimeout(temporizador); fin = guardarPendiente(); }
+        return fin.then(function () { self.editId = null; self.borrador = {}; });
+      },
       eliminar: function () {
         var p = this.edit;
         var usos = A.store('datos').lista('temporadas').filter(function (t) { return t.paleta_id === p.id; });
@@ -269,15 +276,20 @@ document.addEventListener('alpine:init', function () {
         if (!r.ok) return;
         if (temporizador) clearTimeout(temporizador);
         var n = ++this.pedido;
-        temporizador = setTimeout(function () {
+        var paleta = this.edit; // se guarda en la paleta que estaba abierta, aunque se cierre antes de terminar
+        var tokens = U.copiar(this.borrador);
+        var ejecutar = function () {
+          temporizador = null;
+          guardarPendiente = null;
           // El servidor vuelve a revisar con las mismas reglas antes de guardar.
-          P.servidor.llamar('validarPaleta', U.copiar(self.borrador)).then(function (res) {
-            if (n !== self.pedido || !self.edit) return;
-            if (!res.ok) { self.frases = V.describirFallos(res); return; }
-            A.store('datos').guardar('paletas', self.edit, 'tokens', U.copiar(self.borrador));
-            self.guardadoTokens = true;
-          }, function (e) { self.frases = [e.amable]; });
-        }, 400);
+          return P.servidor.llamar('validarPaleta', tokens).then(function (res) {
+            if (!res.ok) { if (n === self.pedido) self.frases = V.describirFallos(res); return; }
+            A.store('datos').guardar('paletas', paleta, 'tokens', tokens);
+            if (n === self.pedido) self.guardadoTokens = true;
+          }, function (e) { if (n === self.pedido) self.frases = [e.amable]; });
+        };
+        guardarPendiente = ejecutar;
+        temporizador = setTimeout(ejecutar, 400);
       },
     }, base);
   });

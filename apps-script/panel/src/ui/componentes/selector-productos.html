@@ -28,6 +28,9 @@
             </li>
           </template>
         </ul>
+        <div class="fila-botones" style="justify-content: center" x-show="todas > limite">
+          <button type="button" class="boton" @click="limite += 60">Mostrar más prendas</button>
+        </div>
       </div>
       <div class="hoja-pie">
         <button type="button" class="boton" @click="$store.selectorProductos.terminar(null)">Cancelar</button>
@@ -64,6 +67,7 @@ document.addEventListener('alpine:init', function () {
   A.data('elegirPrendas', function (opciones) {
     return {
       texto: '',
+      limite: 60,
       listo: false,
       seleccion: (opciones.seleccion || []).slice(),
       init: function () {
@@ -73,10 +77,12 @@ document.addEventListener('alpine:init', function () {
           A.store('min').pedir(self.visibles.slice(0, 40).map(function (p) { return p.fotos[0]; }));
         }, function () { self.listo = true; });
       },
-      get visibles() {
+      get coincidencias() {
         var L = window.Panel.logica;
-        return L.ordenarProductos(L.filtrarProductos(A.store('datos').lista('productos'), { texto: this.texto }), 'codigo').slice(0, 60);
+        return L.ordenarProductos(L.filtrarProductos(A.store('datos').lista('productos'), { texto: this.texto }), 'codigo');
       },
+      get todas() { return this.coincidencias.length; },
+      get visibles() { return this.coincidencias.slice(0, this.limite); },
       elegida: function (id) { return this.seleccion.indexOf(id) !== -1; },
       alternar: function (id) {
         this.seleccion = this.elegida(id) ? this.seleccion.filter(function (x) { return x !== id; }) : this.seleccion.concat([id]);

@@ -72,7 +72,7 @@
           </label>
           <label class="campo">
             <span class="campo-etiqueta">Texto de la insignia</span>
-            <input type="text" maxlength="24" :placeholder="'Si lo dejas vacío: -' + (edit.tipo === 'porcentaje' ? edit.valor : 'NN') + '%'" :value="edit.etiqueta" @input="g(edit, 'etiqueta', $event)" />
+            <input type="text" maxlength="24" :placeholder="edit.tipo === 'porcentaje' && edit.valor ? 'Si lo dejas vacío: -' + edit.valor + '%' : 'Por ejemplo: -30%'" :value="edit.etiqueta" @input="g(edit, 'etiqueta', $event)" />
             <span class="campo-ayuda">Es lo que se ve sobre la foto de la prenda, por ejemplo «-30%» o «Día de la Madre».</span>
           </label>
         </article>
@@ -145,7 +145,9 @@
           </label>
           <p class="campo-ayuda" x-show="!productosConPrecio.length">Para ver la vista previa necesitas al menos una prenda con precio.</p>
           <p class="nota aviso" x-show="avisoPrevia" x-text="avisoPrevia"></p>
-          <div x-show="previa && !avisoPrevia" role="status" aria-live="polite">
+          <p class="nota aviso" x-show="!avisoPrevia && !alcanza" x-text="'Esta prenda no entra en la oferta, así que su precio no cambia. Prueba con otra o cambia a qué se aplica.'"></p>
+          <p class="nota" x-show="!avisoPrevia && alcanza && !edit.activa">La oferta está apagada: así se vería cuando la enciendas.</p>
+          <div x-show="previa && !avisoPrevia && alcanza" role="status" aria-live="polite">
             <p x-text="textoHoy"></p>
             <ul class="lista" style="margin-top: 0.75rem">
               <template x-for="(v, i) in (previa ? previa.ventanas : [])" :key="i">
@@ -189,7 +191,7 @@ document.addEventListener('alpine:init', function () {
       init: function () {
         var self = this;
         var d = A.store('datos');
-        Promise.all([d.cargar('ofertas'), d.cargar('productos'), d.cargar('categorias'), d.cargar('secciones'), d.cargar('temporadas')]).then(
+        Promise.all([d.cargar('ofertas'), d.cargar('productos'), d.cargar('categorias'), d.cargar('secciones'), d.cargar('temporadas'), d.cargar('temporada_fotos')]).then(
           function () { self.listo = true; },
           function (e) { self.error = e.amable || 'No pude cargar las ofertas.'; self.listo = true; }
         );
@@ -207,7 +209,7 @@ document.addEventListener('alpine:init', function () {
       },
       get edit() { return this.editId ? A.store('datos').buscar('ofertas', this.editId) : null; },
       get errores() { return this.edit ? P.validar.oferta(this.edit) : {}; },
-      get productosConPrecio() { return A.store('datos').lista('productos').filter(function (p) { return p.estado !== 'archivado' && Number(p.precio_regular) > 0; }); },
+      get productosConPrecio() { return A.store('datos').lista('productos').filter(function (p) { return p.estado !== 'archivado' && P.validar.num(p.precio_regular) > 0; }); },
       get opcionesAlcance() {
         var d = A.store('datos');
         var a = this.edit && this.edit.alcance;
@@ -227,14 +229,21 @@ document.addEventListener('alpine:init', function () {
       get claveVista() {
         var o = this.edit;
         if (!o) return '';
-        return JSON.stringify([o.tipo, o.valor, o.desde, o.hasta, o.etiqueta, o.es_liquidacion, o.cuenta_regresiva, this.productoPrueba]);
+        return JSON.stringify([o.tipo, o.valor, o.desde, o.hasta, o.etiqueta, o.es_liquidacion, o.cuenta_regresiva, o.prioridad, o.alcance, o.objetivos, o.activa, this.productoPrueba]);
+      },
+      get alcanza() {
+        var d = A.store('datos');
+        var p = d.buscar('productos', this.productoPrueba);
+        if (!this.edit || !p) return true;
+        return L.ofertaAlcanza(this.edit, p, { secciones: d.lista('secciones'), temporada_fotos: d.lista('temporada_fotos') });
       },
       get textoHoy() {
         if (!this.previa) return '';
         var ahora = new Date().getTime();
         var v = this.previa.ventanas.filter(function (x) { return (!x.desde || new Date(x.desde).getTime() <= ahora) && (!x.hasta || new Date(x.hasta).getTime() > ahora); })[0];
         var m = U.formatoMonto;
-        if (v && v.antes) return 'Hoy tu clienta vería ' + m(v.precio) + ' (antes ' + m(v.antes) + ', ' + (v.etiqueta || '-' + v.descuento_pct + '%') + ').';
+        var cuando = this.edit && !this.edit.activa ? 'Con la oferta encendida, tu clienta vería ' : 'Hoy tu clienta vería ';
+        if (v && v.antes) return cuando + m(v.precio) + ' (antes ' + m(v.antes) + ', ' + (v.etiqueta || '-' + v.descuento_pct + '%') + ').';
         return 'Hoy tu clienta vería el precio regular, ' + m(this.previa.regular) + '. La oferta todavía no empieza o ya terminó.';
       },
 
@@ -298,8 +307,7 @@ document.addEventListener('alpine:init', function () {
       cambiarAlcance: function (e) {
         var o = this.edit;
         var d = A.store('datos');
-        d.guardar('ofertas', o, 'alcance', e.target.value);
-        d.guardar('ofertas', o, 'objetivos', []);
+        d.guardarVarios('ofertas', o, { alcance: e.target.value, objetivos: [] });
       },
       alternarObjetivo: function (id, e) {
         var o = this.edit;
@@ -326,7 +334,7 @@ document.addEventListener('alpine:init', function () {
         var valor = Number(String(o.valor).replace(',', '.'));
         return P.servidor.llamar('vistaPreviaPrecios', {
           producto_id: this.productoPrueba,
-          oferta: { id: o.id, tipo: o.tipo, valor: valor, desde: o.desde, hasta: o.hasta, etiqueta: o.etiqueta, es_liquidacion: o.es_liquidacion, cuenta_regresiva: o.cuenta_regresiva, prioridad: o.prioridad },
+          oferta: { id: o.id, tipo: o.tipo, valor: valor, desde: o.desde, hasta: o.hasta, etiqueta: o.etiqueta, es_liquidacion: o.es_liquidacion, cuenta_regresiva: o.cuenta_regresiva, prioridad: o.prioridad, activa: o.activa, alcance: o.alcance, objetivos: o.objetivos },
         }).then(
           function (r) { if (n === self.pedido) self.previa = r; },
           function (err) { if (n === self.pedido) { self.previa = null; self.avisoPrevia = err.amable; } }

@@ -128,7 +128,7 @@ document.addEventListener('alpine:init', function () {
     novedades: 'Las prendas que llegaron hace poco.',
     ofertas: 'Las prendas que tienen una oferta encendida.',
     liquidacion: 'Las prendas en liquidación, con su propio estilo.',
-    mas_consultados: 'Solo aparece cuando hay clics reales: al menos 3 en los últimos 30 días.',
+    mas_consultados: 'Solo aparece cuando hay clics reales en los últimos 30 días.',
     categoria: 'Todas las prendas de una categoría.',
     etiqueta: 'Todas las prendas con una etiqueta que tú pongas.',
   };
@@ -155,7 +155,11 @@ document.addEventListener('alpine:init', function () {
       get edit() { return this.editId ? A.store('datos').buscar('secciones', this.editId) : null; },
       get categorias() { return A.store('datos').lista('categorias'); },
       get temporadas() { return A.store('datos').lista('temporadas'); },
-      get ayudaTipo() { return this.edit ? AYUDA[this.edit.tipo] || '' : ''; },
+      get ayudaTipo() {
+        if (!this.edit) return '';
+        if (this.edit.tipo === 'mas_consultados') return AYUDA.mas_consultados.replace('clics reales', 'al menos ' + (A.store('panel').config.min_clics_mas_consultados || 3) + ' clics reales');
+        return AYUDA[this.edit.tipo] || '';
+      },
 
       nombreTipo: function (t) { var x = TIPOS.filter(function (y) { return y[0] === t; })[0]; return x ? x[1] : t; },
       abrir: function (id) { this.editId = id; },

@@ -69,7 +69,7 @@ document.addEventListener('alpine:init', function () {
       deshacer: function (h) {
         var self = this;
         this.trabajando = h.id;
-        return A.store('datos').deshacer(h.id, h.entidad).then(function () { return self.cargar(); }).then(function () { self.trabajando = null; });
+        return A.store('datos').deshacer(h.id, h.entidad).then(function () { return self.cargar(); }).then(function () { self.trabajando = null; }, function () { self.trabajando = null; });
       },
     };
   });

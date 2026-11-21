@@ -263,7 +263,7 @@ document.addEventListener('alpine:init', function () {
       get errores() { return this.edit ? P.validar.temporada(this.edit, A.store('datos').lista('temporadas')) : {}; },
       get fotos() {
         var id = this.editId;
-        return A.store('datos').lista('temporada_fotos').filter(function (f) { return f.temporada_id === id; }).sort(function (a, b) { return a.orden - b.orden; });
+        return A.store('datos').lista('temporada_fotos').filter(function (f) { return f.temporada_id === id; }).sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
       },
       get usoPaleta() {
         var p = this.edit && A.store('datos').buscar('paletas', this.edit.paleta_id);

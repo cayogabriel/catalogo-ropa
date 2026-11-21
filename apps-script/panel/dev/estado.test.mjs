@@ -175,6 +175,38 @@ describe('datos: autoguardado', () => {
     expect(servidorDe(m, 'ofertas', nueva.id).valor).toBe(15);
   });
 
+  it('restaurar una prenda recién archivada no da un falso conflicto', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    const f = (await d.cargar('productos')).find((x) => x.id === 'prd_00000003');
+    await d.eliminar('productos', f, { mensaje: 'Archivada.' });
+    d.guardar('productos', f, 'estado', 'borrador');
+    await avanzar(700);
+    expect(servidorDe(m, 'productos', f.id).estado).toBe('borrador');
+    expect(m.stores.toasts.lista.some((t) => /otra pestaña/i.test(t.texto))).toBe(false);
+  });
+
+  it('guardarVarios manda todos los campos juntos aunque alguno no pase la validación de la pantalla', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    const [o] = await d.cargar('ofertas');
+    d.guardarVarios('ofertas', o, { alcance: 'categoria', objetivos: [] });
+    await avanzar(700);
+    const s = servidorDe(m, 'ofertas', o.id);
+    expect(s.alcance).toBe('categoria');
+    expect(s.objetivos).toEqual([]);
+    expect(m.llamadas.filter((x) => x === 'guardarCampos')).toHaveLength(1);
+  });
+
+  it('un texto con solo espacios en un número se trata como vacío, no como 0', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    const f = (await d.cargar('productos')).find((x) => x.id === 'prd_00000001');
+    d.guardar('productos', f, 'stock', '   ');
+    await avanzar(700);
+    expect(servidorDe(m, 'productos', f.id).stock).toBeNull();
+  });
+
   it('agregarFilas suma las filas nuevas (por ejemplo, de la alta rápida) y las deja editables', async () => {
     const m = await listo();
     const d = m.stores.datos;
@@ -197,6 +229,20 @@ describe('datos: autoguardado', () => {
     const n = await d.duplicarProducto('prd_00000001');
     expect(d.listas.productos.some((x) => x.id === n.id)).toBe(true);
     expect(n.estado).toBe('borrador');
+  });
+});
+
+describe('datos: deshacer', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+  it('si recargar la lista falla después de deshacer, no queda una promesa sin manejar', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    const f = (await d.cargar('productos')).find((x) => x.id === 'prd_00000003');
+    await d.eliminar('productos', f, { mensaje: 'Archivada.' });
+    const accion = m.stores.toasts.lista.at(-1).accion;
+    m.gas.simular.falla('listar', 'limite', 1);
+    await expect(accion.fn()).resolves.toBeDefined();
   });
 });
 

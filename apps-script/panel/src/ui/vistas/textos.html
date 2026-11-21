@@ -21,7 +21,7 @@
     <p class="suave" x-show="!grupos.length && busqueda">No encontré textos con esa búsqueda.</p>
 
     <template x-for="g in grupos" :key="g.id">
-      <details class="tarjeta" :open="!!busqueda || g.id === 'tienda'">
+      <details class="tarjeta" :open="!!busqueda || abiertos[g.id]" @toggle="if (!busqueda) abiertos[g.id] = $el.open">
         <summary style="cursor: pointer; min-height: var(--alto-toque); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 650">
           <span x-text="g.titulo"></span>
           <span class="chip" x-text="g.claves.length"></span>
@@ -48,6 +48,7 @@ document.addEventListener('alpine:init', function () {
   A.data('vistaTextos', function () {
     return {
       busqueda: '',
+      abiertos: { tienda: true },
       get grupos() {
         var q = this.busqueda;
         var textos = A.store('panel').textos;
@@ -55,7 +56,7 @@ document.addEventListener('alpine:init', function () {
         if (!q) return todos;
         return todos
           .map(function (g) {
-            return Object.assign({}, g, { claves: g.claves.filter(function (c) { return P.util.coincide(c.etiqueta + ' ' + g.titulo + ' ' + c.valor, q); }) });
+            return Object.assign({}, g, { claves: g.claves.filter(function (c) { return P.util.coincide(c.etiqueta + ' ' + g.titulo + ' ' + c.clave, q); }) });
           })
           .filter(function (g) { return g.claves.length; });
       },

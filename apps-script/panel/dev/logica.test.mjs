@@ -41,10 +41,35 @@ describe('productos', () => {
     expect(L.textoFaltantes(prod({ fotos: [] }))).toBe('Para publicarla falta: foto.');
     expect(L.textoFaltantes(prod())).toBe('');
   });
+  it('un precio escrito con coma cuenta como precio', () => {
+    expect(L.textoFaltantes(prod({ precio_regular: '66,5' }))).toBe('');
+    expect(L.textoFaltantes(prod({ precio_regular: 'abc' }))).toBe('Para publicarla falta: precio.');
+    expect(ids(L.filtrarProductos([prod({ id: 'x', precio_regular: '66,5' })], { sinPrecio: true }))).toEqual([]);
+  });
   it('resumenAltaRapida cuenta borradores y fotos que fallaron', () => {
     expect(L.resumenAltaRapida([{ estado: 'listo' }, { estado: 'listo' }, { estado: 'listo' }], 3)).toBe('Creé 3 borradores. Completa el nombre y el precio de cada uno.');
     expect(L.resumenAltaRapida([{ estado: 'listo' }, { estado: 'error' }], 1)).toBe('Creé 1 borrador. 1 foto no se pudo subir. Completa el nombre y el precio.');
     expect(L.resumenAltaRapida([{ estado: 'error' }, { estado: 'error' }], 0)).toBe('No pude subir ninguna foto.');
+  });
+});
+
+describe('ofertaAlcanza', () => {
+  const ctx = { secciones: [{ id: 's1', productos: ['p1'] }], temporada_fotos: [{ temporada_id: 't1', productos: ['p2'] }] };
+  const p = (id, cat = 'c1') => ({ id, categoria_id: cat });
+  it('tienda alcanza a todas', () => {
+    expect(L.ofertaAlcanza({ alcance: 'tienda', objetivos: [] }, p('p1'), ctx)).toBe(true);
+  });
+  it('producto y categoría miran sus objetivos', () => {
+    expect(L.ofertaAlcanza({ alcance: 'producto', objetivos: ['p1'] }, p('p1'), ctx)).toBe(true);
+    expect(L.ofertaAlcanza({ alcance: 'producto', objetivos: ['p1'] }, p('p9'), ctx)).toBe(false);
+    expect(L.ofertaAlcanza({ alcance: 'categoria', objetivos: ['c1'] }, p('p9', 'c1'), ctx)).toBe(true);
+    expect(L.ofertaAlcanza({ alcance: 'categoria', objetivos: ['c2'] }, p('p9', 'c1'), ctx)).toBe(false);
+  });
+  it('sección y temporada miran dónde aparece la prenda', () => {
+    expect(L.ofertaAlcanza({ alcance: 'seccion', objetivos: ['s1'] }, p('p1'), ctx)).toBe(true);
+    expect(L.ofertaAlcanza({ alcance: 'seccion', objetivos: ['s1'] }, p('p2'), ctx)).toBe(false);
+    expect(L.ofertaAlcanza({ alcance: 'temporada', objetivos: ['t1'] }, p('p2'), ctx)).toBe(true);
+    expect(L.ofertaAlcanza({ alcance: 'temporada', objetivos: ['t1'] }, p('p1'), ctx)).toBe(false);
   });
 });
 
@@ -192,6 +217,11 @@ describe('WhatsApp', () => {
     expect(r.lista).toContain('- Vestido Lino (VES-001) · S · Coral · S/ 89');
     expect(r.lista).toContain('- Blusa (BLU-002) · S/ 89');
     expect(r.lista).toContain('Total: S/ 178');
+  });
+  it('un producto con precio escrito con coma entra en la vista previa', () => {
+    const r = L.vistaPreviaWhatsapp(textos, { vendedora: 'Ana', productos: [{ codigo: 'X-001', nombre: 'Falda', precio_regular: '66,5', tallas: [], colores: [] }], sitioUrl: '', simbolo: 'S/' });
+    expect(r.ejemplo).toBe(false);
+    expect(r.producto).toContain('Precio: S/ 66.50');
   });
   it('sin productos usa un ejemplo y lo dice', () => {
     const r = L.vistaPreviaWhatsapp(textos, { vendedora: '', productos: [], sitioUrl: '', simbolo: 'S/' });

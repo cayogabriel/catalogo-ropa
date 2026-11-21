@@ -19,7 +19,7 @@
       if (f.categoria && p.categoria_id !== f.categoria) return false;
       if (f.texto && !U.coincide((p.nombre || '') + ' ' + (p.codigo || ''), f.texto)) return false;
       if (f.sinFoto && (p.fotos || []).length) return false;
-      if (f.sinPrecio && p.precio_regular) return false;
+      if (f.sinPrecio && V.num(p.precio_regular) > 0) return false;
       return true;
     });
   }
@@ -33,7 +33,7 @@
   function textoFaltantes(p) {
     var falta = [];
     if (!String(p.nombre || '').trim()) falta.push('nombre');
-    if (!(Number(p.precio_regular) > 0)) falta.push('precio');
+    if (!(V.num(p.precio_regular) > 0)) falta.push('precio');
     if (!(p.fotos || []).length) falta.push('foto');
     return falta.length ? 'Para publicarla falta: ' + unir(falta) + '.' : '';
   }
@@ -141,6 +141,18 @@
     }
     return (que + ' ' + donde).trim();
   }
+  /** ¿Esta oferta alcanzaría a esta prenda? ctx = { secciones, temporada_fotos } (las listas del panel). */
+  function ofertaAlcanza(o, p, ctx) {
+    var ob = o.objetivos || [];
+    switch (o.alcance) {
+      case 'tienda': return true;
+      case 'producto': return ob.indexOf(p.id) !== -1;
+      case 'categoria': return ob.indexOf(p.categoria_id) !== -1;
+      case 'seccion': return (ctx.secciones || []).some(function (s) { return ob.indexOf(s.id) !== -1 && (s.productos || []).indexOf(p.id) !== -1; });
+      case 'temporada': return (ctx.temporada_fotos || []).some(function (f) { return ob.indexOf(f.temporada_id) !== -1 && (f.productos || []).indexOf(p.id) !== -1; });
+      default: return false;
+    }
+  }
   /** Atajo «Liquidación»: nace apagada para que la dueña revise el descuento antes de encenderla. */
   function ofertaLiquidacion() {
     return {
@@ -199,7 +211,7 @@
   /* ---------- WhatsApp ---------- */
   function vistaPreviaWhatsapp(textos, o) {
     var simbolo = o.simbolo || 'S/';
-    var reales = (o.productos || []).filter(function (p) { return Number(p.precio_regular) > 0; }).slice(0, 2);
+    var reales = (o.productos || []).filter(function (p) { return V.num(p.precio_regular) > 0; }).slice(0, 2);
     var ejemplo = !reales.length;
     var lista = ejemplo ? [{ nombre: 'Vestido de ejemplo', codigo: 'VES-001', precio_regular: 89, tallas: ['M'], colores: ['Coral'] }] : reales;
     var base = o.sitioUrl ? o.sitioUrl.replace(/\/+$/, '') + '/' : '';
@@ -217,7 +229,7 @@
       partes.push(U.formatoMonto(x.precio_regular, simbolo));
       return '- ' + partes.join(' · ');
     });
-    var total = lista.reduce(function (s, x) { return s + Number(x.precio_regular); }, 0);
+    var total = lista.reduce(function (s, x) { return s + V.num(x.precio_regular); }, 0);
     var sinOpcionales = { vendedora: datos.vendedora, producto: datos.producto, codigo: datos.codigo, precio: datos.precio, enlace: datos.enlace };
     return {
       producto: U.rellenarPlantilla(textos['whatsapp.producto'] || '', datos),
@@ -267,7 +279,7 @@
     resumenAltaRapida: resumenAltaRapida, describirCambio: describirCambio, valorLegible: valorLegible,
     estadoTemporada: estadoTemporada, urlVistaPrevia: urlVistaPrevia, variablesPaleta: variablesPaleta,
     vigenciaTexto: vigenciaTexto, mesesDeUso: mesesDeUso, estadoOferta: estadoOferta, descripcionOferta: descripcionOferta,
-    ofertaLiquidacion: ofertaLiquidacion, rutasDeDestino: rutasDeDestino, etiquetaTexto: etiquetaTexto,
+    ofertaLiquidacion: ofertaLiquidacion, ofertaAlcanza: ofertaAlcanza, rutasDeDestino: rutasDeDestino, etiquetaTexto: etiquetaTexto,
     agruparTextos: agruparTextos, vistaPreviaWhatsapp: vistaPreviaWhatsapp, agruparPaletas: agruparPaletas,
     nombreDeCopia: nombreDeCopia,
   };

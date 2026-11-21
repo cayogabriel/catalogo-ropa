@@ -55,6 +55,7 @@ describe('mensajeAmable', () => {
     expect(S.mensajeAmable('no_autorizado')).toMatch(/permiso/i);
     expect(S.mensajeAmable('sin_token')).toMatch(/Configuración/);
     expect(S.mensajeAmable('desconocido')).toMatch(/conexión/i);
+    expect(S.mensajeAmable('desconocido')).not.toMatch(/reintento solo/i);
   });
   it('invalido y limite muestran el detalle del servidor con mayúscula y punto', () => {
     expect(S.mensajeAmable('invalido', 'el precio debe ser mayor que 0')).toBe('El precio debe ser mayor que 0.');

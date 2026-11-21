@@ -136,8 +136,12 @@ document.addEventListener('alpine:init', function () {
       /** Primero se marca la nueva y después se desmarca la anterior: nunca queda la tienda sin vendedora por defecto. */
       hacerPrincipal: function (v) {
         var d = A.store('datos');
+        var otras = this.vendedoras.filter(function (o) { return o.id !== v.id && o.por_defecto; });
         d.guardar('vendedoras', v, 'por_defecto', true);
-        this.vendedoras.forEach(function (o) { if (o.id !== v.id && o.por_defecto) d.guardar('vendedoras', o, 'por_defecto', false); });
+        return d.vaciar().then(function (r) {
+          if (!r.ok) return;
+          otras.forEach(function (o) { d.guardar('vendedoras', o, 'por_defecto', false); });
+        });
       },
       eliminar: function (v) {
         if (v.por_defecto && this.vendedoras.length > 1) {

@@ -47,8 +47,9 @@
 
   /** 66.75 → 'S/ 66.75'; 89 → 'S/ 89'; 66.5 → 'S/ 66.50'. */
   function formatoMonto(n, simbolo) {
-    if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
-    var v = Number(n);
+    if (n === null || n === undefined || n === '') return '';
+    var v = Number(String(n).replace(',', '.'));
+    if (isNaN(v)) return '';
     return (simbolo || 'S/') + ' ' + (Number.isInteger(v) ? String(v) : v.toFixed(2));
   }
 

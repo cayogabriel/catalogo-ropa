@@ -71,7 +71,7 @@
               <tr>
                 <td>
                   <div style="display: flex; align-items: center; gap: 0.625rem; min-width: 0">
-                    <div class="miniatura" style="width: 2.25rem"><img :src="$foto(fotoDe(p.producto_id))" :alt="'Foto de ' + p.nombre" /></div>
+                    <div class="miniatura" style="width: 2.25rem"><img :src="$foto(fotoDe(p.producto_id))" :alt="fotoDe(p.producto_id) ? 'Foto de ' + p.nombre : ''" /></div>
                     <div style="min-width: 0"><span class="fila-titulo" x-text="p.nombre || 'Sin nombre'"></span><span class="fila-sub" x-text="p.codigo"></span></div>
                   </div>
                 </td>

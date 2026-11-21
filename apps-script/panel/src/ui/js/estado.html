@@ -31,6 +31,7 @@
 
   function normalizar(entidad, campo, valor) {
     if ((NUMERICOS[entidad] || []).indexOf(campo) !== -1) {
+      if (typeof valor === 'string') valor = valor.trim();
       if (valor === '' || valor === null || valor === undefined) return null;
       var n = Number(String(valor).replace(',', '.'));
       return isNaN(n) ? valor : n;
@@ -49,6 +50,12 @@
     var intervaloSondeo = deps.intervaloSondeo || 5000;
     var crearCola = deps.crearCola || P.crearCola;
     var actividad = 0; // operaciones sueltas en curso (crear, reordenar…)
+    var sueltas = []; // sus promesas: publicar() las espera
+    var contadorCambios = 0; // sube con cada cambio: sirve para saber si hubo ediciones durante una publicación
+    function marcar() {
+      contadorCambios++;
+      otro('panel').cambiosSinPublicar = true;
+    }
 
     /* ---------- toasts ---------- */
     var toasts = {
@@ -94,6 +101,9 @@
       var p = otro('panel');
       actividad++;
       p.guardado.estado = 'guardando';
+      var rastro = Promise.resolve(promesa).then(function () {}, function () {});
+      sueltas.push(rastro);
+      rastro.then(function () { sueltas.splice(sueltas.indexOf(rastro), 1); });
       return Promise.resolve(promesa).then(
         function (r) {
           actividad--;
@@ -206,13 +216,13 @@
         delete this.erroresConfig[clave];
         this.config[clave] = texto;
         cola.encolar({ entidad: 'config', id: clave, campo: 'valor', valor: texto });
-        this.cambiosSinPublicar = true;
+        marcar();
         return true;
       },
       guardarTexto: function (clave, valor) {
         this.textos[clave] = valor;
         cola.encolar({ entidad: 'textos', id: clave, campo: 'valor', valor: valor });
-        this.cambiosSinPublicar = true;
+        marcar();
         return true;
       },
       /** El token viaja una vez y no se guarda en ningún estado de la interfaz. */
@@ -301,9 +311,23 @@
           if (errores[campo]) return false;
         }
         cola.encolar({ entidad: entidad, id: fila.id, campo: campo, valor: valor, version: fila.version });
-        otro('panel').cambiosSinPublicar = true;
+        marcar();
         return true;
       },
+
+      /** Varios campos de una fila que van juntos (por ejemplo alcance y objetivos): no se validan por separado. */
+      guardarVarios: function (entidad, fila, cambios) {
+        var self = this;
+        Object.keys(cambios).forEach(function (campo) {
+          var valor = normalizar(entidad, campo, cambios[campo]);
+          fila[campo] = valor;
+          cola.encolar({ entidad: entidad, id: fila.id, campo: campo, valor: valor, version: fila.version });
+        });
+        marcar();
+        return true;
+      },
+      /** Espera a que se guarde todo lo pendiente (para encadenar un cambio después de otro). */
+      vaciar: function () { return cola.vaciar(); },
 
       alGuardar: function (g) {
         if (g.entidad === 'config' || g.entidad === 'textos') return;
@@ -312,7 +336,7 @@
           fila.version = g.version;
           if (g.fila && g.fila.actualizado_en) fila.actualizado_en = g.fila.actualizado_en;
         }
-        otro('panel').cambiosSinPublicar = true;
+        marcar();
       },
       alConflicto: function (c) {
         var self = this;
@@ -334,7 +358,7 @@
             var lista = self.listas[entidad] || (self.listas[entidad] = []);
             if (opciones.alInicio) lista.unshift(fila);
             else lista.push(fila);
-            otro('panel').cambiosSinPublicar = true;
+            marcar();
             return self.buscar(entidad, fila.id);
           },
           function (e) { fallar(e, 'No pude crearlo.'); throw e; }
@@ -348,7 +372,7 @@
           cola.registrarVersion(entidad, f.id, f.version);
           lista.push(f);
         });
-        otro('panel').cambiosSinPublicar = true;
+        marcar();
       },
 
       duplicarProducto: function (id) {
@@ -357,7 +381,7 @@
           function (fila) {
             cola.registrarVersion('productos', fila.id, fila.version);
             (self.listas.productos || (self.listas.productos = [])).push(fila);
-            otro('panel').cambiosSinPublicar = true;
+            marcar();
             return self.buscar('productos', fila.id);
           },
           function (e) { fallar(e, 'No pude duplicarla.'); throw e; }
@@ -371,9 +395,9 @@
         cola.descartar(entidad, fila.id);
         return conIndicador(S.llamar('eliminar', entidad, fila.id)).then(
           function (r) {
-            if (entidad === 'productos') fila.estado = 'archivado';
+            if (entidad === 'productos') { fila.estado = 'archivado'; self.recargarFila(entidad, fila.id).catch(function () {}); }
             else self.listas[entidad] = self.lista(entidad).filter(function (f) { return f.id !== fila.id; });
-            otro('panel').cambiosSinPublicar = true;
+            marcar();
             return S.llamar('historial', { entidad: entidad, id: fila.id, limite: 1 }).then(
               function (h) { return h; }, function () { return []; }
             ).then(function (h) {
@@ -396,7 +420,7 @@
         ids.forEach(function (id, i) { porId[id] = i + 1; });
         previo.forEach(function (f) { if (porId[f.id]) f.orden = porId[f.id]; });
         this.listas[entidad] = previo.slice().sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
-        otro('panel').cambiosSinPublicar = true;
+        marcar();
         return conIndicador(S.llamar('reordenar', entidad, ids)).then(
           function () { return true; },
           function (e) { fallar(e, 'No pude guardar el orden.'); return self.cargar(entidad, true).then(function () { return false; }); }
@@ -407,9 +431,12 @@
         var self = this;
         return conIndicador(S.llamar('deshacer', historialId)).then(
           function () {
-            otro('panel').cambiosSinPublicar = true;
+            marcar();
             return self.cargar(entidad, true).then(function () {
               otro('toasts').mostrar({ tipo: 'ok', texto: 'Deshice el cambio.' });
+              return true;
+            }, function () {
+              otro('toasts').mostrar({ tipo: 'aviso', texto: 'Deshice el cambio, pero no pude actualizar la pantalla. Recarga la página para verlo.' });
               return true;
             });
           },
@@ -476,7 +503,7 @@
             self.estado = est;
             if (est.estado === 'error') {
               self.enCurso = false;
-              otro('panel').cambiosSinPublicar = true;
+              marcar();
               otro('toasts').mostrar({ tipo: 'error', texto: 'No se pudo publicar. Revisa el detalle e inténtalo otra vez.' });
               return;
             }
@@ -507,17 +534,19 @@
         this.final = false;
         this.enCurso = true;
         this.estado = { estado: 'en_cola' };
-        return cola.vaciar().then(function (r) {
+        var esperarTodo = function () { return Promise.all(sueltas.slice()).then(function () { return cola.vaciar(); }); };
+        return esperarTodo().then(function (r) {
           if (!r.ok) {
             self.enCurso = false;
             self.estado = previo;
             otro('toasts').mostrar({ tipo: 'error', texto: 'No se pudo guardar un cambio, así que no publiqué. Revisa los avisos e inténtalo de nuevo.' });
             return;
           }
+          var antes = contadorCambios;
           return S.llamar('publicar').then(
             function (est) {
               self.estado = est;
-              otro('panel').cambiosSinPublicar = false;
+              if (contadorCambios === antes) otro('panel').cambiosSinPublicar = false;
               consultas = 0;
               self.programar();
             },

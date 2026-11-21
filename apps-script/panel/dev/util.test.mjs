@@ -48,6 +48,8 @@ describe('montos', () => {
     expect(U.formatoMonto(null)).toBe('');
     expect(U.formatoMonto('')).toBe('');
     expect(U.formatoMonto(12, '$')).toBe('$ 12');
+    expect(U.formatoMonto('66,5')).toBe('S/ 66.50');
+    expect(U.formatoMonto('89')).toBe('S/ 89');
   });
 });
 

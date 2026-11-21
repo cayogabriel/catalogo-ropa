@@ -75,7 +75,7 @@
       <template x-for="p in pagina" :key="p.id">
         <li class="fila-producto">
           <button type="button" class="miniatura" :class="{ cargando: p.fotos[0] && !$foto(p.fotos[0]) }" style="width: 3.5rem" @click="abrir(p.id)" :aria-label="'Abrir ' + (p.nombre || 'prenda sin nombre')">
-            <img :src="$foto(p.fotos[0])" :alt="p.nombre ? 'Foto de ' + p.nombre : 'Foto de la prenda'" />
+            <img :src="$foto(p.fotos[0])" :alt="p.fotos[0] ? (p.nombre ? 'Foto de ' + p.nombre : 'Foto de la prenda') : ''" />
           </button>
           <button type="button" class="fila-principal" @click="abrir(p.id)">
             <strong x-text="p.nombre || 'Sin nombre'"></strong>
@@ -132,7 +132,7 @@
                     <span class="chip ok principal" x-show="i === 0">Principal</span>
                     <div class="esquina">
                       <button type="button" class="boton asa" data-asa :aria-label="'Mover la foto ' + (i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-asa"/></svg></button>
-                      <button type="button" class="boton" :aria-label="'Quitar la foto ' + (i + 1)" @click="quitarDe(ficha, 'fotos', i)"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+                      <button type="button" class="boton" :aria-label="'Quitar la foto ' + (i + 1)" @click="quitarFoto(i)"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
                     </div>
                     <div class="orden">
                       <button type="button" class="boton" :disabled="i === 0" :aria-label="'Mover la foto ' + (i + 1) + ' antes'" @click="moverEn(ficha, 'fotos', i, i - 1)"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg></button>
@@ -194,7 +194,7 @@
               <div class="rejilla-campos dos" style="margin-top: 0.75rem">
                 <label class="campo">
                   <span class="campo-etiqueta">Tallas</span>
-                  <input type="text" placeholder="S, M, L" :value="lista(ficha, 'tallas')" @change="gl(ficha, 'tallas', $event)" />
+                  <input type="text" placeholder="S, M, L" :value="lista(ficha, 'tallas')" @change="cambiarTallas($event)" />
                   <span class="campo-ayuda">Sepáralas con comas.</span>
                 </label>
                 <label class="campo">
@@ -474,6 +474,23 @@ document.addEventListener('alpine:init', function () {
           }
         }
         A.store('datos').guardar('productos', p, 'estado', nuevo);
+      },
+      /** Al cambiar las tallas, las agotadas que ya no existen se quitan en el mismo guardado. */
+      cambiarTallas: function (e) {
+        var f = this.ficha;
+        var tallas = U.textoALista(e.target.value);
+        A.store('datos').guardarVarios('productos', f, {
+          tallas: tallas,
+          tallas_agotadas: f.tallas_agotadas.filter(function (t) { return tallas.indexOf(t) !== -1; }),
+        });
+      },
+      quitarFoto: function (i) {
+        var f = this.ficha;
+        if (f.estado === 'publicado' && f.fotos.length === 1) {
+          A.store('toasts').mostrar({ tipo: 'aviso', texto: 'Una prenda publicada necesita al menos una foto. Agrega otra antes de quitar esta, o pásala a borrador.' });
+          return;
+        }
+        this.quitarDe(f, 'fotos', i);
       },
       alternarAgotada: function (t, e) {
         var f = this.ficha;

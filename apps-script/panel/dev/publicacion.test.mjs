@@ -78,6 +78,26 @@ describe('publicación', () => {
     expect(m.stores.panel.cambiosSinPublicar).toBe(true);
   });
 
+  it('publicar espera a las operaciones sueltas (por ejemplo, un reorden) antes de enviar', async () => {
+    const m = await listo();
+    const filas = await m.stores.datos.cargar('secciones');
+    m.stores.datos.reordenar('secciones', filas.map((s) => s.id).reverse()); // sin esperar
+    await m.stores.publicacion.publicar();
+    expect(m.llamadas.indexOf('publicar')).toBeGreaterThan(m.llamadas.lastIndexOf('reordenar'));
+  });
+
+  it('una edición hecha mientras viaja publicar() deja marcados los cambios sin publicar', async () => {
+    const m = await listo();
+    const f = (await m.stores.datos.cargar('productos'))[0];
+    const orig = m.gas.llamar.bind(m.gas);
+    m.gas.llamar = async (n, a) => {
+      if (n === 'publicar') m.stores.datos.guardar('productos', f, 'stock', 7); // la dueña sigue editando
+      return orig(n, a);
+    };
+    await m.stores.publicacion.publicar();
+    expect(m.stores.panel.cambiosSinPublicar).toBe(true);
+  });
+
   it('sin token: deja un aviso con enlace a Configuración', async () => {
     const m = await listo({ gas: crearGasFalso({ duraciones: DURACIONES }) });
     m.gas.db.tokenGithub = null;
