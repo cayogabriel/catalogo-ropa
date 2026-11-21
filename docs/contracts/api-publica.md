@@ -30,6 +30,7 @@ Apps Script responde siempre con HTTP 200, así que el éxito se lee en `ok`. An
 | `sin_instalacion` | no se encontró el puntero `catalogo-ropa.config.json` (todavía no se corrió `instalar()`) |
 | `sin_publicacion` | el puntero no tiene `publicado_id` o ese archivo no existe |
 | `foto_no_publicada` | el id no está en la copia publicada. En ese caso **no se abre** el archivo de Drive |
+| `foto_no_disponible` | el id está publicado, pero el archivo ya no existe en Drive (se borró o está en la papelera). El workflow falla y nombra la foto y el producto |
 | `foto_muy_grande` | la foto pesa más de 8 MB |
 | `ruta_desconocida` | falta `r` o tiene otro valor |
 | `evento_invalido` | el cuerpo del POST no cumple el formato |
