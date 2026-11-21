@@ -4,11 +4,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { obtenerCatalogo } from '../scripts/lib/obtener.mjs';
-import { procesarFoto, descargarFotos } from '../scripts/lib/fotos.mjs';
+import { obtenerCatalogo } from '../../scripts/lib/obtener.mjs';
+import { procesarFoto, descargarFotos } from '../../scripts/lib/fotos.mjs';
 
-const RUTA_FIXTURE = fileURLToPath(new URL('../../fixtures/catalogo.ejemplo.json', import.meta.url));
-const DIR_FIXTURE_IMG = fileURLToPath(new URL('../../fixtures/img/', import.meta.url));
+const RUTA_FIXTURE = fileURLToPath(new URL('../../../fixtures/catalogo.ejemplo.json', import.meta.url));
+const DIR_FIXTURE_IMG = fileURLToPath(new URL('../../../fixtures/img/', import.meta.url));
 const ejemplo = JSON.parse(readFileSync(RUTA_FIXTURE, 'utf8'));
 const API = 'https://api.test/exec';
 const tmp = () => mkdtempSync(join(tmpdir(), 'catalogo-'));

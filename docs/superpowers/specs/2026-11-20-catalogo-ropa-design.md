@@ -353,3 +353,17 @@ Cada sesión de código sigue superpowers: lee este diseño y los contratos → 
   - el botón de WhatsApp abre el número y el mensaje correctos;
   - la lista de favoritos se envía completa;
   - el clic desde el PDF aparece en el reporte con su origen.
+
+## Notas de implementación S1 (21/11/2026)
+
+Decisiones de la fundación que precisan o cambian algo de lo de arriba:
+
+- **Pruebas de Apps Script:** en lugar de la «exportación condicional» se usa un cargador `vm` (`apps-script/test/gas/cargar.mjs`). Ejecuta los archivos GAS en un único ámbito global, con dobles de los servicios de Google, así que los archivos no llevan código extra.
+- **Esquema del catálogo y validadores:** viven en el paquete `@catalogo/contratos` (`contratos/`). Los documentos siguen en `docs/contracts/`. El validador también comprueba la lista blanca exacta de fotos y que las ventanas de precio sean contiguas.
+- **Ids:** la API encuentra el puntero `catalogo-ropa.config.json` por nombre en Drive. `.clasp.json` y `.env.local` (URLs de despliegue) quedan fuera del repo público.
+- **Despliegues:** solo la sesión coordinadora hace `clasp push` y despliega. Dos ramas subiendo al mismo proyecto de Apps Script se pisarían.
+- **Error nuevo de la API:** `foto_no_disponible`, para una foto publicada que ya no está en Drive.
+- **Herramientas:** Astro 7.4, Vitest 5, sharp 0.35 y Node 24 en CI.
+- **Correo de los commits:** los commits del repo usan el correo *noreply* de GitHub, para no publicar el correo personal.
+- **Panel provisional:** trae los botones «Instalar» y «Publicar prueba», para no tener que abrir el editor de Apps Script. S4 los reemplaza.
+- **Contenido de S5:** se revisó y se subió antes de lo previsto (12/12 paletas pasan el contraste). La tienda todavía no tiene nombre; los textos usan `{tienda}`.
