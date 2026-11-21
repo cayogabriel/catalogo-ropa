@@ -37,16 +37,20 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
   p.tipo === 'portada' && (
     <section class="pagina portada">
       <Foto foto={p.foto} class="portada__foto" posicion="center top" />
-      <div class="velo velo--arriba" />
-      <header class="portada__marca">
+      <div class="velo velo--marca" />
+      <header class="portada__marca" data-bloque>
         {logo ? <img class="portada__logo" src={base + rutaImpresion(logo.id, 540)} alt={tienda} /> : <span class="portada__tienda">{tienda}</span>}
         <span>{p.etiqueta}</span>
       </header>
-      <div class="portada__texto">
-        <p class="portada__temporada">{p.nombre}</p>
-        <h1 class:list={['portada__titulo', tamTitulo && `portada__titulo--${tamTitulo}`]}>{p.titulo}</h1>
-        <p class="portada__subtitulo">{p.subtitulo}</p>
-        {p.intro && <p class="portada__intro">{p.intro}</p>}
+      <div class="zona-texto">
+        <div class="portada__texto" data-bloque>
+          <p class="portada__temporada">{p.nombre}</p>
+          <h1 class:list={['portada__titulo', tamTitulo && `portada__titulo--${tamTitulo}`]} data-ajustar>
+            {p.titulo}
+          </h1>
+          <p class="portada__subtitulo" data-ajustar>{p.subtitulo}</p>
+          {p.intro && <p class="portada__intro" data-ajustar>{p.intro}</p>}
+        </div>
       </div>
       <Pie {...pie} sobreFoto />
     </section>
@@ -57,11 +61,18 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
   p.tipo === 'editorial-completa' && (
     <section class="pagina completa">
       <Foto foto={p.fotos[0].foto} class="completa__foto" />
-      <div class="velo" />
-      <div class="completa__texto">
-        {p.intro && <p class="intro intro--sobre-foto">{p.intro}</p>}
-        <h2 class:list={['completa__titulo', tamTexto && `titulo--${tamTexto}`]}>{p.fotos[0].texto}</h2>
-        <Creditos creditos={p.fotos[0].creditos} sobreFoto />
+      <div class="zona-texto">
+        <div class="completa__texto" data-bloque>
+          {p.intro && (
+            <p class="intro intro--sobre-foto" data-ajustar>
+              {p.intro}
+            </p>
+          )}
+          <h2 class:list={['completa__titulo', tamTexto && `titulo--${tamTexto}`]} data-ajustar>
+            {p.fotos[0].texto}
+          </h2>
+          <Creditos creditos={p.fotos[0].creditos} sobreFoto />
+        </div>
       </div>
       <Pie {...pie} sobreFoto />
     </section>
@@ -71,12 +82,18 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
 {
   p.tipo === 'editorial-doble' && (
     <section class:list={['pagina doble', { 'doble--intro': p.intro }]}>
-      {p.intro && <p class="intro doble__intro">{p.intro}</p>}
+      {p.intro && (
+        <p class="intro doble__intro" data-bloque data-ajustar>
+          {p.intro}
+        </p>
+      )}
       {p.fotos.map((f: any, i: number) => (
         <figure class={`doble__figura doble__figura--${i + 1}`}>
-          <Foto foto={f.foto} class="doble__foto" />
-          <figcaption>
-            <h2 class="doble__texto">{f.texto}</h2>
+          <Foto foto={f.foto} class="doble__foto" bloque />
+          <figcaption data-bloque>
+            <h2 class="doble__texto" data-ajustar>
+              {f.texto}
+            </h2>
             <Creditos creditos={f.creditos} />
           </figcaption>
         </figure>
@@ -89,10 +106,16 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
 {
   p.tipo === 'editorial-sola' && (
     <section class="pagina sola">
-      <Foto foto={p.fotos[0].foto} class="sola__foto" />
-      <div class="sola__texto">
-        {p.intro && <p class="intro">{p.intro}</p>}
-        <h2 class:list={['sola__titulo', tamTexto && `titulo--${tamTexto}`]}>{p.fotos[0].texto}</h2>
+      <Foto foto={p.fotos[0].foto} class="sola__foto" bloque />
+      <div class="sola__texto" data-bloque>
+        {p.intro && (
+          <p class="intro" data-ajustar>
+            {p.intro}
+          </p>
+        )}
+        <h2 class:list={['sola__titulo', tamTexto && `titulo--${tamTexto}`]} data-ajustar>
+          {p.fotos[0].texto}
+        </h2>
         <Creditos creditos={p.fotos[0].creditos} />
       </div>
       <Pie {...pie} />
@@ -104,7 +127,7 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
   p.tipo === 'prendas' && (
     <section class:list={['pagina prendas', { 'prendas--una': p.prendas.length === 1 }]}>
       {p.prendas.map((x: any) => (
-        <article class="prenda">
+        <article class="prenda" data-bloque>
           <Foto foto={x.foto} class="prenda__foto" posicion="center top" />
           {x.insignias.length > 0 && (
             <p class="insignias prenda__insignias">
@@ -113,8 +136,10 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
               ))}
             </p>
           )}
-          <h2 class="prenda__nombre">{x.producto.nombre}</h2>
-          <p class="prenda__detalle">
+          <h2 class="prenda__nombre" data-ajustar>
+            {x.producto.nombre}
+          </h2>
+          <p class="prenda__detalle" data-ajustar>
             {codigo(x.producto.codigo)}
             {x.tallas.length > 0 && <>. {tallas(x.tallas)}</>}
           </p>
@@ -132,18 +157,30 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
 {
   p.tipo === 'contraportada' && (
     <section class="pagina contra">
-      <p class="contra__cierre">{p.cierre}</p>
+      <p class="contra__cierre" data-ajustar>
+        {p.cierre}
+      </p>
       <div class="contra__datos">
-        <h2 class="contra__titulo">{p.titulo}</h2>
-        <ul class="contra__contactos">
+        <h2 class="contra__titulo" data-ajustar>
+          {p.titulo}
+        </h2>
+        <ul class="contra__contactos" data-ajustar>
           {p.contactos.map((c: any) => (
             <li>
-              <span class="contra__nombre">{c.nombre}</span> {c.telefono}
+              <span class="contra__nombre">{c.nombre}</span> <span class="contra__telefono">{c.telefono}</span>
             </li>
           ))}
         </ul>
-        {p.horario && <p class="contra__nota">{p.horario}</p>}
-        {p.envios && <p class="contra__nota">{p.envios}</p>}
+        {p.horario && (
+          <p class="contra__nota" data-ajustar>
+            {p.horario}
+          </p>
+        )}
+        {p.envios && (
+          <p class="contra__nota" data-ajustar>
+            {p.envios}
+          </p>
+        )}
         {p.redes.length > 0 && (
           <p class="contra__redes">
             {p.redes.map((r: any) => (
@@ -157,7 +194,7 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
       <div class="contra__web">
         <div class="contra__qr" set:html={qr} role="img" aria-label={`Código QR de ${p.url}`} />
         <div class="contra__enlace">
-          <p>{p.escaneaQr}</p>
+          <p data-ajustar>{p.escaneaQr}</p>
           <p class="contra__url">{p.url.replace(/^https:\/\//, '')}</p>
           <Boton href={p.enlaceTemporada}>{texto(datos, 'temporada.ver_revista')}</Boton>
         </div>
@@ -198,12 +235,16 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
     object-fit: contain;
     width: auto;
   }
-  .portada__texto {
-    bottom: 132px;
+  /* Zona del texto sobre la foto: el velo crece con el texto, así el blanco
+     siempre queda sobre oscuro (contraste AA) aunque el texto sea largo. */
+  .zona-texto {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.72) 0, rgb(0 0 0 / 0.58) calc(100% - 280px), rgb(0 0 0 / 0) 100%);
+    bottom: 0;
     color: #fff;
-    left: 72px;
+    left: 0;
+    padding: 280px 72px 132px;
     position: absolute;
-    right: 72px;
+    right: 0;
   }
   .portada__temporada {
     font-size: 34px;
@@ -259,6 +300,7 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
   /* Créditos: las prendas de la foto, cada una con su enlace. */
   .creditos {
     display: flex;
+    font-size: 28px;
     flex-wrap: wrap;
     gap: 16px;
     list-style: none;
@@ -273,7 +315,7 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
     border: 3px solid currentColor;
     border-radius: 999px;
     display: inline-flex;
-    font-size: 28px;
+    font-size: inherit;
     gap: 6px 14px;
     line-height: 1.2;
     min-height: 88px;
@@ -286,13 +328,7 @@ const tamTexto = largo(p.fotos?.[0]?.texto, 30, 60);
   }
 
   /* Editorial a página completa. */
-  .completa__texto {
-    bottom: 132px;
-    color: #fff;
-    left: 72px;
-    position: absolute;
-    right: 72px;
-  }
+
   .completa__titulo {
     font-size: 96px;
     letter-spacing: -0.035em;

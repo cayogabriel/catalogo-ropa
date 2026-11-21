@@ -9,6 +9,7 @@ import { chromium } from 'playwright';
 import { BASE } from '../sitio.config.mjs';
 import { servirDist } from './lib/servidor.mjs';
 import { rutasRevista, RUTA_CATALOGO, RUTA_MANIFIESTO, PAGINA, armarManifiesto, jpgHasta } from './lib/documentos.mjs';
+import { ajustarPaginas } from './lib/ajustar.mjs';
 import { revistasDe } from '../src/components/imprimir/plan.mjs';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
@@ -24,8 +25,18 @@ const escribir = (ruta, datos) => {
 
 // Abre una página de impresión y espera fuentes y fotos. Cualquier archivo
 // propio que falte (404) detiene todo: un PDF con fotos rotas no se publica.
-async function abrir(contexto, url) {
+async function abrir(contexto, url, nombre) {
   const pagina = await contexto.newPage();
+  try {
+    await prepararPagina(pagina, url, nombre);
+    return pagina;
+  } catch (e) {
+    await pagina.close();
+    throw e;
+  }
+}
+
+async function prepararPagina(pagina, url, nombre) {
   const faltantes = [];
   pagina.on('response', (r) => {
     if (r.status() >= 400 && r.url().startsWith(new URL(url).origin)) faltantes.push(`${r.status()} ${r.url()}`);
@@ -38,7 +49,20 @@ async function abrir(contexto, url) {
   });
   const rotas = await pagina.evaluate(() => [...document.images].filter((i) => !i.naturalWidth).map((i) => i.src));
   if (faltantes.length || rotas.length) throw new Error(`faltan archivos en ${url}:\n- ${[...faltantes, ...rotas].join('\n- ')}`);
-  return pagina;
+
+  // Textos largos: se achican y, si no alcanza, se recortan con aviso. Se
+  // mide con el estilo de impresión, el mismo del PDF y de los JPG.
+  await pagina.emulateMedia({ media: 'print' });
+  const avisos = await pagina.evaluate(ajustarPaginas);
+  for (const a of avisos.filter((x) => x.recortado)) {
+    console.warn(`! ${nombre}, página ${a.pagina}: el texto «${a.texto}…» era muy largo y se recortó. Acórtalo en el Panel.`);
+  }
+  const noCaben = avisos.filter((a) => !a.recortado).map((a) => `la página ${a.pagina}`);
+  if (noCaben.length) {
+    throw new Error(
+      `${nombre}: ${noCaben.join(', ')} no cabe ni achicando los textos. Acorta en el Panel los textos de esa página (cierre, textos de las fotos, nombres o datos de contacto).`,
+    );
+  }
 }
 
 async function imprimirPdf(pagina, ruta) {
@@ -48,7 +72,6 @@ async function imprimirPdf(pagina, ruta) {
 
 // Un JPG de 1080 × 1350 por página (.pagina), con la calidad que lo deje en ≤ 600 KB.
 async function exportarCarrusel(pagina, rutas) {
-  await pagina.emulateMedia({ media: 'print' });
   const paginas = pagina.locator('.pagina');
   const total = await paginas.count();
   const archivos = [];
@@ -78,7 +101,7 @@ try {
   for (const temporada of revistasDe(catalogo)) {
     avisarVigencia(temporada);
     const rutas = rutasRevista(temporada.slug);
-    const pagina = await abrir(contexto, `${servidor.url}imprimir/revista/${temporada.slug}/`);
+    const pagina = await abrir(contexto, `${servidor.url}imprimir/revista/${temporada.slug}/`, `Revista ${temporada.nombre}`);
     const bytes = await imprimirPdf(pagina, rutas.pdf);
     const paginas = await contarPaginas(pagina);
     rmSync(join(DIST, dirname(rutas.carrusel(1))), { recursive: true, force: true });
@@ -88,13 +111,15 @@ try {
     console.log(`Revista ${temporada.slug}: ${paginas} páginas, ${(bytes / 1e6).toFixed(1)} MB, ${carrusel.length} JPG.`);
   }
 
-  const pagina = await abrir(contexto, `${servidor.url}imprimir/catalogo/`);
+  const pagina = await abrir(contexto, `${servidor.url}imprimir/catalogo/`, 'Catálogo PDF');
   const bytes = await imprimirPdf(pagina, RUTA_CATALOGO);
   const paginas = await contarPaginas(pagina);
+  // El instante con el que el build armó los planes (precios y vigencias).
+  const construido = Number(await pagina.getAttribute('meta[name="construido"]', 'content'));
   await pagina.close();
   console.log(`Catálogo: ${paginas} páginas, ${(bytes / 1e6).toFixed(1)} MB.`);
 
-  escribir(RUTA_MANIFIESTO, JSON.stringify(armarManifiesto({ ahora: Date.now(), revistas, catalogo: { paginas, bytes } }), null, 2));
+  escribir(RUTA_MANIFIESTO, JSON.stringify(armarManifiesto({ ahora: construido || Date.now(), revistas, catalogo: { paginas, bytes } }), null, 2));
 
   // Las páginas y fotos de impresión solo sirven para generar los documentos.
   rmSync(join(DIST, 'imprimir'), { recursive: true, force: true });

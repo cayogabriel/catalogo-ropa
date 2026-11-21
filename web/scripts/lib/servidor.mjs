@@ -47,8 +47,15 @@ export function servirDist(dir, base = '/') {
       respuesta.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('No encontrado');
       return;
     }
-    respuesta.writeHead(200, { 'content-type': TIPOS[extname(archivo).toLowerCase()] ?? 'application/octet-stream' });
-    createReadStream(archivo).pipe(respuesta);
+    const flujo = createReadStream(archivo);
+    flujo.on('error', () => {
+      if (!respuesta.headersSent) respuesta.writeHead(500);
+      respuesta.end();
+    });
+    flujo.once('open', () => {
+      respuesta.writeHead(200, { 'content-type': TIPOS[extname(archivo).toLowerCase()] ?? 'application/octet-stream' });
+      flujo.pipe(respuesta);
+    });
   });
   return new Promise((listo) => {
     servidor.listen(0, '127.0.0.1', () => {

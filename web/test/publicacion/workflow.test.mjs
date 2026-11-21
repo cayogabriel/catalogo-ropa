@@ -13,7 +13,7 @@ describe('publicar.yml', () => {
       indice(/npm run publicar -w web/),
       indice(/npm run build -w web/),
       indice(/npm run documentos -w web/),
-      indice(/npm run verificar:build -w web/),
+      indice(/npm run verificar:build -w web -- --con-documentos/),
       indice(/actions\/upload-pages-artifact/),
     ];
     expect(pasos.every((i) => i >= 0)).toBe(true);

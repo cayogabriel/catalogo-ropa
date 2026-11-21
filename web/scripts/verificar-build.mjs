@@ -6,7 +6,9 @@
 //   1080 × 1350 px, ≤ 10 MB, con los enlaces del plan (todos a ir/ o a la web) y
 //   la nota de vigencia en cada página; JPG de carrusel de 1080 × 1350 y
 //   ≤ 600 KB; cada enlace ir/ tiene su página.
-// Uso: node scripts/verificar-build.mjs [--sin-documentos]
+// Uso: node scripts/verificar-build.mjs [--con-documentos]
+//   --con-documentos: los documentos son obligatorios (publicar.yml). Sin el
+//   flag se revisan solo si existe dist/documentos.json (CI sin Chromium).
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +20,7 @@ import { planRevista, planCatalogo, revistasDe } from '../src/components/imprimi
 const WEB = fileURLToPath(new URL('../', import.meta.url));
 const DIST = join(WEB, 'dist');
 const datos = JSON.parse(readFileSync(join(WEB, 'src', 'data', 'catalogo.json'), 'utf8'));
-const conDocumentos = !process.argv.includes('--sin-documentos');
+const documentosObligatorios = process.argv.includes('--con-documentos');
 const errores = [];
 
 if (!existsSync(join(DIST, 'index.html'))) errores.push('falta dist/index.html');
@@ -61,14 +63,16 @@ function revisarPaginasIr(planes) {
   }
 }
 
-let resumenDocumentos = '';
-if (conDocumentos) {
-  const ahora = Date.now();
-  const manifiestoRuta = join(DIST, RUTA_MANIFIESTO);
-  if (!existsSync(manifiestoRuta)) {
-    errores.push(`falta ${RUTA_MANIFIESTO}: corre npm run documentos -w web después del build`);
-  } else {
+let resumenDocumentos = ', sin documentos (no se generaron)';
+const manifiestoRuta = join(DIST, RUTA_MANIFIESTO);
+if (!existsSync(manifiestoRuta)) {
+  if (documentosObligatorios) errores.push(`falta ${RUTA_MANIFIESTO}: corre npm run documentos -w web después del build`);
+} else {
+  {
     const manifiesto = JSON.parse(readFileSync(manifiestoRuta, 'utf8'));
+    // El mismo instante que usó el build (lo guarda documentos.mjs), para que
+    // una oferta que termina justo entre el build y la verificación no cambie el plan.
+    const ahora = Date.parse(manifiesto.generado_en);
     const planes = [];
     for (const temporada of revistasDe(datos)) {
       const nombre = `revista ${temporada.slug}`;
@@ -91,7 +95,9 @@ if (conDocumentos) {
     planes.push(planCat);
     await revisarDocumento(RUTA_CATALOGO, planCat, 'catálogo', manifiesto.catalogo);
     revisarPaginasIr(planes);
-    if (existsSync(join(DIST, 'imprimir'))) errores.push('dist/imprimir/ no se borró: las páginas de impresión no se despliegan');
+    for (const carpeta of ['imprimir', join('img', 'imprimir')]) {
+      if (existsSync(join(DIST, carpeta))) errores.push(`dist/${carpeta}/ no se borró: lo de impresión no se despliega`);
+    }
     resumenDocumentos = `, ${manifiesto.revistas.length} revista(s) y el catálogo PDF`;
   }
 }

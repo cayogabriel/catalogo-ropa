@@ -8,9 +8,11 @@ interface Props {
   ancho?: 1080 | 540;
   class?: string;
   posicion?: string;
+  bloque?: boolean;
 }
 
-const { foto, ancho = 1080, class: clase, posicion = 'center' } = Astro.props;
+// bloque: la foto ocupa lugar en la página y el texto no debe pisarla (ajustar.mjs).
+const { foto, ancho = 1080, class: clase, posicion = 'center', bloque = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const meta = datos.imagenes[foto.id];
 ---
@@ -23,4 +25,5 @@ const meta = datos.imagenes[foto.id];
   height={meta?.alto}
   style={`object-position:${posicion}`}
   decoding="sync"
+  data-bloque={bloque ? '' : undefined}
 />

@@ -5,19 +5,31 @@
 // botones miden 120 px (≈ 44 px en pantalla) y ningún texto baja de 28 px.
 interface Props {
   titulo: string;
+  ahora: number;
   paleta: { tokens: Record<string, string>; fuentes: { titulos: string; texto: string }; radio: string };
 }
 
-const { titulo, paleta } = Astro.props;
-const familias = [...new Set([paleta.fuentes.titulos, paleta.fuentes.texto])];
-const fuentes = `https://fonts.googleapis.com/css2?${familias
-  .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@500;700`)
-  .join('&')}&display=swap`;
+const { titulo, paleta, ahora } = Astro.props;
+// Solo nombres de familia simples: cualquier otro carácter podría romper el CSS.
+const fuenteSegura = (f: string) => (/^[A-Za-z0-9 ]{1,60}$/.test(f) ? f : null);
+const titulos = fuenteSegura(paleta.fuentes.titulos);
+const textoF = fuenteSegura(paleta.fuentes.texto);
+const familias = [...new Set([titulos, textoF].filter(Boolean))];
+// 400 y 700: Google omite los pesos que una familia no tiene (y la familia
+// entera si no tiene ninguno), y las de un solo peso (Abril Fatface, Bree
+// Serif…) solo traen 400.
+const fuentes = familias.length
+  ? `https://fonts.googleapis.com/css2?${familias.map((f) => `family=${f.replace(/ /g, '+')}:wght@400;700`).join('&')}&display=swap`
+  : null;
+const colorSeguro = (v: string) => /^#[0-9A-Fa-f]{6}$/.test(v);
+const radio = /^\d{1,3}px$/.test(paleta.radio) ? paleta.radio : '16px';
 const variables = [
-  ...Object.entries(paleta.tokens).map(([k, v]) => `${k}:${v}`),
-  `--fuente-titulos:'${paleta.fuentes.titulos}',system-ui,sans-serif`,
-  `--fuente-texto:'${paleta.fuentes.texto}',system-ui,sans-serif`,
-  `--radio:${paleta.radio}`,
+  ...Object.entries(paleta.tokens)
+    .filter(([k, v]) => /^--color-[a-z-]+$/.test(k) && colorSeguro(v))
+    .map(([k, v]) => `${k}:${v}`),
+  `--fuente-titulos:${titulos ? `'${titulos}',` : ''}system-ui,sans-serif`,
+  `--fuente-texto:${textoF ? `'${textoF}',` : ''}system-ui,sans-serif`,
+  `--radio:${radio}`,
 ].join(';');
 ---
 
@@ -27,10 +39,11 @@ const variables = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=1080" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="construido" content={String(ahora)} />
     <title>{titulo}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href={fuentes} />
+    {fuentes && <link rel="stylesheet" href={fuentes} />}
     <style set:html={`:root{${variables}}`} />
   </head>
   <body>
@@ -226,13 +239,18 @@ const variables = [
 
   /* Contactos, redes y QR (contraportada de la revista y portada del catálogo). */
   .contra__contactos {
+    line-height: 1.3;
     list-style: none;
     margin: 0 0 20px;
     padding: 0;
   }
-  .contra__contactos li {
+  .contra__contactos {
     font-size: 36px;
+  }
+  .contra__contactos li {
     font-variant-numeric: tabular-nums;
+  }
+  .contra__telefono {
     white-space: nowrap;
   }
   .contra__nombre {
@@ -259,15 +277,12 @@ const variables = [
     width: 100%;
   }
 
-  /* Velo para que el texto blanco se lea sobre cualquier foto. */
+  /* Velo arriba de la portada, para el logo y la etiqueta. */
   .velo {
-    background: linear-gradient(to top, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.38) 38%, rgb(0 0 0 / 0) 62%);
     inset: 0;
     position: absolute;
   }
-  .velo--arriba {
-    background:
-      linear-gradient(to bottom, rgb(0 0 0 / 0.45) 0%, rgb(0 0 0 / 0) 22%),
-      linear-gradient(to top, rgb(0 0 0 / 0.75) 0%, rgb(0 0 0 / 0.4) 40%, rgb(0 0 0 / 0) 66%);
+  .velo--marca {
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0.5) 0%, rgb(0 0 0 / 0) 22%);
   }
 </style>

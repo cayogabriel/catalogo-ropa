@@ -32,14 +32,14 @@ jobs:
       - run: npm ci
 
       # Las fotos ya procesadas se reutilizan. La clave cambia si cambia el
-      # proceso (fotos.mjs); el índice además lleva su propia versión.
+      # proceso (fotos.mjs, rutas.mjs); el índice además lleva su propia versión.
       - name: Caché de fotos procesadas
         uses: actions/cache@v6
         with:
           path: web/.cache
-          key: fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs') }}-${{ github.run_id }}
+          key: fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs', 'web/src/components/imprimir/rutas.mjs') }}-${{ github.run_id }}
           restore-keys: |
-            fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs') }}-
+            fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs', 'web/src/components/imprimir/rutas.mjs') }}-
             fotos-${{ runner.os }}-
 
       - name: Datos y fotos desde la API
@@ -73,7 +73,7 @@ jobs:
       - name: Revista, catálogo PDF y carrusel
         run: npm run documentos -w web
       - name: Verificar páginas, vistas previas y documentos
-        run: npm run verificar:build -w web
+        run: npm run verificar:build -w web -- --con-documentos
       - uses: actions/upload-pages-artifact@v5
         with:
           path: web/dist

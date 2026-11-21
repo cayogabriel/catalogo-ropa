@@ -6,9 +6,11 @@ import Documento from '../../components/imprimir/Documento.astro';
 import PaginaCatalogo from '../../components/imprimir/PaginaCatalogo.astro';
 import { planCatalogo } from '../../components/imprimir/plan.mjs';
 
-const plan = planCatalogo(datos, Date.now());
+// Un solo instante para todo el build: documentos.json lo guarda y verificar-build lo reutiliza.
+const ahora = Number(process.env.AHORA_DOCUMENTOS) || Date.now();
+const plan = planCatalogo(datos, ahora);
 ---
 
-<Documento titulo={`Catálogo · ${datos.tienda.nombre}`} paleta={plan.paleta}>
+<Documento ahora={ahora} titulo={`Catálogo · ${datos.tienda.nombre}`} paleta={plan.paleta}>
   {plan.paginas.map((pagina) => <PaginaCatalogo pagina={pagina} nota={plan.nota} pedir={plan.pedir} paleta={plan.paleta} />)}
 </Documento>

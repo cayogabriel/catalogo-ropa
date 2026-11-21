@@ -9,7 +9,7 @@ const { creditos, sobreFoto = false } = Astro.props;
 
 {
   creditos.length > 0 && (
-    <ul class:list={['creditos', { 'creditos--sobre-foto': sobreFoto }]}>
+    <ul class:list={['creditos', { 'creditos--sobre-foto': sobreFoto }]} data-ajustar>
       {creditos.map((c) => (
         <li>
           <a class="credito" href={c.enlace}>

@@ -29,33 +29,50 @@ const pie = { nota, tienda, numero: p.numero, total: p.total };
     <section class="pagina cportada">
       {p.foto && <Foto foto={p.foto} class="cportada__foto" posicion="center 30%" />}
       <div class="cportada__cuerpo">
-        <p class="cportada__tienda">{p.tienda}</p>
-        <h1 class="cportada__titulo">{p.titulo}</h1>
-        {p.eslogan && <p class="cportada__eslogan">{p.eslogan}</p>}
-        <div class="cportada__pie">
-          <div class="cportada__contacto">
-            <ul class="contra__contactos">
-              {p.contactos.map((c: any) => (
-                <li>
-                  <span class="contra__nombre">{c.nombre}</span> {c.telefono}
-                </li>
-              ))}
-            </ul>
-            {p.horario && <p class="contra__nota">{p.horario}</p>}
-            {p.redes.length > 0 && (
-              <p class="contra__redes">
-                {p.redes.map((r: any) => (
-                  <Boton href={r.enlace} variante="borde">
-                    {r.nombre}
-                  </Boton>
-                ))}
+        <div class="cportada__cabecera">
+          <div class="cportada__titulos">
+            <p class="cportada__tienda">{p.tienda}</p>
+            <h1 class="cportada__titulo" data-ajustar>
+              {p.titulo}
+            </h1>
+            {p.eslogan && (
+              <p class="cportada__eslogan" data-ajustar>
+                {p.eslogan}
               </p>
             )}
           </div>
           <a class="cportada__qr" href={p.url}>
             <span class="contra__qr" set:html={qr} role="img" aria-label={`Código QR de ${p.url}`} />
-            <span>{p.url.replace(/^https:\/\//, '')}</span>
+            <span data-ajustar>{p.escaneaQr}</span>
           </a>
+        </div>
+        <div class="cportada__contacto">
+          <ul class="contra__contactos" data-ajustar>
+            {p.contactos.map((c: any) => (
+              <li>
+                <span class="contra__nombre">{c.nombre}</span> <span class="contra__telefono">{c.telefono}</span>
+              </li>
+            ))}
+          </ul>
+          {p.horario && (
+            <p class="contra__nota" data-ajustar>
+              {p.horario}
+            </p>
+          )}
+          {p.envios && (
+            <p class="contra__nota" data-ajustar>
+              {p.envios}
+            </p>
+          )}
+          {p.redes.length > 0 && (
+            <p class="contra__redes">
+              {p.redes.map((r: any) => (
+                <Boton href={r.enlace} variante="borde">
+                  {r.nombre}
+                </Boton>
+              ))}
+            </p>
+          )}
         </div>
       </div>
       <Pie {...pie} />
@@ -100,14 +117,16 @@ const pie = { nota, tienda, numero: p.numero, total: p.total };
     display: flex;
     flex-direction: column;
   }
+  /* La foto cede alto si los datos de contacto lo necesitan. */
   .cportada__foto {
-    flex: none;
+    flex: 0 1 560px;
     height: 560px;
+    min-height: 240px;
     width: 100%;
   }
   .cportada__cuerpo {
     display: flex;
-    flex: 1;
+    flex: 1 0 auto;
     flex-direction: column;
     padding: 56px 72px 120px;
   }
@@ -127,24 +146,35 @@ const pie = { nota, tienda, numero: p.numero, total: p.total };
     margin-top: 20px;
     max-width: 800px;
   }
-  .cportada__pie {
-    align-items: flex-end;
+  .cportada__cabecera {
+    align-items: flex-start;
     display: flex;
-    gap: 48px;
+    gap: 40px;
     justify-content: space-between;
+  }
+  .cportada__titulos {
+    flex: 1;
+    min-width: 0;
+  }
+  .cportada__contacto {
+    border-top: 3px solid var(--color-borde);
     margin-top: auto;
+    padding-top: 32px;
   }
   .cportada__qr {
     align-items: center;
     display: flex;
+    flex: none;
     flex-direction: column;
-    font-size: 26px;
-    gap: 14px;
+    font-size: 24px;
+    gap: 10px;
+    text-align: center;
     text-decoration: none;
+    width: 220px;
   }
   .cportada__qr .contra__qr {
-    height: 220px;
-    width: 220px;
+    height: 200px;
+    width: 200px;
   }
 
   /* 4 filas: foto 4:5 a la izquierda; datos arriba y, abajo, precio y botón. */

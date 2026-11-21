@@ -11,9 +11,11 @@ export function getStaticPaths() {
 }
 
 const { temporada } = Astro.props;
-const plan = planRevista(datos, temporada, Date.now());
+// Un solo instante para todo el build: documentos.json lo guarda y verificar-build lo reutiliza.
+const ahora = Number(process.env.AHORA_DOCUMENTOS) || Date.now();
+const plan = planRevista(datos, temporada, ahora);
 ---
 
-<Documento titulo={`${temporada.nombre} · ${datos.tienda.nombre}`} paleta={plan.paleta}>
+<Documento ahora={ahora} titulo={`${temporada.nombre} · ${datos.tienda.nombre}`} paleta={plan.paleta}>
   {plan.paginas.map((pagina) => <PaginaRevista pagina={pagina} nota={plan.nota} pedir={plan.pedir} paleta={plan.paleta} />)}
 </Documento>
