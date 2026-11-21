@@ -1,0 +1,199 @@
+<script>
+/* Cola de autoguardado por campo.
+ *
+ * - Junta los cambios de una fila (un solo envío con todos sus campos) y espera `esperaMs` desde el último.
+ * - Nunca hay dos envíos a la vez para la misma fila: la versión de la respuesta se usa en el siguiente.
+ * - conflicto → descarta lo de esa fila y avisa; invalido/limite → avisa; no_autorizado → se detiene.
+ * - Fallas de red → reintenta con espera creciente; si se agotan, queda en 'error' con lo pendiente intacto.
+ */
+(function (P) {
+  var SIN_REINTENTO = { invalido: 1, limite: 1, no_encontrado: 1, foto_no_disponible: 1 };
+
+  function crearCola(o) {
+    var esperaMs = o.esperaMs === undefined ? 600 : o.esperaMs;
+    var esperas = o.esperasReintento || [1000, 3000, 8000];
+    var filas = {}; // 'entidad:id' → fila pendiente
+    var versiones = {}; // 'entidad:id' → última versión conocida
+    var esperando = []; // quienes llamaron a vaciar()
+    var detenida = false;
+    var huboGuardado = false;
+    var ultimoEstado = 'inactivo';
+
+    function clave(entidad, id) { return entidad + ':' + id; }
+    function vacio(obj) { return Object.keys(obj).length === 0; }
+    function ocupada(f) { return f.enVuelo || f.timer !== null; }
+
+    function estado() {
+      var lista = Object.keys(filas).map(function (k) { return filas[k]; });
+      if (detenida || lista.some(function (f) { return f.fallo; })) return 'error';
+      if (lista.some(function (f) { return !f.enVuelo && f.intentos > 0 && !vacio(f.cambios); })) return 'reintentando';
+      if (lista.some(function (f) { return f.enVuelo; })) return 'guardando';
+      if (lista.some(function (f) { return !vacio(f.cambios); })) return 'pendiente';
+      return huboGuardado ? 'guardado' : 'inactivo';
+    }
+    function pendientes() {
+      return Object.keys(filas).filter(function (k) { return filas[k].enVuelo || !vacio(filas[k].cambios); }).length;
+    }
+    function resolverEsperas() {
+      var hay = Object.keys(filas).some(function (k) { return ocupada(filas[k]); });
+      if (hay) return;
+      var lista = esperando;
+      esperando = [];
+      lista.forEach(function (w) { w.resolver({ ok: w.errores.length === 0, errores: w.errores }); });
+    }
+    function emitir() {
+      var e = estado();
+      if (e !== ultimoEstado) {
+        ultimoEstado = e;
+        if (o.onEstado) o.onEstado(e);
+      }
+      resolverEsperas();
+    }
+    function anotarError(err) { esperando.forEach(function (w) { w.errores.push(err); }); }
+
+    function nueva(entidad, id) {
+      return { entidad: entidad, id: id, cambios: {}, timer: null, enVuelo: false, intentos: 0, fallo: false, reprogramar: false };
+    }
+    function programar(f, ms) {
+      if (f.timer !== null) clearTimeout(f.timer);
+      f.timer = setTimeout(function () { f.timer = null; enviar(f); }, ms);
+    }
+    function limpiarSiVacia(f) {
+      if (!f.enVuelo && f.timer === null && vacio(f.cambios) && !f.fallo) delete filas[clave(f.entidad, f.id)];
+    }
+
+    function enviar(f) {
+      if (detenida) return;
+      if (f.enVuelo) { f.reprogramar = true; return; }
+      if (vacio(f.cambios)) { limpiarSiVacia(f); emitir(); return; }
+      if (f.timer !== null) { clearTimeout(f.timer); f.timer = null; }
+      var k = clave(f.entidad, f.id);
+      var lote = f.cambios;
+      f.cambios = {};
+      f.enVuelo = true;
+      f.reprogramar = false;
+      emitir();
+      var paquete = { entidad: f.entidad, id: f.id, cambios: lote, version: versiones[k] };
+      var promesa;
+      try { promesa = Promise.resolve(o.ejecutar(paquete)); } catch (e) { promesa = Promise.reject(e); }
+      promesa.then(
+        function (res) { alExito(f, k, lote, res); },
+        function (err) { alFallo(f, k, lote, err); }
+      );
+    }
+
+    function alExito(f, k, lote, res) {
+      f.enVuelo = false;
+      f.intentos = 0;
+      huboGuardado = true;
+      if (res && res.version !== undefined && res.version !== null) versiones[k] = res.version;
+      if (o.onGuardado) o.onGuardado({ entidad: f.entidad, id: f.id, fila: res ? res.fila : undefined, version: versiones[k], campos: Object.keys(lote) });
+      if (!vacio(f.cambios) && f.timer === null && f.reprogramar) { enviar(f); return; }
+      limpiarSiVacia(f);
+      emitir();
+    }
+
+    function alFallo(f, k, lote, err) {
+      f.enVuelo = false;
+      var codigo = (err && err.codigo) || 'desconocido';
+      if (codigo === 'no_autorizado') {
+        detenida = true;
+        Object.keys(filas).forEach(function (kk) { if (filas[kk].timer !== null) { clearTimeout(filas[kk].timer); filas[kk].timer = null; } });
+        anotarError(err);
+        if (o.onNoAutorizado) o.onNoAutorizado(err);
+        emitir();
+        return;
+      }
+      if (codigo === 'conflicto') {
+        var perdidos = {};
+        Object.keys(lote).forEach(function (c) { perdidos[c] = lote[c]; });
+        Object.keys(f.cambios).forEach(function (c) { perdidos[c] = f.cambios[c]; });
+        if (f.timer !== null) { clearTimeout(f.timer); f.timer = null; }
+        f.cambios = {};
+        f.fallo = false;
+        delete filas[k];
+        anotarError(err);
+        if (o.onConflicto) o.onConflicto({ entidad: f.entidad, id: f.id, perdidos: perdidos });
+        emitir();
+        return;
+      }
+      if (SIN_REINTENTO[codigo]) {
+        anotarError(err);
+        if (o.onRechazo) o.onRechazo({ entidad: f.entidad, id: f.id, campos: Object.keys(lote), error: err });
+        if (!vacio(f.cambios) && f.timer === null) programar(f, esperaMs);
+        limpiarSiVacia(f);
+        emitir();
+        return;
+      }
+      // Falla pasajera (red, Google): se devuelve el lote a lo pendiente sin pisar lo más nuevo y se reintenta.
+      Object.keys(lote).forEach(function (c) { if (!(c in f.cambios)) f.cambios[c] = lote[c]; });
+      f.intentos += 1;
+      if (f.intentos <= esperas.length) {
+        programar(f, esperas[f.intentos - 1]);
+      } else {
+        f.fallo = true;
+        anotarError(err);
+      }
+      emitir();
+    }
+
+    return {
+      /** { entidad, id, campo, valor, version? } */
+      encolar: function (c) {
+        if (detenida) return;
+        var k = clave(c.entidad, c.id);
+        if (c.version !== undefined && versiones[k] === undefined) versiones[k] = c.version;
+        var f = filas[k] || (filas[k] = nueva(c.entidad, c.id));
+        f.cambios[c.campo] = c.valor;
+        if (f.fallo) { f.fallo = false; f.intentos = 0; }
+        programar(f, esperaMs);
+        emitir();
+      },
+      registrarVersion: function (entidad, id, version) {
+        var k = clave(entidad, id);
+        if (versiones[k] === undefined || version >= versiones[k]) versiones[k] = version;
+      },
+      /** Olvida lo pendiente de una fila (por ejemplo, porque se eliminó). */
+      descartar: function (entidad, id) {
+        var f = filas[clave(entidad, id)];
+        if (!f) return;
+        if (f.timer !== null) clearTimeout(f.timer);
+        f.timer = null;
+        f.cambios = {};
+        f.fallo = false;
+        if (!f.enVuelo) delete filas[clave(entidad, id)];
+        emitir();
+      },
+      /** Envía todo ya y resuelve { ok, errores } cuando no queda nada en marcha. */
+      vaciar: function () {
+        if (detenida) return Promise.resolve({ ok: false, errores: [{ codigo: 'no_autorizado' }] });
+        return new Promise(function (resolver) {
+          esperando.push({ resolver: resolver, errores: [] });
+          Object.keys(filas).slice().forEach(function (k) {
+            var f = filas[k];
+            if (!f) return;
+            if (f.fallo) { f.fallo = false; f.intentos = 0; }
+            if (!vacio(f.cambios) || f.enVuelo) enviar(f);
+          });
+          emitir();
+        });
+      },
+      /** Después de 'error': vuelve a intentar ahora mismo. */
+      reintentarYa: function () {
+        Object.keys(filas).slice().forEach(function (k) {
+          var f = filas[k];
+          if (!f) return;
+          f.fallo = false;
+          f.intentos = 0;
+          if (!vacio(f.cambios)) enviar(f);
+        });
+        emitir();
+      },
+      pendientes: pendientes,
+      estado: estado,
+    };
+  }
+
+  P.crearCola = crearCola;
+})((window.Panel = window.Panel || {}));
+</script>
