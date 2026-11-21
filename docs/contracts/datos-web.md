@@ -18,7 +18,7 @@ El script `web/scripts/publicar.mjs` (de S6) lo escribe antes de `astro build`. 
 ```
 
 **Las imágenes:**
-- `webp` tiene solo los anchos de 480, 960 y 1440 px que no superan el original. Nunca se agranda una foto.
+- `webp` tiene los anchos de 480, 960 y 1440 px que no superan el original, más el ancho original cuando pasa de 960 y no está en la lista (por ejemplo `"1200"`), para que se vea nítida en pantallas 3×. Nunca se agranda una foto. S3 arma el `srcset` con todas las entradas que vengan.
 - Si el original mide menos de 480 px, hay una sola entrada, con su ancho real.
 - `og` es un JPG de 1200 px de ancho (o menos, si el original es más chico) que pesa como máximo 300 KB.
 - Las rutas son relativas a la base del sitio: no empiezan con `/`. En Astro se arman con `import.meta.env.BASE_URL`.
