@@ -3,12 +3,43 @@
   <head>
     <base target="_top" />
     <meta charset="utf-8" />
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 40rem; padding: 1.5rem; line-height: 1.5; }
+      button { font: inherit; min-height: 44px; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #555; background: #fff; cursor: pointer; }
+      button:disabled { opacity: 0.6; cursor: progress; }
+      li { margin-bottom: 0.75rem; }
+      #estado { white-space: pre-wrap; background: #f5f5f5; padding: 0.75rem; border-radius: 8px; min-height: 1.5em; }
+    </style>
   </head>
   <body>
-    <!-- Marcador provisional: la interfaz completa del Panel la construye S4. -->
-    <main id="panel" style="font-family: system-ui, sans-serif; padding: 2rem">
+    <!-- Panel provisional de S1. La interfaz completa la construye S4. -->
+    <main id="panel">
       <h1>Panel del catálogo</h1>
-      <p>La interfaz del panel está en construcción.</p>
+      <p>La interfaz completa está en construcción. Mientras tanto puedes preparar tu Google y probar la publicación:</p>
+      <ol>
+        <li><button type="button" id="instalar">1. Instalar</button> — crea la hoja «Catálogo Ropa — Base de datos» y sus carpetas en tu Drive.</li>
+        <li><button type="button" id="probar">2. Publicar prueba</button> — sube 3 fotos de ejemplo y deja lista una copia para la web.</li>
+      </ol>
+      <p id="estado" role="status" aria-live="polite"></p>
     </main>
+    <script>
+      const estado = document.getElementById('estado');
+      const botones = document.querySelectorAll('button');
+      function correr(funcion, texto) {
+        botones.forEach((b) => (b.disabled = true));
+        estado.textContent = texto + '…';
+        google.script.run
+          .withSuccessHandler((r) => {
+            estado.textContent = '✓ Listo: ' + JSON.stringify(r, null, 2);
+            botones.forEach((b) => (b.disabled = false));
+          })
+          .withFailureHandler((e) => {
+            estado.textContent = '✗ ' + e.message;
+            botones.forEach((b) => (b.disabled = false));
+          })[funcion]();
+      }
+      document.getElementById('instalar').addEventListener('click', () => correr('instalar', 'Instalando'));
+      document.getElementById('probar').addEventListener('click', () => correr('publicarPrueba', 'Publicando la prueba'));
+    </script>
   </body>
 </html>

@@ -12,6 +12,12 @@ describe('doGet()', () => {
     expect(salida.getTitle()).toBe('Panel · Catálogo');
   });
 
+  test('el panel provisional ofrece instalar y publicar la prueba sin abrir el editor', () => {
+    const html = conUsuario('duena@example.com').doGet({ parameter: {} }).getContent();
+    expect(html).toContain("correr('instalar'");
+    expect(html).toContain("correr('publicarPrueba'");
+  });
+
   test('a cualquier otra persona le muestra «Acceso restringido» y nada del panel', () => {
     const salida = conUsuario('').doGet({ parameter: {} });
     expect(salida.getContent()).toContain('Acceso restringido');
