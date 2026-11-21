@@ -1,0 +1,1954 @@
+{
+  "version_esquema": 1,
+  "generado_en": "2026-11-21T10:53:04-05:00",
+  "tienda": {
+    "nombre": "Tienda de ejemplo",
+    "eslogan": "Ropa para mujer y niñas, con envío desde Ayacucho.",
+    "logo": null,
+    "moneda": {
+      "simbolo": "S/",
+      "codigo": "PEN"
+    },
+    "pais_codigo": "51",
+    "zona_horaria": "America/Lima",
+    "redes": {
+      "instagram": null,
+      "facebook": null,
+      "tiktok": null
+    },
+    "horario": "Lunes a sábado, 9:00–20:00",
+    "envios": "Coordinamos el envío por WhatsApp.",
+    "sitio_url": "https://cayogabriel.github.io/catalogo-ropa/",
+    "inicio_modo": "temporada"
+  },
+  "tema_paleta_id": "verano-costa",
+  "paletas": {
+    "verano-costa": {
+      "nombre": "Verano Costa",
+      "tokens": {
+        "--color-fondo": "#FFFBF5",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#1B2B34",
+        "--color-texto-suave": "#4A5A63",
+        "--color-borde": "#E6DCCB",
+        "--color-control": "#6B7C85",
+        "--color-primario": "#006D77",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#FF8F6B",
+        "--color-sobre-acento": "#1B2B34",
+        "--color-oferta": "#C2410C",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#1B2B34",
+        "--color-sobre-liquidacion": "#FFE8A3",
+        "--color-exito": "#1E7B4B",
+        "--color-foco": "#0B5ED7"
+      },
+      "fuentes": {
+        "titulos": "Poppins",
+        "texto": "Nunito Sans"
+      },
+      "radio": "16px"
+    },
+    "liquidacion": {
+      "nombre": "Liquidación",
+      "tokens": {
+        "--color-fondo": "#FFFFFF",
+        "--color-superficie": "#F5F5F4",
+        "--color-texto": "#171717",
+        "--color-texto-suave": "#52525B",
+        "--color-borde": "#D4D4D8",
+        "--color-control": "#71717A",
+        "--color-primario": "#171717",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#FACC15",
+        "--color-sobre-acento": "#171717",
+        "--color-oferta": "#B91C1C",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#B91C1C",
+        "--color-sobre-liquidacion": "#FFFFFF",
+        "--color-exito": "#166534",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Archivo Narrow",
+        "texto": "Archivo"
+      },
+      "radio": "4px"
+    },
+    "san-valentin": {
+      "nombre": "San Valentín",
+      "tokens": {
+        "--color-fondo": "#FFF5F6",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#3A1520",
+        "--color-texto-suave": "#6B4350",
+        "--color-borde": "#F0CBD1",
+        "--color-control": "#8F6A75",
+        "--color-primario": "#9F1239",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#F9A8B8",
+        "--color-sobre-acento": "#3A1520",
+        "--color-oferta": "#BE123C",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#3A1520",
+        "--color-sobre-liquidacion": "#FFD9DF",
+        "--color-exito": "#1E7B4B",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Playfair Display",
+        "texto": "Lato"
+      },
+      "radio": "20px"
+    },
+    "otono-tierra": {
+      "nombre": "Otoño Tierra",
+      "tokens": {
+        "--color-fondo": "#FBF6EE",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#2E2118",
+        "--color-texto-suave": "#5E4B3C",
+        "--color-borde": "#E3D3BE",
+        "--color-control": "#8A7461",
+        "--color-primario": "#8A4B1F",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#D9A441",
+        "--color-sobre-acento": "#2E2118",
+        "--color-oferta": "#B23A1C",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#2E2118",
+        "--color-sobre-liquidacion": "#F3D9A4",
+        "--color-exito": "#4D6B1F",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Fraunces",
+        "texto": "Inter"
+      },
+      "radio": "10px"
+    },
+    "dia-de-la-madre": {
+      "nombre": "Día de la Madre",
+      "tokens": {
+        "--color-fondo": "#FFF7F4",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#33202A",
+        "--color-texto-suave": "#664A57",
+        "--color-borde": "#EFD3D6",
+        "--color-control": "#8D6C79",
+        "--color-primario": "#8E3B6E",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#F4B5A8",
+        "--color-sobre-acento": "#33202A",
+        "--color-oferta": "#B4294F",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#33202A",
+        "--color-sobre-liquidacion": "#F8D7DD",
+        "--color-exito": "#2F7A4F",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Cormorant Garamond",
+        "texto": "Jost"
+      },
+      "radio": "18px"
+    },
+    "invierno-andino": {
+      "nombre": "Invierno Andino",
+      "tokens": {
+        "--color-fondo": "#F4F1EC",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#1E2430",
+        "--color-texto-suave": "#4B5563",
+        "--color-borde": "#D8D2C7",
+        "--color-control": "#6B7280",
+        "--color-primario": "#2C3E6B",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#C9A24B",
+        "--color-sobre-acento": "#1E2430",
+        "--color-oferta": "#A32A2A",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#1E2430",
+        "--color-sobre-liquidacion": "#E8D49A",
+        "--color-exito": "#256D45",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "DM Serif Display",
+        "texto": "DM Sans"
+      },
+      "radio": "8px"
+    },
+    "fiestas-patrias": {
+      "nombre": "Fiestas Patrias",
+      "tokens": {
+        "--color-fondo": "#FFFFFF",
+        "--color-superficie": "#FBF3F3",
+        "--color-texto": "#1F1A1A",
+        "--color-texto-suave": "#5A4A4A",
+        "--color-borde": "#E5D0D0",
+        "--color-control": "#857070",
+        "--color-primario": "#B3121F",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#F2E1C8",
+        "--color-sobre-acento": "#1F1A1A",
+        "--color-oferta": "#8F0F1A",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#1F1A1A",
+        "--color-sobre-liquidacion": "#FFFFFF",
+        "--color-exito": "#1E7B4B",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Bree Serif",
+        "texto": "Source Sans 3"
+      },
+      "radio": "12px"
+    },
+    "primavera-jardin": {
+      "nombre": "Primavera Jardín",
+      "tokens": {
+        "--color-fondo": "#F8FBF4",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#1F2D1F",
+        "--color-texto-suave": "#4A5B49",
+        "--color-borde": "#D9E5CE",
+        "--color-control": "#6F826C",
+        "--color-primario": "#2F6B3A",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#F6B6C8",
+        "--color-sobre-acento": "#1F2D1F",
+        "--color-oferta": "#B4325A",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#1F2D1F",
+        "--color-sobre-liquidacion": "#DDF0C8",
+        "--color-exito": "#2F6B3A",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Lora",
+        "texto": "Mulish"
+      },
+      "radio": "14px"
+    },
+    "halloween-criolla": {
+      "nombre": "Halloween y Canción Criolla",
+      "tokens": {
+        "--color-fondo": "#16121C",
+        "--color-superficie": "#221B2B",
+        "--color-texto": "#F5F0FA",
+        "--color-texto-suave": "#C9BFD6",
+        "--color-borde": "#4A3F5A",
+        "--color-control": "#8F82A3",
+        "--color-primario": "#FF9A3C",
+        "--color-sobre-primario": "#16121C",
+        "--color-acento": "#B28DFF",
+        "--color-sobre-acento": "#16121C",
+        "--color-oferta": "#FF7A2E",
+        "--color-sobre-oferta": "#16121C",
+        "--color-liquidacion": "#F5F0FA",
+        "--color-sobre-liquidacion": "#16121C",
+        "--color-exito": "#6EDB9A",
+        "--color-foco": "#7DD3FC"
+      },
+      "fuentes": {
+        "titulos": "Abril Fatface",
+        "texto": "Work Sans"
+      },
+      "radio": "6px"
+    },
+    "cyber-wow": {
+      "nombre": "Cyber Wow",
+      "tokens": {
+        "--color-fondo": "#0F1226",
+        "--color-superficie": "#1A1E3A",
+        "--color-texto": "#F4F6FF",
+        "--color-texto-suave": "#BCC3E6",
+        "--color-borde": "#394070",
+        "--color-control": "#8189BD",
+        "--color-primario": "#5B7CFF",
+        "--color-sobre-primario": "#0F1226",
+        "--color-acento": "#2DE2C4",
+        "--color-sobre-acento": "#0F1226",
+        "--color-oferta": "#FF4D8D",
+        "--color-sobre-oferta": "#0F1226",
+        "--color-liquidacion": "#FFD23F",
+        "--color-sobre-liquidacion": "#0F1226",
+        "--color-exito": "#4ADE80",
+        "--color-foco": "#FFD23F"
+      },
+      "fuentes": {
+        "titulos": "Space Grotesk",
+        "texto": "IBM Plex Sans"
+      },
+      "radio": "10px"
+    },
+    "navidad-festiva": {
+      "nombre": "Navidad Festiva",
+      "tokens": {
+        "--color-fondo": "#FBF8F1",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#1C2A22",
+        "--color-texto-suave": "#4A5A50",
+        "--color-borde": "#DCD6C4",
+        "--color-control": "#74806F",
+        "--color-primario": "#14532D",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#D4A937",
+        "--color-sobre-acento": "#1C2A22",
+        "--color-oferta": "#A71D2A",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#7F1D1D",
+        "--color-sobre-liquidacion": "#FFF1C2",
+        "--color-exito": "#14532D",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Libre Baskerville",
+        "texto": "Karla"
+      },
+      "radio": "12px"
+    },
+    "neutra-minimal": {
+      "nombre": "Neutra Minimal",
+      "tokens": {
+        "--color-fondo": "#FAFAF8",
+        "--color-superficie": "#FFFFFF",
+        "--color-texto": "#1C1C1C",
+        "--color-texto-suave": "#555555",
+        "--color-borde": "#E2E0DA",
+        "--color-control": "#767676",
+        "--color-primario": "#1C1C1C",
+        "--color-sobre-primario": "#FFFFFF",
+        "--color-acento": "#C8B8A2",
+        "--color-sobre-acento": "#1C1C1C",
+        "--color-oferta": "#9B2C2C",
+        "--color-sobre-oferta": "#FFFFFF",
+        "--color-liquidacion": "#1C1C1C",
+        "--color-sobre-liquidacion": "#FFFFFF",
+        "--color-exito": "#2F6B3A",
+        "--color-foco": "#1D4ED8"
+      },
+      "fuentes": {
+        "titulos": "Cormorant",
+        "texto": "Manrope"
+      },
+      "radio": "2px"
+    }
+  },
+  "textos": {
+    "tienda.eslogan": "Ropa para mujer y niña, elegida con calma.",
+    "tienda.descripcion_corta": "Ropa para mujer y niña. Elige, escríbenos por WhatsApp y te la enviamos desde Ayacucho.",
+    "inicio.portada.titulo": "Nueva temporada",
+    "inicio.portada.subtitulo": "Mira las prendas y pídelas por WhatsApp.",
+    "inicio.portada.boton": "Ver temporada",
+    "inicio.meta.titulo": "{tienda} · Ropa para mujer y niña",
+    "inicio.meta.descripcion": "Catálogo de ropa para mujer y niña. Elige tu prenda y pídela por WhatsApp. Envíos desde Ayacucho.",
+    "seccion.novedades.titulo": "Novedades",
+    "seccion.novedades.subtitulo": "Lo último que llegó.",
+    "seccion.ofertas.titulo": "Ofertas",
+    "seccion.ofertas.subtitulo": "Precios rebajados por tiempo limitado.",
+    "seccion.liquidacion.titulo": "Liquidación",
+    "seccion.liquidacion.subtitulo": "Últimas prendas de temporadas anteriores, con precio rebajado.",
+    "seccion.mas_consultados.titulo": "Más consultados",
+    "seccion.mas_consultados.subtitulo": "Las prendas por las que más nos han escrito.",
+    "seccion.categorias.titulo": "Por categoría",
+    "seccion.categorias.subtitulo": "Encuentra lo que buscas.",
+    "seccion.ver_todo": "Ver todo",
+    "temporada.ver_prendas": "Ver prendas",
+    "temporada.descargar_revista": "Descargar revista (PDF)",
+    "temporada.ver_revista": "Ver revista web",
+    "temporada.fotos_titulo": "La temporada en fotos",
+    "temporada.toca_prenda": "Toca una prenda para ver precio y tallas.",
+    "temporada.archivo_titulo": "Temporadas anteriores",
+    "temporada.archivo_subtitulo": "Mira lo que lanzamos antes.",
+    "temporada.contacto_titulo": "¿Te gustó algo? Escríbenos.",
+    "producto.boton_whatsapp": "Pedir por WhatsApp",
+    "producto.elige_talla": "Elige tu talla",
+    "producto.talla_agotada": "Talla agotada",
+    "producto.elige_color": "Elige tu color",
+    "producto.compartir": "Compartir",
+    "producto.agregar_lista": "Agregar a mi lista",
+    "producto.quitar_lista": "Quitar de mi lista",
+    "producto.codigo": "Código {codigo}",
+    "producto.relacionados": "También te puede gustar",
+    "producto.guia_tallas": "Consulta las medidas por WhatsApp si dudas de tu talla.",
+    "producto.agotado": "Agotado por ahora",
+    "producto.copiado": "Enlace copiado",
+    "precio.antes": "Antes",
+    "precio.ahora": "Ahora",
+    "precio.ahorras": "Ahorras {monto}",
+    "precio.descuento": "-{porcentaje} %",
+    "precio.regular": "Precio regular",
+    "precio.desde": "Desde {monto}",
+    "insignia.nuevo": "Nuevo",
+    "insignia.oferta": "Oferta",
+    "insignia.liquidacion": "Liquidación",
+    "insignia.ultimas_unidades": "Últimas unidades",
+    "insignia.mas_consultado": "Más consultado",
+    "cuenta_regresiva.termina_en": "Termina en",
+    "cuenta_regresiva.dias": "días",
+    "cuenta_regresiva.horas": "horas",
+    "cuenta_regresiva.minutos": "min",
+    "cuenta_regresiva.terminada": "Oferta terminada",
+    "lista.titulo": "Mi lista",
+    "lista.vacia": "Tu lista está vacía. Toca el corazón en las prendas que te gusten.",
+    "lista.enviar_whatsapp": "Enviar mi lista por WhatsApp",
+    "lista.total": "Total de la lista",
+    "lista.vaciar": "Vaciar lista",
+    "lista.nota": "Tu lista se guarda solo en este dispositivo.",
+    "aviso.agregado_lista": "Agregado a tu lista",
+    "aviso.quitado_lista": "Quitado de tu lista",
+    "aviso.error_generico": "No pudimos completar la acción. Inténtalo otra vez.",
+    "catalogo.titulo": "Catálogo",
+    "catalogo.filtros": "Filtros",
+    "catalogo.aplicar_filtros": "Ver resultados",
+    "catalogo.limpiar_filtros": "Limpiar filtros",
+    "catalogo.buscar": "Buscar prenda",
+    "catalogo.buscar_placeholder": "Ej. vestido, blusa, polera",
+    "catalogo.ordenar": "Ordenar por",
+    "catalogo.solo_ofertas": "Solo ofertas",
+    "catalogo.sin_resultados": "No encontramos prendas con esos filtros. Prueba quitando alguno.",
+    "catalogo.resultados": "{cantidad} prendas",
+    "revista.precios_validos_hasta": "Precios válidos hasta el {fecha}",
+    "revista.escanea_qr": "Escanea el código y mira el catálogo completo",
+    "revista.pedir": "Pedir por WhatsApp",
+    "revista.portada_etiqueta": "Revista de temporada",
+    "revista.contraportada_titulo": "Escríbenos, te respondemos con gusto",
+    "contacto.titulo": "Escríbenos",
+    "contacto.subtitulo": "Resolvemos tus dudas de tallas, colores y envíos.",
+    "contacto.whatsapp": "WhatsApp",
+    "contacto.instagram": "Instagram",
+    "contacto.facebook": "Facebook",
+    "contacto.tiktok": "TikTok",
+    "pie.horario": "Atención por WhatsApp: lunes a sábado, de 9:00 a 20:00.",
+    "pie.envios": "Enviamos desde Ayacucho. Coordinamos zona, costo y tiempo por WhatsApp.",
+    "pie.derechos": "© {anio} {tienda}",
+    "pie.precios_nota": "Los precios y las ofertas pueden cambiar. Vale el precio que confirmamos por WhatsApp.",
+    "accesibilidad.saltar_contenido": "Saltar al contenido",
+    "accesibilidad.abrir_menu": "Abrir menú",
+    "accesibilidad.cerrar": "Cerrar",
+    "accesibilidad.foto_de": "Foto de {producto}",
+    "accesibilidad.abrir_whatsapp": "Abre WhatsApp en una nueva ventana",
+    "whatsapp.producto": "Hola {vendedora}, me interesa esta prenda:\n{producto} (código {codigo})\nTalla: {talla}\nColor: {color}\nPrecio: {precio}\n{enlace}\n¿Está disponible?",
+    "whatsapp.lista": "Hola {vendedora}, esta es mi lista:\n{lista}\nTotal: {total}\n¿Me confirmas disponibilidad y envío?",
+    "whatsapp.revista": "Hola {vendedora}, vi esta prenda en la revista:\n{producto} (código {codigo})\nPrecio: {precio}\n{enlace}\n¿Qué tallas tienes?"
+  },
+  "vendedoras": [
+    {
+      "id": "ven_00000001",
+      "nombre": "Vendedora 1",
+      "whatsapp": "51000000001",
+      "por_defecto": true
+    },
+    {
+      "id": "ven_00000002",
+      "nombre": "Vendedora 2",
+      "whatsapp": "51000000002",
+      "por_defecto": false
+    }
+  ],
+  "categorias": [
+    {
+      "id": "cat_00000001",
+      "nombre": "Vestidos",
+      "slug": "vestidos",
+      "orden": 1,
+      "foto": null
+    },
+    {
+      "id": "cat_00000002",
+      "nombre": "Blusas y tops",
+      "slug": "blusas-tops",
+      "orden": 2,
+      "foto": null
+    },
+    {
+      "id": "cat_00000003",
+      "nombre": "Pantalones y faldas",
+      "slug": "pantalones-faldas",
+      "orden": 3,
+      "foto": null
+    },
+    {
+      "id": "cat_00000004",
+      "nombre": "Accesorios",
+      "slug": "accesorios",
+      "orden": 4,
+      "foto": null
+    }
+  ],
+  "productos": [
+    {
+      "id": "prd_00000001",
+      "codigo": "VES-001",
+      "nombre": "Vestido Lino Coral",
+      "descripcion": "Vestido Lino Coral. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Coral"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000001",
+          "alt": "Vestido Lino Coral en coral"
+        },
+        {
+          "id": "fx_00000002",
+          "alt": "Vestido Lino Coral, otra vista"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 1,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": 1,
+      "precio": {
+        "regular": 89,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 89,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 66.75,
+            "antes": 89,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 89,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000002",
+      "codigo": "VES-002",
+      "nombre": "Vestido Midi Floral",
+      "descripcion": "Vestido Midi Floral. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Floral azul"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000003",
+          "alt": "Vestido Midi Floral en floral azul"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 2,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 119,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 119,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 89.25,
+            "antes": 119,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 119,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000003",
+      "codigo": "VES-003",
+      "nombre": "Vestido Camisero Arena",
+      "descripcion": "Vestido Camisero Arena. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [
+        "S"
+      ],
+      "colores": [
+        "Arena"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000004",
+          "alt": "Vestido Camisero Arena en arena"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 3,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 99,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 99,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 74.25,
+            "antes": 99,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 99,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000004",
+      "codigo": "VES-004",
+      "nombre": "Vestido Wrap Esmeralda",
+      "descripcion": "Vestido Wrap Esmeralda. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Esmeralda"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000005",
+          "alt": "Vestido Wrap Esmeralda en esmeralda"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 4,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 129,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 129,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 96.75,
+            "antes": 129,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 129,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000005",
+      "codigo": "VES-005",
+      "nombre": "Vestido Niña Margaritas",
+      "descripcion": "Vestido Niña Margaritas. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "4",
+        "6",
+        "8",
+        "10"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Blanco"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000006",
+          "alt": "Vestido Niña Margaritas en blanco"
+        },
+        {
+          "id": "fx_00000007",
+          "alt": "Vestido Niña Margaritas, otra vista"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 5,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 69,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 69,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 51.75,
+            "antes": 69,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 69,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000006",
+      "codigo": "VES-006",
+      "nombre": "Vestido Satinado Noche",
+      "descripcion": "Vestido Satinado Noche. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000001",
+      "tallas": [
+        "S",
+        "M"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Negro"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000008",
+          "alt": "Vestido Satinado Noche en negro"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 6,
+      "nuevo": false,
+      "ultimas_unidades": true,
+      "popularidad": null,
+      "precio": {
+        "regular": 149,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-19T10:53:04-05:00",
+            "precio": 149,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-19T10:53:04-05:00",
+            "hasta": "2026-12-01T10:53:04-05:00",
+            "precio": 111.75,
+            "antes": 149,
+            "descuento_pct": 25,
+            "etiqueta": "-25%",
+            "liquidacion": false,
+            "cuenta_regresiva": true,
+            "oferta_id": "ofe_00000001"
+          },
+          {
+            "desde": "2026-12-01T10:53:04-05:00",
+            "hasta": null,
+            "precio": 149,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000007",
+      "codigo": "BLU-001",
+      "nombre": "Blusa Seda Marfil",
+      "descripcion": "Blusa Seda Marfil. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000002",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Marfil"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000009",
+          "alt": "Blusa Seda Marfil en marfil"
+        },
+        {
+          "id": "fx_0000000a",
+          "alt": "Blusa Seda Marfil, otra vista"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 7,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": 2,
+      "precio": {
+        "regular": 79,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 79,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000008",
+      "codigo": "BLU-002",
+      "nombre": "Blusa Off-Shoulder Mostaza",
+      "descripcion": "Blusa Off-Shoulder Mostaza. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000002",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Mostaza"
+      ],
+      "fotos": [
+        {
+          "id": "fx_0000000b",
+          "alt": "Blusa Off-Shoulder Mostaza en mostaza"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 8,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 59,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 59,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000009",
+      "codigo": "BLU-003",
+      "nombre": "Blusa Bordada Andina",
+      "descripcion": "Blusa Bordada Andina. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000002",
+      "tallas": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Blanco",
+        "Multicolor"
+      ],
+      "fotos": [
+        {
+          "id": "fx_0000000c",
+          "alt": "Blusa Bordada Andina en blanco"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 9,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 89,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 89,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000a",
+      "codigo": "BLU-004",
+      "nombre": "Blusa Lazo Rosa Palo",
+      "descripcion": "Blusa Lazo Rosa Palo. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000002",
+      "tallas": [
+        "S",
+        "M"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Rosa palo"
+      ],
+      "fotos": [
+        {
+          "id": "fx_0000000d",
+          "alt": "Blusa Lazo Rosa Palo en rosa palo"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 10,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 69,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 69,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000b",
+      "codigo": "BLU-005",
+      "nombre": "Top Crochet Crudo",
+      "descripcion": "Top Crochet Crudo. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000002",
+      "tallas": [
+        "S",
+        "M"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Crudo"
+      ],
+      "fotos": [
+        {
+          "id": "fx_0000000e",
+          "alt": "Top Crochet Crudo en crudo"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 11,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 49,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-16T10:53:04-05:00",
+            "precio": 49,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-16T10:53:04-05:00",
+            "hasta": null,
+            "precio": 29,
+            "antes": 49,
+            "descuento_pct": 41,
+            "etiqueta": "Liquidación",
+            "liquidacion": true,
+            "cuenta_regresiva": false,
+            "oferta_id": "ofe_00000002"
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000c",
+      "codigo": "PAN-001",
+      "nombre": "Pantalón Palazzo Lino",
+      "descripcion": "Pantalón Palazzo Lino. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Lino natural"
+      ],
+      "fotos": [
+        {
+          "id": "fx_0000000f",
+          "alt": "Pantalón Palazzo Lino en lino natural"
+        },
+        {
+          "id": "fx_00000010",
+          "alt": "Pantalón Palazzo Lino, otra vista"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 12,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 99,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 99,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000d",
+      "codigo": "PAN-002",
+      "nombre": "Jean Mom Celeste",
+      "descripcion": "Jean Mom Celeste. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "26",
+        "28",
+        "30",
+        "32"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Celeste"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000011",
+          "alt": "Jean Mom Celeste en celeste"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 13,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": 3,
+      "precio": {
+        "regular": 109,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 109,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000e",
+      "codigo": "PAN-003",
+      "nombre": "Short Sastrero Beige",
+      "descripcion": "Short Sastrero Beige. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Beige"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000012",
+          "alt": "Short Sastrero Beige en beige"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 14,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 69,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 69,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_0000000f",
+      "codigo": "PAN-004",
+      "nombre": "Pantalón Cargo Oliva",
+      "descripcion": "Pantalón Cargo Oliva. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Oliva"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000013",
+          "alt": "Pantalón Cargo Oliva en oliva"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 15,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 89,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-16T10:53:04-05:00",
+            "precio": 89,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-16T10:53:04-05:00",
+            "hasta": null,
+            "precio": 49,
+            "antes": 89,
+            "descuento_pct": 45,
+            "etiqueta": "Liquidación",
+            "liquidacion": true,
+            "cuenta_regresiva": false,
+            "oferta_id": "ofe_00000002"
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000010",
+      "codigo": "PAN-005",
+      "nombre": "Falda Plisada Lila",
+      "descripcion": "Falda Plisada Lila. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "S",
+        "M",
+        "L"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Lila"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000014",
+          "alt": "Falda Plisada Lila en lila"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "agotado",
+      "vendedora_id": null,
+      "orden": 16,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 79,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 79,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000011",
+      "codigo": "PAN-006",
+      "nombre": "Conjunto Niña Lino",
+      "descripcion": "Conjunto Niña Lino. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000003",
+      "tallas": [
+        "4",
+        "6",
+        "8"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Celeste"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000015",
+          "alt": "Conjunto Niña Lino en celeste"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 17,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 79,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 79,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000012",
+      "codigo": "ACC-001",
+      "nombre": "Cartera Tejida Paja",
+      "descripcion": "Cartera Tejida Paja. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000004",
+      "tallas": [
+        "Única"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Natural"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000016",
+          "alt": "Cartera Tejida Paja en natural"
+        },
+        {
+          "id": "fx_00000017",
+          "alt": "Cartera Tejida Paja, otra vista"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 18,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 89,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 89,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000013",
+      "codigo": "ACC-002",
+      "nombre": "Sombrero Ala Ancha",
+      "descripcion": "Sombrero Ala Ancha. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000004",
+      "tallas": [
+        "Única"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Beige"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000018",
+          "alt": "Sombrero Ala Ancha en beige"
+        }
+      ],
+      "etiquetas": [],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 19,
+      "nuevo": false,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 59,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": "2026-11-16T10:53:04-05:00",
+            "precio": 59,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          },
+          {
+            "desde": "2026-11-16T10:53:04-05:00",
+            "hasta": null,
+            "precio": 35,
+            "antes": 59,
+            "descuento_pct": 41,
+            "etiqueta": "Liquidación",
+            "liquidacion": true,
+            "cuenta_regresiva": false,
+            "oferta_id": "ofe_00000002"
+          }
+        ]
+      }
+    },
+    {
+      "id": "prd_00000014",
+      "codigo": "ACC-003",
+      "nombre": "Aretes Dorados Sol",
+      "descripcion": "Aretes Dorados Sol. Prenda de ejemplo para probar el catálogo.",
+      "categoria_id": "cat_00000004",
+      "tallas": [
+        "Única"
+      ],
+      "tallas_agotadas": [],
+      "colores": [
+        "Dorado"
+      ],
+      "fotos": [
+        {
+          "id": "fx_00000019",
+          "alt": "Aretes Dorados Sol en dorado"
+        }
+      ],
+      "etiquetas": [
+        "nuevo"
+      ],
+      "estado": "publicado",
+      "vendedora_id": null,
+      "orden": 20,
+      "nuevo": true,
+      "ultimas_unidades": false,
+      "popularidad": null,
+      "precio": {
+        "regular": 39,
+        "ventanas": [
+          {
+            "desde": null,
+            "hasta": null,
+            "precio": 39,
+            "antes": null,
+            "descuento_pct": null,
+            "etiqueta": null,
+            "liquidacion": false,
+            "cuenta_regresiva": false,
+            "oferta_id": null
+          }
+        ]
+      }
+    }
+  ],
+  "secciones": [
+    {
+      "id": "sec_00000001",
+      "titulo": "Novedades",
+      "subtitulo": "Lo último que llegó.",
+      "tipo": "novedades",
+      "diseno": "carrusel",
+      "orden": 1,
+      "productos": [
+        "prd_00000001",
+        "prd_00000004",
+        "prd_00000005",
+        "prd_00000008",
+        "prd_0000000e",
+        "prd_00000014"
+      ]
+    },
+    {
+      "id": "sec_00000002",
+      "titulo": "Ofertas",
+      "subtitulo": "Precios rebajados por tiempo limitado.",
+      "tipo": "ofertas",
+      "diseno": "grilla",
+      "orden": 2,
+      "productos": [
+        "prd_00000001",
+        "prd_00000002",
+        "prd_00000003",
+        "prd_00000004",
+        "prd_00000005",
+        "prd_00000006"
+      ]
+    },
+    {
+      "id": "sec_00000003",
+      "titulo": "Liquidación",
+      "subtitulo": "Últimas prendas de temporadas anteriores, con precio rebajado.",
+      "tipo": "liquidacion",
+      "diseno": "grilla",
+      "orden": 3,
+      "productos": [
+        "prd_0000000b",
+        "prd_0000000f",
+        "prd_00000013"
+      ]
+    },
+    {
+      "id": "sec_00000004",
+      "titulo": "Más consultados",
+      "subtitulo": "Las prendas por las que más nos han escrito.",
+      "tipo": "mas_consultados",
+      "diseno": "carrusel",
+      "orden": 4,
+      "productos": [
+        "prd_00000001",
+        "prd_00000007",
+        "prd_0000000d"
+      ]
+    },
+    {
+      "id": "sec_00000005",
+      "titulo": "Accesorios",
+      "subtitulo": "",
+      "tipo": "categoria",
+      "diseno": "carrusel",
+      "orden": 5,
+      "productos": [
+        "prd_00000012",
+        "prd_00000013",
+        "prd_00000014"
+      ]
+    }
+  ],
+  "portadas": [
+    {
+      "id": "por_00000001",
+      "titulo": "Verano en la costa",
+      "subtitulo": "Prendas frescas para los días de sol.",
+      "boton_texto": "Ver temporada",
+      "boton_destino": "/temporada/verano-2027/",
+      "foto_escritorio": {
+        "id": "fx_00000020",
+        "alt": "Portada de verano"
+      },
+      "foto_movil": {
+        "id": "fx_00000021",
+        "alt": "Portada de verano"
+      },
+      "desde": null,
+      "hasta": null,
+      "orden": 1,
+      "temporada_id": "tem_00000001"
+    },
+    {
+      "id": "por_00000002",
+      "titulo": "Liquidación",
+      "subtitulo": "Precios rebajados mientras haya stock.",
+      "boton_texto": "Ver liquidación",
+      "boton_destino": "/catalogo/?oferta=1",
+      "foto_escritorio": {
+        "id": "fx_00000022",
+        "alt": "Portada de liquidación"
+      },
+      "foto_movil": {
+        "id": "fx_00000023",
+        "alt": "Portada de liquidación"
+      },
+      "desde": "2026-11-16T10:53:04-05:00",
+      "hasta": null,
+      "orden": 2,
+      "temporada_id": null
+    }
+  ],
+  "temporadas": [
+    {
+      "id": "tem_00000001",
+      "slug": "verano-2027",
+      "nombre": "Verano 2027",
+      "titulo": "Verano en la costa",
+      "subtitulo": "Prendas frescas para los días de sol.",
+      "intro": "Telas ligeras y colores de playa. Elige tu talla y escríbenos.",
+      "cierre": "¿Te gustó algo? Escríbenos por WhatsApp y te ayudamos con tu talla.",
+      "paleta_id": "verano-costa",
+      "foto_portada": {
+        "id": "fx_0000001f",
+        "alt": "Portada de la temporada Verano 2027"
+      },
+      "desde": "2026-11-01T10:53:04-05:00",
+      "hasta": "2027-03-01T10:53:04-05:00",
+      "visible_en_web": true,
+      "revista": true,
+      "vigencia_hasta": "2026-12-01",
+      "fotos": [
+        {
+          "id": "tfo_00000001",
+          "foto": {
+            "id": "fx_0000001a",
+            "alt": "Modelo con vestido de lino coral y sombrero frente al mar"
+          },
+          "tipo": "ambiente",
+          "productos": [
+            "prd_00000001",
+            "prd_00000013"
+          ],
+          "texto": "Lino y sol para la costa.",
+          "destacada": true
+        },
+        {
+          "id": "tfo_00000002",
+          "foto": {
+            "id": "fx_00000002",
+            "alt": "Vestido Lino Coral, otra vista"
+          },
+          "tipo": "producto",
+          "productos": [
+            "prd_00000001"
+          ],
+          "texto": "Coral, el color del verano.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000003",
+          "foto": {
+            "id": "fx_0000001b",
+            "alt": "Dos modelos con blusa marfil y pantalón palazzo caminando por una plaza"
+          },
+          "tipo": "ambiente",
+          "productos": [
+            "prd_00000007",
+            "prd_0000000c"
+          ],
+          "texto": "Marfil y lino, fresco todo el día.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000004",
+          "foto": {
+            "id": "fx_0000000b",
+            "alt": "Blusa Off-Shoulder Mostaza en mostaza"
+          },
+          "tipo": "producto",
+          "productos": [
+            "prd_00000008"
+          ],
+          "texto": "Hombros al aire.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000005",
+          "foto": {
+            "id": "fx_00000006",
+            "alt": "Vestido Niña Margaritas en blanco"
+          },
+          "tipo": "producto",
+          "productos": [
+            "prd_00000005"
+          ],
+          "texto": "También para ellas.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000006",
+          "foto": {
+            "id": "fx_0000001c",
+            "alt": "Modelo con vestido wrap esmeralda junto a una pared blanca"
+          },
+          "tipo": "ambiente",
+          "productos": [
+            "prd_00000004"
+          ],
+          "texto": "Esmeralda para la noche.",
+          "destacada": true
+        },
+        {
+          "id": "tfo_00000007",
+          "foto": {
+            "id": "fx_00000012",
+            "alt": "Short Sastrero Beige en beige"
+          },
+          "tipo": "producto",
+          "productos": [
+            "prd_0000000e"
+          ],
+          "texto": "Corte sastre, tela liviana.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000008",
+          "foto": {
+            "id": "fx_0000001d",
+            "alt": "Modelo con blusa bordada y jean celeste en un mercado"
+          },
+          "tipo": "ambiente",
+          "productos": [
+            "prd_00000009",
+            "prd_0000000d"
+          ],
+          "texto": "Bordado hecho a mano.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_00000009",
+          "foto": {
+            "id": "fx_00000017",
+            "alt": "Cartera Tejida Paja, otra vista"
+          },
+          "tipo": "producto",
+          "productos": [
+            "prd_00000012"
+          ],
+          "texto": "Tejida en paja natural.",
+          "destacada": false
+        },
+        {
+          "id": "tfo_0000000a",
+          "foto": {
+            "id": "fx_0000001e",
+            "alt": "Modelo con vestido midi floral azul en un jardín"
+          },
+          "tipo": "ambiente",
+          "productos": [
+            "prd_00000002"
+          ],
+          "texto": "Flores para los días largos.",
+          "destacada": false
+        }
+      ]
+    }
+  ],
+  "temporada_activa_id": "tem_00000001",
+  "fotos": {
+    "fx_00000001": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000002": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000003": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000004": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000005": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000006": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000007": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000008": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000009": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000a": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000b": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000c": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000d": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000e": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000000f": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000010": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000011": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000012": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000013": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000014": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000015": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000016": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000017": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000018": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000019": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000020": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000021": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000022": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_00000023": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001f": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001a": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001b": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001c": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001d": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    },
+    "fx_0000001e": {
+      "actualizado": "2026-11-20T10:53:04-05:00"
+    }
+  }
+}
