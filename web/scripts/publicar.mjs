@@ -5,7 +5,7 @@ import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { obtenerCatalogo } from './lib/obtener.mjs';
-import { descargarFotos, procesarFoto, leerIndice, guardarIndice } from './lib/fotos.mjs';
+import { descargarFotos, procesarPendientes, archivosDeFoto } from './lib/fotos.mjs';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
 const RAIZ = fileURLToPath(new URL('../../', import.meta.url));
@@ -23,20 +23,17 @@ const apiUrl = process.env.CATALOG_API_URL;
 try {
   const catalogo = await obtenerCatalogo({ origen, apiUrl, rutaFixture: rutas.fixture });
   const nuevas = await descargarFotos(catalogo, { origen, apiUrl, dirCache: rutas.cache, dirFixture: rutas.fixtureImg });
+  const indice = await procesarPendientes(catalogo, nuevas, { dirCache: rutas.cache });
 
-  const indice = leerIndice(rutas.cache);
-  for (const [id, buffer] of nuevas) {
-    indice[id] = { actualizado: catalogo.fotos[id].actualizado, meta: await procesarFoto(buffer, { id, dirSalida: rutas.cache }) };
-  }
-  guardarIndice(rutas.cache, indice);
-
-  // Solo las fotos del catálogo actual pasan al sitio.
+  // Solo las fotos del catálogo actual pasan al sitio. img/imprimir/ lo usan
+  // las páginas de impresión; documentos.mjs lo borra de dist/ al terminar.
   rmSync(join(rutas.publico, 'img'), { recursive: true, force: true });
   mkdirSync(join(rutas.publico, 'img', 'og'), { recursive: true });
+  mkdirSync(join(rutas.publico, 'img', 'imprimir'), { recursive: true });
   const imagenes = {};
   for (const id of Object.keys(catalogo.fotos)) {
-    const { meta } = indice[id];
-    for (const ruta of [...Object.values(meta.webp), meta.og]) cpSync(join(rutas.cache, ruta), join(rutas.publico, ruta));
+    const { meta } = indice.fotos[id];
+    for (const ruta of archivosDeFoto(id, meta)) cpSync(join(rutas.cache, ruta), join(rutas.publico, ruta));
     imagenes[id] = meta;
   }
 

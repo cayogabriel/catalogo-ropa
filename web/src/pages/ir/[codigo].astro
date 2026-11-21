@@ -1,0 +1,18 @@
+---
+// ir/<código>/?o=pdf|catalogo_pdf → cuenta el clic y abre WhatsApp con la
+// plantilla whatsapp.revista. Contrato: docs/contracts/documentos.md
+import datos from '../../data/catalogo.json';
+import Redireccion from '../../components/imprimir/Redireccion.astro';
+import { mensajeRevista, vendedoraPara } from '../../compartido/mensajes.mjs';
+import { enlaceWhatsApp } from '../../compartido/enlaces.mjs';
+
+export function getStaticPaths() {
+  return datos.productos.map((producto) => ({ params: { codigo: producto.codigo.toLowerCase() }, props: { producto } }));
+}
+
+const { producto } = Astro.props;
+const vendedora = vendedoraPara(producto, datos.vendedoras);
+const destino = enlaceWhatsApp(vendedora.whatsapp, mensajeRevista({ catalogo: datos, producto, ahora: Date.now() }));
+---
+
+<Redireccion destino={destino} evento={{ t: 'whatsapp', p: producto.id }} mensaje="Abriendo WhatsApp…" boton="Abrir WhatsApp" />

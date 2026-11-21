@@ -1,0 +1,16 @@
+---
+// Pie de cada página: la nota de vigencia de los precios y el número de página.
+interface Props {
+  nota: string;
+  tienda: string;
+  numero: number;
+  total: number;
+  sobreFoto?: boolean;
+}
+const { nota, tienda, numero, total, sobreFoto = false } = Astro.props;
+---
+
+<footer class:list={['pie', { 'pie--sobre-foto': sobreFoto }]}>
+  <span class="pie__vigencia">{nota}</span>
+  <span class="pie__pagina"><span>{tienda}</span><span>{numero} de {total}</span></span>
+</footer>

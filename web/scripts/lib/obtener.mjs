@@ -3,11 +3,28 @@
 import { readFileSync } from 'node:fs';
 import { validarCatalogo } from '@catalogo/contratos';
 
+// Pide una ruta de la API y devuelve el sobre JSON. Apps Script responde una
+// página HTML cuando el despliegue no está autorizado o no es público: eso se
+// informa con un mensaje que dice qué revisar, en vez de un error de JSON.
+export async function leerJsonDeApi(url, fetch) {
+  const respuesta = await fetch(url, { redirect: 'follow' });
+  if (!respuesta.ok) throw new Error(`API respondió HTTP ${respuesta.status}`);
+  const texto = await respuesta.text();
+  try {
+    return JSON.parse(texto);
+  } catch {
+    if (/^\s*</.test(texto)) {
+      throw new Error(
+        'API respondió HTML en lugar de JSON: revisa que el despliegue de la API esté autorizado y con acceso «cualquiera», y que CATALOG_API_URL sea su URL /exec',
+      );
+    }
+    throw new Error(`API respondió algo que no es JSON: ${texto.slice(0, 80)}`);
+  }
+}
+
 async function leerDeApi(apiUrl, fetch) {
   if (!apiUrl) throw new Error('Falta CATALOG_API_URL (URL /exec de la API pública)');
-  const respuesta = await fetch(`${apiUrl}?r=catalogo`, { redirect: 'follow' });
-  if (!respuesta.ok) throw new Error(`API respondió HTTP ${respuesta.status}`);
-  const sobre = await respuesta.json();
+  const sobre = await leerJsonDeApi(`${apiUrl}?r=catalogo`, fetch);
   if (!sobre.ok) throw new Error(`API respondió: ${sobre.error}`);
   return sobre.datos;
 }

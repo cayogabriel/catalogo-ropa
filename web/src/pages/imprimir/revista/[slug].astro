@@ -1,0 +1,21 @@
+---
+// Revista 4:5 de una temporada, lista para imprimir con Chromium
+// (web/scripts/documentos.mjs). No se despliega: se borra de dist/ al terminar.
+import datos from '../../../data/catalogo.json';
+import Documento from '../../../components/imprimir/Documento.astro';
+import PaginaRevista from '../../../components/imprimir/PaginaRevista.astro';
+import { planRevista, revistasDe } from '../../../components/imprimir/plan.mjs';
+
+export function getStaticPaths() {
+  return revistasDe(datos).map((temporada) => ({ params: { slug: temporada.slug }, props: { temporada } }));
+}
+
+const { temporada } = Astro.props;
+// Un solo instante para todo el build: documentos.json lo guarda y verificar-build lo reutiliza.
+const ahora = Number(process.env.AHORA_DOCUMENTOS) || Date.now();
+const plan = planRevista(datos, temporada, ahora);
+---
+
+<Documento ahora={ahora} titulo={`${temporada.nombre} · ${datos.tienda.nombre}`} paleta={plan.paleta}>
+  {plan.paginas.map((pagina) => <PaginaRevista pagina={pagina} nota={plan.nota} pedir={plan.pedir} paleta={plan.paleta} />)}
+</Documento>

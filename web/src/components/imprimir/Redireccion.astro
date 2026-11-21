@@ -1,0 +1,98 @@
+---
+// Página puente de los botones del PDF: cuenta el clic y redirige.
+// Sin JavaScript, el meta refresh lleva igual al destino.
+import datos from '../../data/catalogo.json';
+
+interface Props {
+  destino: string;
+  evento: { t: string; p?: string | null; s?: string | null };
+  mensaje: string;
+  boton: string;
+}
+
+const { destino, evento, mensaje, boton } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? '';
+const temporadas = Object.fromEntries(datos.temporadas.map((t) => [t.slug, t.id]));
+const tokens = datos.paletas[datos.tema_paleta_id]?.tokens ?? {};
+const estilo = Object.entries(tokens)
+  .map(([k, v]) => `${k}:${v}`)
+  .join(';');
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="refresh" content={`1; url=${destino}`} />
+    <title>{mensaje} · {datos.tienda.nombre}</title>
+    <style set:html={`:root{${estilo}}`} />
+    <style>
+      body {
+        align-items: center;
+        background: var(--color-fondo, #fff);
+        color: var(--color-texto, #111);
+        display: grid;
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        min-height: 100svh;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      p {
+        font-size: 1.125rem;
+        margin: 0 0 1.25rem;
+      }
+      a {
+        align-items: center;
+        background: var(--color-primario, #111);
+        border-radius: 999px;
+        color: var(--color-sobre-primario, #fff);
+        display: inline-flex;
+        font-weight: 600;
+        min-height: 48px;
+        padding: 0 1.5rem;
+        text-decoration: none;
+      }
+      a:focus-visible {
+        outline: 3px solid var(--color-foco, #0b5ed7);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      id="ir"
+      data-destino={destino}
+      data-api={apiUrl}
+      data-base={base}
+      data-t={evento.t}
+      data-p={evento.p ?? ''}
+      data-s={evento.s ?? ''}
+      data-temporadas={JSON.stringify(temporadas)}
+    >
+      <p>{mensaje}</p>
+      <a href={destino}>{boton}</a>
+    </main>
+    <script>
+      import { origenDe, rutaEvento, idSesion, construirEvento, redirigir } from './evento.mjs';
+
+      const raiz = document.getElementById('ir');
+      const d = raiz.dataset;
+      const parametros = new URLSearchParams(location.search);
+      const temporadas = JSON.parse(d.temporadas || '{}');
+      const evento = construirEvento({
+        t: d.t,
+        p: d.p || null,
+        s: d.s || temporadas[parametros.get('t')] || null,
+        o: origenDe(location.search),
+        pg: rutaEvento(location.pathname, d.base),
+        ss: idSesion(),
+      });
+      redirigir({ destino: d.destino, evento, apiUrl: d.api, navegador: navigator, ubicacion: location });
+    </script>
+  </body>
+</html>

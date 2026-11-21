@@ -2,6 +2,8 @@
 # Se dispara con el botón «Publicar» del Panel (repository_dispatch), a mano,
 # y cada madrugada mediante un activador del Panel. Si algo falla antes del
 # despliegue, la web anterior sigue en línea.
+#
+# Orden: datos y fotos → sitio → revista, catálogo PDF y carrusel → verificación → subida.
 name: Publicar sitio
 
 on:
@@ -9,10 +11,9 @@ on:
   repository_dispatch:
     types: [publicar]
 
+# Solo lectura por defecto; el job de despliegue pide lo suyo.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -21,6 +22,7 @@ concurrency:
 jobs:
   construir:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -28,12 +30,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+
+      # Las fotos ya procesadas se reutilizan. La clave cambia si cambia el
+      # proceso (fotos.mjs, rutas.mjs); el índice además lleva su propia versión.
       - name: Caché de fotos procesadas
         uses: actions/cache@v6
         with:
           path: web/.cache
-          key: fotos-${{ github.run_id }}
-          restore-keys: fotos-
+          key: fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs', 'web/src/components/imprimir/rutas.mjs') }}-${{ github.run_id }}
+          restore-keys: |
+            fotos-${{ runner.os }}-${{ hashFiles('web/scripts/lib/fotos.mjs', 'web/src/components/imprimir/rutas.mjs') }}-
+            fotos-${{ runner.os }}-
+
       - name: Datos y fotos desde la API
         run: npm run publicar -w web
         env:
@@ -42,9 +50,30 @@ jobs:
         run: npm run build -w web
         env:
           PUBLIC_API_URL: ${{ vars.CATALOG_API_URL }}
-      - name: Verificar páginas y vistas previas
-        run: npm run verificar:build -w web
-      - uses: actions/configure-pages@v6
+
+      # Chromium para imprimir los PDF: se guarda por versión de Playwright.
+      - name: Versión de Playwright
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Caché de Chromium
+        id: cache-chromium
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Instalar Chromium
+        if: steps.cache-chromium.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --only-shell chromium
+        working-directory: web
+      - name: Dependencias del sistema para Chromium
+        if: steps.cache-chromium.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+        working-directory: web
+
+      - name: Revista, catálogo PDF y carrusel
+        run: npm run documentos -w web
+      - name: Verificar páginas, vistas previas y documentos
+        run: npm run verificar:build -w web -- --con-documentos
       - uses: actions/upload-pages-artifact@v5
         with:
           path: web/dist
@@ -52,9 +81,14 @@ jobs:
   desplegar:
     needs: construir
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v6
       - id: despliegue
         uses: actions/deploy-pages@v5
