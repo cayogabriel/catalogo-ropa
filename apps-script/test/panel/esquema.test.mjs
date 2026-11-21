@@ -38,6 +38,16 @@ describe('ESQUEMA de la hoja', () => {
     }
   });
 
+  test('TIPOS solo nombra columnas que existen, con tipos conocidos', () => {
+    const TIPOS = cargarGas('panel').valor('TIPOS');
+    for (const [pestana, tipos] of Object.entries(TIPOS)) {
+      for (const [col, tipo] of Object.entries(tipos)) {
+        expect(ESQUEMA[pestana], `${pestana}.${col}`).toContain(col);
+        expect(['numero', 'booleano', 'fecha']).toContain(tipo);
+      }
+    }
+  });
+
   test('las pestañas editables llevan version al final', () => {
     const sinVersion = ['config', 'eventos', 'estadisticas_diarias', 'historial'];
     for (const [pestana, columnas] of Object.entries(ESQUEMA)) {

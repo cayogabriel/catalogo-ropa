@@ -1,76 +1,100 @@
 // instalar(): crea (o completa) la hoja, las carpetas de Drive, la configuración
-// por defecto y el puntero que usa la API pública. Se puede repetir sin miedo.
+// por defecto y el puntero que usa la API pública. Se puede repetir sin miedo,
+// aunque la vez anterior haya fallado a mitad: cada id se guarda apenas se crea,
+// lo que esté en la papelera se restaura y un candado evita dos corridas a la vez.
 
 function instalar() {
   requireAdmin_();
+  const candado = LockService.getScriptLock();
+  candado.waitLock(30000);
+  try {
+    return instalarConCandado_();
+  } finally {
+    candado.releaseLock();
+  }
+}
+
+function instalarConCandado_() {
   const props = PropertiesService.getScriptProperties();
   let nueva = false;
+  let restaurado = false;
 
-  let raiz = abrirCarpeta_(props.getProperty(PROP.CARPETA_RAIZ_ID));
+  let raiz = porId_('carpeta', props.getProperty(PROP.CARPETA_RAIZ_ID));
+  if (raiz && raiz.isTrashed()) {
+    raiz.setTrashed(false);
+    restaurado = true;
+  }
   if (!raiz) {
     raiz = DriveApp.createFolder(NOMBRE_CARPETA_RAIZ);
+    props.setProperty(PROP.CARPETA_RAIZ_ID, raiz.getId());
     nueva = true;
   }
   const carpetas = asegurarCarpetas_(raiz);
 
-  let libro = abrirLibro_(props.getProperty(PROP.HOJA_ID));
-  if (!libro) {
+  let archivoHoja = porId_('archivo', props.getProperty(PROP.HOJA_ID));
+  if (archivoHoja && archivoHoja.isTrashed()) {
+    archivoHoja.setTrashed(false);
+    restaurado = true;
+  }
+  let libro;
+  if (archivoHoja) {
+    libro = SpreadsheetApp.openById(archivoHoja.getId());
+  } else {
     libro = SpreadsheetApp.create(NOMBRE_HOJA);
-    DriveApp.getFileById(libro.getId()).moveTo(raiz);
+    props.setProperty(PROP.HOJA_ID, libro.getId());
     nueva = true;
   }
+  asegurarDentro_(DriveApp.getFileById(libro.getId()), raiz);
   libro.setSpreadsheetTimeZone(CONFIG_DEFECTO.zona_horaria);
   asegurarPestanas_(libro);
   asegurarConfig_(libro);
 
   const puntero = escribirPuntero_(raiz, libro.getId(), carpetas, props.getProperty(PROP.PUNTERO_ID));
-  props.setProperties({
-    [PROP.HOJA_ID]: libro.getId(),
-    [PROP.CARPETA_RAIZ_ID]: raiz.getId(),
-    [PROP.PUNTERO_ID]: puntero.getId(),
-  });
-  return { hojaId: libro.getId(), hojaUrl: libro.getUrl(), carpetaRaizId: raiz.getId(), nueva: nueva };
+  props.setProperty(PROP.PUNTERO_ID, puntero.getId());
+  return {
+    hojaId: libro.getId(),
+    hojaUrl: libro.getUrl(),
+    carpetaRaizId: raiz.getId(),
+    nueva: nueva,
+    restaurado: restaurado,
+  };
 }
 
-function abrirCarpeta_(id) {
+// Carpeta o archivo por id, o null si no existe (aunque esté en la papelera, lo devuelve).
+function porId_(tipo, id) {
   if (!id) return null;
   try {
-    const carpeta = DriveApp.getFolderById(id);
-    return carpeta.isTrashed() ? null : carpeta;
+    return tipo === 'carpeta' ? DriveApp.getFolderById(id) : DriveApp.getFileById(id);
   } catch (e) {
     return null;
   }
 }
 
+// Archivo por id que existe y NO está en la papelera; si no, null.
 function abrirArchivo_(id) {
-  if (!id) return null;
-  try {
-    const archivo = DriveApp.getFileById(id);
-    return archivo.isTrashed() ? null : archivo;
-  } catch (e) {
-    return null;
-  }
+  const archivo = porId_('archivo', id);
+  return archivo && !archivo.isTrashed() ? archivo : null;
 }
 
-function abrirLibro_(id) {
-  if (!abrirArchivo_(id)) return null;
-  try {
-    return SpreadsheetApp.openById(id);
-  } catch (e) {
-    return null;
-  }
+function asegurarDentro_(archivo, carpeta) {
+  const padres = archivo.getParents();
+  while (padres.hasNext()) if (padres.next().getId() === carpeta.getId()) return;
+  archivo.moveTo(carpeta);
 }
 
 function subcarpeta_(padre, nombre) {
   const it = padre.getFoldersByName(nombre);
-  return it.hasNext() ? it.next() : padre.createFolder(nombre);
+  while (it.hasNext()) {
+    const carpeta = it.next();
+    if (!carpeta.isTrashed()) return carpeta;
+  }
+  return padre.createFolder(nombre);
 }
 
 function asegurarCarpetas_(raiz) {
   const ids = { raiz: raiz.getId() };
   Object.keys(CARPETAS).forEach(function (clave) {
-    const carpeta = CARPETAS[clave].split('/').reduce(subcarpeta_, raiz);
-    ids[clave] = carpeta.getId();
+    ids[clave] = CARPETAS[clave].split('/').reduce(subcarpeta_, raiz).getId();
   });
   return ids;
 }
@@ -81,6 +105,8 @@ function asegurarPestanas_(libro) {
     let hoja = libro.getSheetByName(nombre);
     if (!hoja) hoja = libro.insertSheet(nombre, indice);
     asegurarEncabezados_(hoja, ESQUEMA[nombre]);
+    formatearTexto_(hoja, nombre);
+    recortarColumnas_(hoja, ESQUEMA[nombre].length);
     hoja.setFrozenRows(1);
   });
   // Quita la pestaña vacía que trae un libro nuevo («Hoja 1» o «Sheet1»).
@@ -105,6 +131,23 @@ function asegurarEncabezados_(hoja, columnas) {
   if (faltan.length) hoja.getRange(1, actuales.length + 1, 1, faltan.length).setValues([faltan]).setFontWeight('bold');
 }
 
+// Formato de texto plano en las columnas de texto (ver TIPOS en esquema.js).
+function formatearTexto_(hoja, nombre) {
+  const tipos = TIPOS[nombre] || {};
+  const encabezados = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  ESQUEMA[nombre].forEach(function (columna) {
+    if (tipos[columna]) return;
+    const indice = encabezados.indexOf(columna);
+    if (indice !== -1) hoja.getRange(1, indice + 1, hoja.getMaxRows(), 1).setNumberFormat('@');
+  });
+}
+
+// Una pestaña nueva trae 26 columnas: se dejan solo las usadas (menos celdas en el libro).
+function recortarColumnas_(hoja, minimo) {
+  const ancho = Math.max(hoja.getLastColumn(), minimo);
+  if (hoja.getMaxColumns() > ancho) hoja.deleteColumns(ancho + 1, hoja.getMaxColumns() - ancho);
+}
+
 function asegurarConfig_(libro) {
   const hoja = libro.getSheetByName('config');
   const existentes = hoja.getLastRow() > 1 ? hoja.getRange(2, 1, hoja.getLastRow() - 1, 1).getValues().map(function (f) {
@@ -119,7 +162,10 @@ function escribirPuntero_(raiz, hojaId, carpetas, punteroId) {
   let archivo = abrirArchivo_(punteroId);
   if (!archivo) {
     const it = raiz.getFilesByName(NOMBRE_PUNTERO);
-    archivo = it.hasNext() ? it.next() : null;
+    while (it.hasNext() && !archivo) {
+      const candidato = it.next();
+      if (!candidato.isTrashed()) archivo = candidato;
+    }
   }
   let publicadoId = null;
   if (archivo) {

@@ -115,6 +115,74 @@ describe('instalar()', () => {
     expect(leerConfig(dobles.SpreadsheetApp.openById(r.hojaId)).moneda_simbolo).toBe('$');
   });
 
+  test('si la primera corrida falla a mitad, la segunda no duplica carpeta ni hoja', () => {
+    const { ctx, dobles } = preparar();
+    const crear = dobles.SpreadsheetApp.create;
+    dobles.SpreadsheetApp.create = (nombre) => {
+      const libro = crear(nombre);
+      const insertar = libro.insertSheet;
+      let fallar = true;
+      libro.insertSheet = (...args) => {
+        if (fallar) {
+          fallar = false;
+          throw new Error('Service error: Spreadsheets');
+        }
+        return insertar(...args);
+      };
+      return libro;
+    };
+    expect(() => ctx.instalar()).toThrow(/Service error/);
+    ctx.instalar();
+    expect(contar(dobles.DriveApp.getFoldersByName('Catálogo Ropa'))).toBe(1);
+    expect(contar(dobles.DriveApp.getFilesByName('Catálogo Ropa — Base de datos'))).toBe(1);
+  });
+
+  test('si la carpeta raíz está en la papelera, la restaura con todo lo que tenía', () => {
+    const { ctx, dobles } = preparar();
+    const r1 = ctx.instalar();
+    dobles.DriveApp.getFolderById(r1.carpetaRaizId).setTrashed(true);
+    const r2 = ctx.instalar();
+    expect(r2).toMatchObject({ carpetaRaizId: r1.carpetaRaizId, hojaId: r1.hojaId, nueva: false, restaurado: true });
+    expect(dobles.DriveApp.getFolderById(r1.carpetaRaizId).isTrashed()).toBe(false);
+    expect(dobles.DriveApp.getFileById(r1.hojaId).isTrashed()).toBe(false);
+  });
+
+  test('una subcarpeta en la papelera no se reutiliza: se crea otra', () => {
+    const { ctx, dobles } = preparar();
+    const r = ctx.instalar();
+    const raiz = dobles.DriveApp.getFolderById(r.carpetaRaizId);
+    const fotosVieja = raiz.getFoldersByName('Fotos').next();
+    fotosVieja.setTrashed(true);
+    ctx.instalar();
+    const puntero = JSON.parse(dobles.DriveApp.getFilesByName('catalogo-ropa.config.json').next().getBlob().getDataAsString());
+    expect(puntero.carpetas.fotos).not.toBe(fotosVieja.getId());
+    expect(dobles.DriveApp.getFolderById(puntero.carpetas.fotos).isTrashed()).toBe(false);
+  });
+
+  test('usa un candado para no correr dos instalaciones a la vez', () => {
+    const { ctx, dobles } = preparar();
+    ctx.instalar();
+    expect(dobles._candado.tomas).toBe(1);
+    expect(dobles._candado.tomado).toBe(false);
+  });
+
+  test('las columnas de texto quedan como texto: una ruta con «=» no se vuelve fórmula', () => {
+    const { ctx, dobles } = preparar();
+    const r = ctx.instalar();
+    const eventos = dobles.SpreadsheetApp.openById(r.hojaId).getSheetByName('eventos');
+    eventos.appendRow([new Date(), 'vista', 'prd_00000001', '', 'web', '=HYPERLINK("http://x")', 'a1b2c3d4']);
+    expect(eventos.getRange(2, 6).getValue()).toBe('=HYPERLINK("http://x")');
+  });
+
+  test('recorta cada pestaña al ancho de su esquema', () => {
+    const { ctx, valor, dobles } = preparar();
+    const r = ctx.instalar();
+    const libro = dobles.SpreadsheetApp.openById(r.hojaId);
+    for (const [pestana, columnas] of Object.entries(valor('ESQUEMA'))) {
+      expect([pestana, libro.getSheetByName(pestana).getMaxColumns()]).toEqual([pestana, columnas.length]);
+    }
+  });
+
   test('si quien llama no es la dueña, lanza no_autorizado y no crea nada', () => {
     const { ctx, dobles } = preparar({ usuario: 'otra@example.com', dueno: 'duena@example.com' });
     expect(() => ctx.instalar()).toThrow(/no_autorizado/);

@@ -39,3 +39,33 @@ const ESQUEMA = {
   ],
   historial: ['id', 'fecha', 'usuario', 'entidad', 'entidad_id', 'campo', 'antes', 'despues', 'accion'],
 };
+
+// Columnas que NO son texto. Todas las demás llevan formato de texto plano («@»),
+// para que Sheets no convierta '51' en número, '2026-12-01' en fecha ni '=…' en fórmula.
+const TIPOS = {
+  productos: {
+    precio_regular: 'numero', stock: 'numero', orden: 'numero', creado_en: 'fecha', actualizado_en: 'fecha',
+    publicado_en: 'fecha', version: 'numero',
+  },
+  categorias: { orden: 'numero', visible: 'booleano', version: 'numero' },
+  secciones: { limite: 'numero', orden: 'numero', visible: 'booleano', version: 'numero' },
+  portadas: { desde: 'fecha', hasta: 'fecha', orden: 'numero', activa: 'booleano', version: 'numero' },
+  ofertas: {
+    valor: 'numero', desde: 'fecha', hasta: 'fecha', prioridad: 'numero', es_liquidacion: 'booleano',
+    cuenta_regresiva: 'booleano', activa: 'booleano', version: 'numero',
+  },
+  temporadas: {
+    desde: 'fecha', hasta: 'fecha', visible_en_web: 'booleano', revista: 'booleano', vigencia_dias: 'numero',
+    version: 'numero',
+  },
+  temporada_fotos: { orden: 'numero', destacada: 'booleano', version: 'numero' },
+  paletas: { version: 'numero' },
+  vendedoras: { activa: 'booleano', por_defecto: 'booleano', version: 'numero' },
+  textos: { version: 'numero' },
+  config: {},
+  eventos: { fecha: 'fecha' },
+  estadisticas_diarias: {
+    vistas: 'numero', whatsapp: 'numero', favoritos: 'numero', compartidos: 'numero', descargas: 'numero',
+  },
+  historial: { fecha: 'fecha' },
+};

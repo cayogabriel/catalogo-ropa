@@ -14,18 +14,19 @@ import {
 } from './servicios.mjs';
 
 // Reloj determinista: arranca el 1/12/2026 12:00 (Lima) y avanza 1 s por escritura,
-// para que «el más reciente» sea siempre claro en los tests.
+// para que «el más reciente» sea siempre claro en los tests. saltar(ms) adelanta el tiempo.
 function crearReloj(inicio = Date.parse('2026-12-01T12:00:00-05:00')) {
   let t = inicio;
-  return { ahora: () => t, avanzar: () => (t += 1000) };
+  return { ahora: () => t, avanzar: () => (t += 1000), saltar: (ms) => (t += ms) };
 }
 
 export function crearDobles({ usuario = 'duena@example.com', dueno = 'duena@example.com' } = {}) {
   const reloj = crearReloj();
-  const drive = crearDrive(reloj);
+  const drive = crearDrive(reloj, { dueno });
   const hojas = crearHojas(drive);
   const propiedades = crearPropiedades();
-  const cache = crearCache();
+  const cache = crearCache(reloj);
+  const candado = crearCandado();
   const url = crearUrlFetch();
   const html = crearHtml();
   const registro = [];
@@ -36,7 +37,7 @@ export function crearDobles({ usuario = 'duena@example.com', dueno = 'duena@exam
     MimeType,
     PropertiesService: propiedades.PropertiesService,
     CacheService: cache.CacheService,
-    ...crearCandado(),
+    LockService: candado.LockService,
     UrlFetchApp: url.UrlFetchApp,
     ...crearUtilidades(),
     ...crearSesion({ usuario, dueno }),
@@ -47,6 +48,7 @@ export function crearDobles({ usuario = 'duena@example.com', dueno = 'duena@exam
     _hojas: hojas.libros,
     _propiedades: propiedades.almacen,
     _cache: cache.almacen,
+    _candado: candado.estado,
     _url: url.ayudas,
     _html: html.estado,
     _registro: registro,

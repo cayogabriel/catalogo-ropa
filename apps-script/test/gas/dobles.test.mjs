@@ -61,10 +61,71 @@ describe('DriveApp', () => {
     expect(archivo.getBlob().getDataAsString()).toBe('{"a":1}');
   });
 
-  test('los archivos en la papelera no aparecen al buscar por nombre', () => {
+  test('buscar por nombre también trae lo que está en la papelera (Google no promete excluirlo)', () => {
     const { DriveApp } = crearDobles();
     DriveApp.createFile('borrado.txt', 'x').setTrashed(true);
-    expect(DriveApp.getFilesByName('borrado.txt').hasNext()).toBe(false);
+    const it = DriveApp.getFilesByName('borrado.txt');
+    expect(it.hasNext()).toBe(true);
+    expect(it.next().isTrashed()).toBe(true);
+  });
+
+  test('lo que está dentro de una carpeta en la papelera también está en la papelera', () => {
+    const { DriveApp } = crearDobles();
+    const carpeta = DriveApp.createFolder('A');
+    const archivo = carpeta.createFile('x.txt', 'x');
+    carpeta.setTrashed(true);
+    expect(archivo.isTrashed()).toBe(true);
+    carpeta.setTrashed(false);
+    expect(archivo.isTrashed()).toBe(false);
+  });
+
+  test('searchFiles filtra por nombre, dueña y papelera', () => {
+    const dobles = crearDobles({ dueno: 'duena@example.com' });
+    const { DriveApp } = dobles;
+    const propio = DriveApp.createFile('p.json', '{}', 'application/json');
+    DriveApp.createFile('p.json', '{}', 'application/json').setTrashed(true);
+    const ajeno = dobles._drive.crearAjeno('p.json', '{}', 'application/json', 'intrusa@example.com');
+    expect(ajeno.getOwner().getEmail()).toBe('intrusa@example.com');
+    const encontrados = [];
+    const it = DriveApp.searchFiles('title = "p.json" and "me" in owners and trashed = false');
+    while (it.hasNext()) encontrados.push(it.next().getId());
+    expect(encontrados).toEqual([propio.getId()]);
+    expect(() => DriveApp.searchFiles('fullText contains "x"')).toThrow(/no soportada/);
+  });
+
+  test('MimeType no tiene JSON, igual que en Apps Script', () => {
+    expect(crearDobles().MimeType.JSON).toBeUndefined();
+  });
+});
+
+describe('SpreadsheetApp convierte los textos como Google', () => {
+  test('números, fechas y fórmulas se convierten si la celda no es de texto', () => {
+    const { SpreadsheetApp } = crearDobles();
+    const hoja = SpreadsheetApp.create('P').insertSheet('d');
+    hoja.getRange(1, 1, 1, 4).setValues([['51', '2026-12-01', '=1+1', 'hola']]);
+    const [fila] = hoja.getRange(1, 1, 1, 4).getValues();
+    expect(fila[0]).toBe(51);
+    expect(fila[1]).toBeInstanceOf(Object);
+    expect(typeof fila[1].getTime).toBe('function');
+    expect(fila[2]).toBe('#ERROR!');
+    expect(fila[3]).toBe('hola');
+  });
+
+  test('con formato de texto («@») se guardan tal cual, también al agregar filas', () => {
+    const { SpreadsheetApp } = crearDobles();
+    const hoja = SpreadsheetApp.create('P').insertSheet('d');
+    hoja.getRange(1, 1, hoja.getMaxRows(), 2).setNumberFormat('@');
+    hoja.appendRow(['51', '=HYPERLINK("x")']);
+    expect(hoja.getRange(1, 1, 1, 2).getValues()[0]).toEqual(['51', '=HYPERLINK("x")']);
+  });
+
+  test('una pestaña nueva tiene 26 columnas y se pueden recortar', () => {
+    const { SpreadsheetApp } = crearDobles();
+    const hoja = SpreadsheetApp.create('P').insertSheet('d');
+    expect(hoja.getMaxColumns()).toBe(26);
+    hoja.deleteColumns(5, 22);
+    expect(hoja.getMaxColumns()).toBe(4);
+    expect(() => hoja.getRange(1, 5)).toThrow();
   });
 });
 
@@ -101,6 +162,43 @@ describe('servicios', () => {
     expect(r.getResponseCode()).toBe(200);
     expect(r.getContentText()).toBe('{"a":1}');
     expect(dobles._url.llamadas.map((l) => l.url)).toEqual(['https://ejemplo.com/x']);
+  });
+
+  test('UrlFetchApp lanza error con HTTP ≥ 400 salvo con muteHttpExceptions', () => {
+    const dobles = crearDobles();
+    dobles._url.responder(/falla\.com/, { codigo: 404, texto: 'no' });
+    expect(() => dobles.UrlFetchApp.fetch('https://falla.com/x')).toThrow(/404/);
+    expect(dobles.UrlFetchApp.fetch('https://falla.com/x', { muteHttpExceptions: true }).getResponseCode()).toBe(404);
+  });
+
+  test('las propiedades del script y las del usuario son almacenes distintos', () => {
+    const { PropertiesService } = crearDobles();
+    PropertiesService.getScriptProperties().setProperty('A', '1');
+    expect(PropertiesService.getUserProperties().getProperty('A')).toBeNull();
+  });
+
+  test('CacheService vence y no acepta valores de más de 100 KB', () => {
+    const dobles = crearDobles();
+    const c = dobles.CacheService.getScriptCache();
+    c.put('k', 'v', 60);
+    dobles._reloj.saltar(61_000);
+    expect(c.get('k')).toBeNull();
+    expect(() => c.put('grande', 'x'.repeat(100 * 1024 + 1), 60)).toThrow();
+  });
+
+  test('Utilities.formatDate da la hora de Lima con su desfase', () => {
+    const { Utilities } = crearDobles();
+    const fecha = new Date('2026-12-01T17:30:05Z');
+    expect(Utilities.formatDate(fecha, 'America/Lima', "yyyy-MM-dd'T'HH:mm:ssXXX")).toBe('2026-12-01T12:30:05-05:00');
+    expect(Utilities.formatDate(fecha, 'America/Lima', 'yyyy-MM-dd')).toBe('2026-12-01');
+  });
+
+  test('LockService cuenta cuántas veces se tomó el candado', () => {
+    const dobles = crearDobles();
+    const lock = dobles.LockService.getScriptLock();
+    lock.waitLock(1000);
+    lock.releaseLock();
+    expect(dobles._candado.tomas).toBe(1);
   });
 
   test('UrlFetchApp sin respuesta programada lanza error', () => {

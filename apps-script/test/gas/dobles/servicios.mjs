@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import { randomUUID } from 'node:crypto';
 import { crearBlob, aBuffer, bytesConSigno } from './blob.mjs';
 
-export function crearPropiedades() {
+function crearAlmacenPropiedades() {
   const almacen = new Map();
   const props = {
     getProperty: (k) => (almacen.has(k) ? almacen.get(k) : null),
@@ -14,30 +14,49 @@ export function crearPropiedades() {
     getProperties: () => Object.fromEntries(almacen),
     deleteProperty: (k) => (almacen.delete(k), props),
   };
-  return { PropertiesService: { getScriptProperties: () => props, getUserProperties: () => props }, almacen };
+  return { props, almacen };
 }
 
-export function crearCache() {
-  const almacen = new Map();
+export function crearPropiedades() {
+  const script = crearAlmacenPropiedades();
+  const usuario = crearAlmacenPropiedades();
+  return {
+    PropertiesService: { getScriptProperties: () => script.props, getUserProperties: () => usuario.props },
+    almacen: script.almacen,
+  };
+}
+
+// CacheService: vence según el reloj del doble (ttl en segundos, 600 por defecto)
+// y, como Google, no acepta valores de más de 100 KB.
+export function crearCache(reloj) {
+  const almacen = new Map(); // clave → { valor, vence }
+  const MAX = 100 * 1024;
+  const vigente = (k) => almacen.has(k) && reloj.ahora() < almacen.get(k).vence;
+  const guardar = (k, v, ttl = 600) => {
+    const valor = String(v);
+    if (Buffer.byteLength(valor, 'utf8') > MAX) throw new Error('Exception: Argument too large: value');
+    almacen.set(k, { valor, vence: reloj.ahora() + ttl * 1000 });
+  };
   const cache = {
-    get: (k) => (almacen.has(k) ? almacen.get(k) : null),
-    put: (k, v) => void almacen.set(k, String(v)),
+    get: (k) => (vigente(k) ? almacen.get(k).valor : null),
+    put: (k, v, ttl) => void guardar(k, v, ttl),
     remove: (k) => void almacen.delete(k),
-    getAll: (ks) => Object.fromEntries(ks.filter((k) => almacen.has(k)).map((k) => [k, almacen.get(k)])),
-    putAll: (o) => void Object.entries(o).forEach(([k, v]) => almacen.set(k, String(v))),
+    getAll: (ks) => Object.fromEntries(ks.filter(vigente).map((k) => [k, almacen.get(k).valor])),
+    putAll: (o, ttl) => void Object.entries(o).forEach(([k, v]) => guardar(k, v, ttl)),
   };
   return { CacheService: { getScriptCache: () => cache }, almacen };
 }
 
+// Un solo hilo en los tests: el candado siempre se concede, pero se cuenta.
 export function crearCandado() {
-  let tomado = false;
+  const estado = { tomado: false, tomas: 0 };
   const lock = {
-    tryLock: () => ((tomado = true), true),
-    waitLock: () => void (tomado = true),
-    releaseLock: () => void (tomado = false),
-    hasLock: () => tomado,
+    tryLock: () => ((estado.tomado = true), estado.tomas++, true),
+    waitLock: () => void ((estado.tomado = true), estado.tomas++),
+    releaseLock: () => void (estado.tomado = false),
+    hasLock: () => estado.tomado,
   };
-  return { LockService: { getScriptLock: () => lock, getDocumentLock: () => lock } };
+  return { LockService: { getScriptLock: () => lock, getDocumentLock: () => lock }, estado };
 }
 
 export function crearUrlFetch() {
@@ -48,6 +67,9 @@ export function crearUrlFetch() {
       llamadas.push({ url, opciones });
       const r = respuestas.find((x) => x.patron.test(url));
       if (!r) throw new Error(`UrlFetchApp: sin respuesta programada para ${url}`);
+      if ((r.codigo ?? 200) >= 400 && !opciones.muteHttpExceptions) {
+        throw new Error(`Exception: Request failed for ${url} returned code ${r.codigo}.`);
+      }
       const cuerpo = r.bytes ? aBuffer(r.bytes) : Buffer.from(r.texto ?? '', 'utf8');
       return {
         getResponseCode: () => r.codigo ?? 200,
@@ -64,6 +86,28 @@ export function crearUrlFetch() {
   };
 }
 
+// Desfases fijos que el proyecto usa (Lima no tiene horario de verano).
+const DESFASES = { 'America/Lima': -5 * 60, UTC: 0, GMT: 0, 'Etc/GMT': 0 };
+
+// Subconjunto de los patrones de SimpleDateFormat: yyyy MM dd HH mm ss XXX y 'literales'.
+function formatearFecha(fecha, zona, patron) {
+  if (!(zona in DESFASES)) throw new Error(`formatDate: zona no soportada por el doble: ${zona}`);
+  const desfase = DESFASES[zona];
+  const local = new Date(fecha.getTime() + desfase * 60_000);
+  const dos = (n) => String(n).padStart(2, '0');
+  const xxx = desfase === 0 ? 'Z' : `${desfase < 0 ? '-' : '+'}${dos(Math.floor(Math.abs(desfase) / 60))}:${dos(Math.abs(desfase) % 60)}`;
+  const piezas = {
+    yyyy: String(local.getUTCFullYear()),
+    MM: dos(local.getUTCMonth() + 1),
+    dd: dos(local.getUTCDate()),
+    HH: dos(local.getUTCHours()),
+    mm: dos(local.getUTCMinutes()),
+    ss: dos(local.getUTCSeconds()),
+    XXX: xxx,
+  };
+  return patron.replace(/'([^']*)'|yyyy|MM|dd|HH|mm|ss|XXX/g, (token, literal) => (literal !== undefined ? literal : piezas[token]));
+}
+
 export function crearUtilidades() {
   return {
     Utilities: {
@@ -71,6 +115,7 @@ export function crearUtilidades() {
       base64Decode: (texto) => bytesConSigno(Buffer.from(texto, 'base64')),
       newBlob: (datos, tipo, nombre) => crearBlob(datos, tipo, nombre),
       getUuid: () => randomUUID(),
+      formatDate: formatearFecha,
       sleep: () => {},
     },
   };
