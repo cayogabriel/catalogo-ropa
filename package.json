@@ -13,7 +13,11 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "fixtures": "node fixtures/generar-imagenes.mjs && node fixtures/generar-catalogo.mjs"
+    "fixtures": "node fixtures/generar-imagenes.mjs && node fixtures/generar-catalogo.mjs",
+    "push:panel": "cd apps-script/panel && clasp push -f",
+    "push:api": "cd apps-script/api && clasp push -f",
+    "desplegar:panel": "node scripts/desplegar.mjs panel",
+    "desplegar:api": "node scripts/desplegar.mjs api"
   },
   "devDependencies": {
     "sharp": "0.35.5",
