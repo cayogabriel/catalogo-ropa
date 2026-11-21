@@ -1,0 +1,199 @@
+<!-- Resumen: publicación, primeros pasos y consultas de las clientas -->
+<template x-if="$store.panel.ruta === 'resumen' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaResumen()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Resumen</h1>
+    </div>
+
+    <article class="tarjeta" aria-labelledby="res-publicacion">
+      <div class="tarjeta-cabecera">
+        <h2 id="res-publicacion">Tu catálogo en la web</h2>
+        <span class="chip aviso" x-show="$store.panel.cambiosSinPublicar">Tienes cambios sin publicar</span>
+        <span class="chip ok" x-show="!$store.panel.cambiosSinPublicar && $store.publicacion.estado.estado === 'publicado'">Todo publicado</span>
+      </div>
+      <p x-text="$store.publicacion.textoEstado"></p>
+      <p class="suave" x-show="$store.panel.cambiosSinPublicar">Guardamos tus cambios al instante, pero tus clientas todavía no los ven. Pulsa «Publicar» cuando estés lista.</p>
+      <div class="fila-botones">
+        <button type="button" class="boton primario" :disabled="$store.publicacion.enCurso" @click="$store.publicacion.publicar()" x-text="$store.publicacion.etiquetaBoton">Publicar</button>
+        <a class="boton" target="_blank" rel="noopener" :href="$store.panel.sitioUrl" x-show="$store.panel.sitioUrl">
+          Ver mi catálogo
+          <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg>
+        </a>
+      </div>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="res-empezar" x-show="pasos.length">
+      <h2 id="res-empezar">Para empezar</h2>
+      <p class="suave">Esto falta para que tu tienda quede lista.</p>
+      <ul class="lista">
+        <template x-for="p in pasos" :key="p.ruta + p.texto">
+          <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+            <span x-text="p.texto"></span>
+            <button type="button" class="boton chico" @click="$store.panel.irA(p.ruta)" x-text="p.boton"></button>
+          </li>
+        </template>
+      </ul>
+    </article>
+
+    <article class="tarjeta" aria-labelledby="res-consultas">
+      <div class="tarjeta-cabecera">
+        <h2 id="res-consultas">Lo que consultan tus clientas</h2>
+        <div class="grupo-opciones" role="group" aria-label="Periodo">
+          <button type="button" class="boton chico" :class="{ primario: dias === 7 }" :aria-pressed="dias === 7" @click="elegir(7)">7 días</button>
+          <button type="button" class="boton chico" :class="{ primario: dias === 30 }" :aria-pressed="dias === 30" @click="elegir(30)">30 días</button>
+        </div>
+      </div>
+
+      <p class="nota error" x-show="error" x-text="error"></p>
+      <p class="suave" x-show="cargando && !resumen" role="status">Cargando…</p>
+
+      <div class="vacio" x-show="resumen && sinDatos && !error">
+        <svg class="ico" aria-hidden="true"><use href="#i-resumen"/></svg>
+        <h3>Aún no hay consultas</h3>
+        <p>Cuando compartas tu catálogo, aquí verás qué prendas miran y piden más.</p>
+      </div>
+
+      <div x-show="resumen && !sinDatos">
+        <div class="cifras">
+          <div class="cifra"><b x-text="resumen ? resumen.totales.vistas : 0"></b><span>Vistas</span></div>
+          <div class="cifra"><b x-text="resumen ? resumen.totales.whatsapp : 0"></b><span>Clics a WhatsApp</span></div>
+          <div class="cifra"><b x-text="resumen ? resumen.totales.favoritos : 0"></b><span>Favoritos</span></div>
+        </div>
+
+        <h3 style="margin-top: 1.25rem">Prendas más consultadas</h3>
+        <table class="tabla" style="margin-top: 0.5rem">
+          <caption class="solo-lector">Prendas con más clics a WhatsApp, vistas y favoritos</caption>
+          <thead>
+            <tr><th scope="col">Prenda</th><th scope="col" class="num">WhatsApp</th><th scope="col" class="num">Vistas</th><th scope="col" class="num">Favoritos</th></tr>
+          </thead>
+          <tbody>
+            <template x-for="p in top" :key="p.producto_id">
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.625rem; min-width: 0">
+                    <div class="miniatura" style="width: 2.25rem"><img :src="$foto(fotoDe(p.producto_id))" :alt="'Foto de ' + p.nombre" /></div>
+                    <div style="min-width: 0"><span class="fila-titulo" x-text="p.nombre || 'Sin nombre'"></span><span class="fila-sub" x-text="p.codigo"></span></div>
+                  </div>
+                </td>
+                <td class="num" x-text="p.whatsapp"></td>
+                <td class="num" x-text="p.vistas"></td>
+                <td class="num" x-text="p.favoritos"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 1.25rem">De dónde llegan</h3>
+        <table class="tabla" style="margin-top: 0.5rem">
+          <caption class="solo-lector">Vistas, clics a WhatsApp y favoritos según el origen</caption>
+          <thead>
+            <tr><th scope="col">Origen</th><th scope="col" class="num">Vistas</th><th scope="col" class="num">WhatsApp</th><th scope="col" class="num">Favoritos</th></tr>
+          </thead>
+          <tbody>
+            <template x-for="o in origenes" :key="o.id">
+              <tr>
+                <th scope="row" style="font-weight: 500; text-align: left" x-text="o.nombre"></th>
+                <td class="num" x-text="o.vistas"></td>
+                <td class="num" x-text="o.whatsapp"></td>
+                <td class="num" x-text="o.favoritos"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <p class="suave" style="margin-top: 0.75rem; font-size: 0.875rem">Los clics desde la revista en PDF se cuentan cuando tu clienta toca el botón de una prenda.</p>
+      </div>
+    </article>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var NOMBRES_ORIGEN = { web: 'Web', revista_web: 'Revista web', pdf: 'Revista en PDF', catalogo_pdf: 'Catálogo en PDF' };
+
+  window.Alpine.data('vistaResumen', function () {
+    return {
+      dias: 7,
+      resumen: null,
+      cargando: false,
+      error: '',
+      pedido: 0,
+
+      init: function () {
+        var d = window.Alpine.store('datos');
+        d.cargar('vendedoras').catch(function () {});
+        d.cargar('productos').catch(function () {});
+        this.cargar();
+      },
+      cargar: function () {
+        var self = this;
+        var n = ++this.pedido;
+        this.cargando = true;
+        this.error = '';
+        return window.Panel.servidor.llamar('resumen', { dias: this.dias }).then(
+          function (r) {
+            if (n !== self.pedido) return;
+            self.resumen = r;
+            self.cargando = false;
+            var ids = [];
+            (r.por_producto || []).forEach(function (p) {
+              var f = window.Alpine.store('datos').buscar('productos', p.producto_id);
+              if (f && f.fotos[0]) ids.push(f.fotos[0]);
+            });
+            window.Alpine.store('min').pedir(ids);
+          },
+          function (e) {
+            if (n !== self.pedido) return;
+            self.error = e.amable;
+            self.cargando = false;
+          }
+        );
+      },
+      elegir: function (d) {
+        if (d === this.dias) return;
+        this.dias = d;
+        this.cargar();
+      },
+      fotoDe: function (id) {
+        var p = window.Alpine.store('datos').buscar('productos', id);
+        return p && p.fotos[0] ? p.fotos[0] : '';
+      },
+      get sinDatos() {
+        var t = this.resumen && this.resumen.totales;
+        return !t || t.vistas + t.whatsapp + t.favoritos + t.compartidos + t.descargas === 0;
+      },
+      get top() {
+        return ((this.resumen && this.resumen.por_producto) || [])
+          .filter(function (p) { return p.whatsapp || p.vistas || p.favoritos; })
+          .slice(0, 8);
+      },
+      get origenes() {
+        var por = (this.resumen && this.resumen.por_origen) || {};
+        return Object.keys(NOMBRES_ORIGEN).map(function (id) {
+          var o = por[id] || {};
+          return { id: id, nombre: NOMBRES_ORIGEN[id], vistas: o.vistas || 0, whatsapp: o.whatsapp || 0, favoritos: o.favoritos || 0 };
+        });
+      },
+      /** Lo que falta para que la tienda pueda publicarse (sale de datos reales). */
+      get pasos() {
+        var p = window.Alpine.store('panel');
+        var d = window.Alpine.store('datos');
+        var pasos = [];
+        if (!p.config.tienda_nombre) pasos.push({ texto: 'Ponle un nombre a tu tienda.', ruta: 'configuracion', boton: 'Poner nombre' });
+        if (!p.token.configurado) pasos.push({ texto: 'Conecta tu cuenta de GitHub para poder publicar.', ruta: 'configuracion', boton: 'Conectar' });
+        var vendedoras = d.listas.vendedoras;
+        if (vendedoras && !vendedoras.some(function (v) { return v.activa && v.whatsapp; })) {
+          pasos.push({ texto: 'Agrega tu número de WhatsApp para recibir los pedidos.', ruta: 'vendedoras', boton: 'Agregar número' });
+        }
+        if (!p.config.instagram && !p.config.facebook && !p.config.tiktok) {
+          pasos.push({ texto: 'Agrega tus redes para que te encuentren.', ruta: 'configuracion', boton: 'Agregar redes' });
+        }
+        var productos = d.listas.productos;
+        if (productos && !productos.some(function (x) { return x.estado === 'publicado'; })) {
+          pasos.push({ texto: 'Sube las fotos de tus primeras prendas.', ruta: 'productos', boton: 'Ir a productos' });
+        }
+        return pasos;
+      },
+    };
+  });
+});
+</script>

@@ -1,0 +1,507 @@
+<!-- Productos: lista con búsqueda y filtros, edición en línea, ficha completa y alta rápida con fotos -->
+<template x-if="$store.panel.ruta === 'productos' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaProductos()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Productos</h1>
+      <div class="fila-botones">
+        <button type="button" class="boton primario" @click="alta = true">
+          <svg class="ico" aria-hidden="true"><use href="#i-camara"/></svg>
+          Subir fotos
+        </button>
+        <button type="button" class="boton" @click="nueva()" :disabled="creando">
+          <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
+          Prenda sin foto
+        </button>
+      </div>
+    </div>
+    <p class="vista-intro">Tus cambios se guardan solos. Para que tus clientas los vean, pulsa «Publicar».</p>
+
+    <p class="nota error" x-show="error" x-text="error"></p>
+
+    <form class="filtros" role="search" aria-label="Buscar y filtrar prendas" @submit.prevent>
+      <label class="campo ancho">
+        <span class="campo-etiqueta">Buscar</span>
+        <input type="search" placeholder="Nombre o código" x-model="filtros.texto" autocomplete="off" />
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Categoría</span>
+        <select x-model="filtros.categoria">
+          <option value="">Todas</option>
+          <template x-for="c in categorias" :key="c.id"><option :value="c.id" x-text="c.nombre"></option></template>
+        </select>
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Estado</span>
+        <select x-model="filtros.estado">
+          <option value="">Todas menos archivadas</option>
+          <option value="borrador">Borradores</option>
+          <option value="publicado">Publicadas</option>
+          <option value="agotado">Agotadas</option>
+          <option value="archivado">Archivadas</option>
+        </select>
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Ordenar por</span>
+        <select x-model="orden">
+          <option value="recientes">Más recientes</option>
+          <option value="nombre">Nombre</option>
+          <option value="codigo">Código</option>
+        </select>
+      </label>
+      <div class="grupo-opciones" style="grid-column: 1 / -1">
+        <label class="pastilla"><input type="checkbox" x-model="filtros.sinFoto" /><span>Sin foto</span></label>
+        <label class="pastilla"><input type="checkbox" x-model="filtros.sinPrecio" /><span>Sin precio</span></label>
+        <button type="button" class="boton texto chico" x-show="hayFiltros" @click="limpiar()">Quitar filtros</button>
+      </div>
+    </form>
+
+    <p class="contador" role="status" aria-live="polite" x-text="textoContador"></p>
+
+    <p class="suave" x-show="!listo" role="status">Cargando tus prendas…</p>
+    <div class="vacio tarjeta" x-show="listo && !todas.length">
+      <svg class="ico" aria-hidden="true"><use href="#i-producto"/></svg>
+      <h2>Aún no tienes prendas</h2>
+      <p>Sube las fotos de tus primeras prendas y creamos un borrador por cada una.</p>
+      <button type="button" class="boton primario" @click="alta = true">Subir fotos</button>
+    </div>
+    <div class="vacio tarjeta" x-show="listo && todas.length && !visibles.length">
+      <svg class="ico" aria-hidden="true"><use href="#i-buscar"/></svg>
+      <h2>No encontré prendas con esos filtros</h2>
+      <button type="button" class="boton" @click="limpiar()">Quitar filtros</button>
+    </div>
+
+    <ul class="lista">
+      <template x-for="p in pagina" :key="p.id">
+        <li class="fila-producto">
+          <button type="button" class="miniatura" :class="{ cargando: p.fotos[0] && !$foto(p.fotos[0]) }" style="width: 3.5rem" @click="abrir(p.id)" :aria-label="'Abrir ' + (p.nombre || 'prenda sin nombre')">
+            <img :src="$foto(p.fotos[0])" :alt="p.nombre ? 'Foto de ' + p.nombre : 'Foto de la prenda'" />
+          </button>
+          <button type="button" class="fila-principal" @click="abrir(p.id)">
+            <strong x-text="p.nombre || 'Sin nombre'"></strong>
+            <span class="fila-sub">
+              <span x-text="p.codigo"></span> · <span x-text="nombreCategoria(p.categoria_id)"></span>
+              <template x-if="!p.fotos.length"><span> · sin foto</span></template>
+            </span>
+          </button>
+          <div class="edicion">
+            <label class="campo">
+              <span class="solo-lector">Precio de <span x-text="p.nombre || p.codigo"></span></span>
+              <span class="campo-moneda"><span aria-hidden="true">S/</span>
+                <input type="text" inputmode="decimal" placeholder="Precio" :value="p.precio_regular === null ? '' : p.precio_regular" @input="g(p, 'precio_regular', $event)" :aria-invalid="err(p).precio_regular ? 'true' : 'false'" />
+              </span>
+              <span class="campo-error" x-show="err(p).precio_regular" x-text="err(p).precio_regular"></span>
+            </label>
+            <label class="campo">
+              <span class="solo-lector">Estado de <span x-text="p.nombre || p.codigo"></span></span>
+              <select :value="p.estado" @change="cambiarEstado(p, $event)">
+                <template x-for="e in estados" :key="e[0]"><option :value="e[0]" :selected="p.estado === e[0]" x-text="e[1]"></option></template>
+              </select>
+            </label>
+          </div>
+        </li>
+      </template>
+    </ul>
+    <div class="fila-botones" style="justify-content: center" x-show="visibles.length > limite">
+      <button type="button" class="boton" @click="limite += 30">Mostrar más prendas</button>
+    </div>
+
+    <!-- Ficha completa -->
+    <dialog class="hoja ancha" x-modal="fichaAbierta" aria-labelledby="ficha-titulo">
+      <template x-if="ficha">
+        <div class="hoja-interior">
+          <div class="hoja-cabecera">
+            <div style="min-width: 0">
+              <h2 id="ficha-titulo" class="fila-titulo" x-text="ficha.nombre || 'Prenda sin nombre'"></h2>
+              <span class="fila-sub" x-text="ficha.codigo"></span>
+            </div>
+            <button type="button" class="boton icono texto" aria-label="Cerrar la ficha" @click="fichaAbierta = false"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+          </div>
+          <div class="hoja-cuerpo">
+            <section aria-labelledby="f-fotos">
+              <div class="tarjeta-cabecera">
+                <h3 id="f-fotos">Fotos</h3>
+                <button type="button" class="boton chico" @click="agregarFotos()"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Agregar fotos</button>
+              </div>
+              <p class="campo-ayuda" style="margin-top: 0.25rem">La primera es la principal. Arrastra desde el ícono de la esquina o usa las flechas para cambiar el orden.</p>
+              <p class="campo-error" x-show="errores.fotos" x-text="errores.fotos"></p>
+              <ul class="rejilla-fotos" style="margin-top: 0.75rem" x-reordenar @reordenado="moverEn(ficha, 'fotos', $event.detail.de, $event.detail.a)">
+                <template x-for="(id, i) in ficha.fotos" :key="id">
+                  <li class="foto-celda" data-item>
+                    <div class="miniatura" :class="{ cargando: !$foto(id) }"><img :src="$foto(id)" :alt="'Foto ' + (i + 1) + ' de ' + (ficha.nombre || 'la prenda')" /></div>
+                    <span class="chip ok principal" x-show="i === 0">Principal</span>
+                    <div class="esquina">
+                      <button type="button" class="boton asa" data-asa :aria-label="'Mover la foto ' + (i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-asa"/></svg></button>
+                      <button type="button" class="boton" :aria-label="'Quitar la foto ' + (i + 1)" @click="quitarDe(ficha, 'fotos', i)"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+                    </div>
+                    <div class="orden">
+                      <button type="button" class="boton" :disabled="i === 0" :aria-label="'Mover la foto ' + (i + 1) + ' antes'" @click="moverEn(ficha, 'fotos', i, i - 1)"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                      <button type="button" class="boton" :disabled="i === ficha.fotos.length - 1" :aria-label="'Mover la foto ' + (i + 1) + ' después'" @click="moverEn(ficha, 'fotos', i, i + 1)"><svg class="ico der" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                    </div>
+                  </li>
+                </template>
+              </ul>
+              <p class="suave" x-show="!ficha.fotos.length" style="margin-top: 0.75rem">Esta prenda todavía no tiene fotos.</p>
+            </section>
+
+            <section aria-labelledby="f-datos">
+              <h3 id="f-datos">Datos de la prenda</h3>
+              <div class="rejilla-campos" style="margin-top: 0.75rem">
+                <label class="campo">
+                  <span class="campo-etiqueta">Nombre</span>
+                  <input type="text" maxlength="80" :value="ficha.nombre" @input="g(ficha, 'nombre', $event)" :aria-invalid="errores.nombre ? 'true' : 'false'" />
+                  <span class="campo-error" x-show="errores.nombre" x-text="errores.nombre"></span>
+                </label>
+                <label class="campo">
+                  <span class="campo-etiqueta">Descripción</span>
+                  <textarea maxlength="600" :value="ficha.descripcion" @input="g(ficha, 'descripcion', $event)" :aria-invalid="errores.descripcion ? 'true' : 'false'"></textarea>
+                  <span class="campo-ayuda num" x-text="(ficha.descripcion || '').length + ' de 600 letras'"></span>
+                  <span class="campo-error" x-show="errores.descripcion" x-text="errores.descripcion"></span>
+                </label>
+                <div class="rejilla-campos dos">
+                  <label class="campo">
+                    <span class="campo-etiqueta">Categoría</span>
+                    <select :value="ficha.categoria_id" @change="g(ficha, 'categoria_id', $event)">
+                      <template x-for="c in categorias" :key="c.id"><option :value="c.id" :selected="ficha.categoria_id === c.id" x-text="c.nombre"></option></template>
+                    </select>
+                  </label>
+                  <label class="campo">
+                    <span class="campo-etiqueta">Precio regular</span>
+                    <span class="campo-moneda"><span aria-hidden="true">S/</span>
+                      <input type="text" inputmode="decimal" :value="ficha.precio_regular === null ? '' : ficha.precio_regular" @input="g(ficha, 'precio_regular', $event)" :aria-invalid="errores.precio_regular ? 'true' : 'false'" />
+                    </span>
+                    <span class="campo-error" x-show="errores.precio_regular" x-text="errores.precio_regular"></span>
+                  </label>
+                  <label class="campo">
+                    <span class="campo-etiqueta">Stock (opcional)</span>
+                    <input type="text" inputmode="numeric" :value="ficha.stock === null ? '' : ficha.stock" @input="g(ficha, 'stock', $event)" />
+                    <span class="campo-ayuda">Déjalo vacío si no llevas la cuenta. Si pones un número, «Últimas unidades» aparece cuando quedan pocas.</span>
+                  </label>
+                  <label class="campo">
+                    <span class="campo-etiqueta">Estado</span>
+                    <select :value="ficha.estado" @change="cambiarEstado(ficha, $event)">
+                      <template x-for="e in estados" :key="e[0]"><option :value="e[0]" :selected="ficha.estado === e[0]" x-text="e[1]"></option></template>
+                    </select>
+                    <span class="campo-ayuda" x-text="ayudaEstado(ficha.estado)"></span>
+                  </label>
+                </div>
+                <p class="nota aviso" x-show="textoFaltantes && ficha.estado !== 'publicado'" x-text="textoFaltantes"></p>
+              </div>
+            </section>
+
+            <section aria-labelledby="f-tallas">
+              <h3 id="f-tallas">Tallas y colores</h3>
+              <div class="rejilla-campos dos" style="margin-top: 0.75rem">
+                <label class="campo">
+                  <span class="campo-etiqueta">Tallas</span>
+                  <input type="text" placeholder="S, M, L" :value="lista(ficha, 'tallas')" @change="gl(ficha, 'tallas', $event)" />
+                  <span class="campo-ayuda">Sepáralas con comas.</span>
+                </label>
+                <label class="campo">
+                  <span class="campo-etiqueta">Colores</span>
+                  <input type="text" placeholder="Coral, Marfil" :value="lista(ficha, 'colores')" @change="gl(ficha, 'colores', $event)" />
+                  <span class="campo-ayuda">Sepáralos con comas.</span>
+                </label>
+              </div>
+              <fieldset style="margin-top: 0.75rem" x-show="ficha.tallas.length">
+                <legend>Tallas agotadas</legend>
+                <p class="campo-ayuda">Marca las que se acabaron. En tu catálogo se verán tachadas.</p>
+                <div class="grupo-opciones" style="margin-top: 0.375rem">
+                  <template x-for="t in ficha.tallas" :key="t">
+                    <label class="pastilla"><input type="checkbox" :checked="ficha.tallas_agotadas.indexOf(t) !== -1" @change="alternarAgotada(t, $event)" /><span x-text="t"></span></label>
+                  </template>
+                </div>
+              </fieldset>
+              <p class="campo-error" x-show="errores.tallas_agotadas" x-text="errores.tallas_agotadas"></p>
+            </section>
+
+            <section aria-labelledby="f-mas">
+              <h3 id="f-mas">Otros datos</h3>
+              <div class="rejilla-campos dos" style="margin-top: 0.75rem">
+                <label class="campo">
+                  <span class="campo-etiqueta">Etiquetas</span>
+                  <input type="text" placeholder="nuevo, destacado" :value="lista(ficha, 'etiquetas')" @change="gl(ficha, 'etiquetas', $event)" />
+                  <span class="campo-ayuda">Sirven para armar secciones, por ejemplo «destacado».</span>
+                </label>
+                <label class="campo">
+                  <span class="campo-etiqueta">Quién atiende este pedido</span>
+                  <select :value="ficha.vendedora_id" @change="g(ficha, 'vendedora_id', $event)">
+                    <option value="" :selected="!ficha.vendedora_id">La vendedora de siempre</option>
+                    <template x-for="v in vendedoras" :key="v.id"><option :value="v.id" :selected="ficha.vendedora_id === v.id" x-text="v.nombre"></option></template>
+                  </select>
+                </label>
+                <label class="campo" style="grid-column: 1 / -1">
+                  <span class="campo-etiqueta">Descripción de la foto principal</span>
+                  <input type="text" :value="ficha.texto_alt" @input="g(ficha, 'texto_alt', $event)" />
+                  <span class="campo-ayuda">La leen los lectores de pantalla. Si la dejas vacía, usamos el nombre y el primer color.</span>
+                </label>
+              </div>
+            </section>
+
+            <section aria-labelledby="f-cambios">
+              <div class="tarjeta-cabecera">
+                <h3 id="f-cambios">Últimos cambios</h3>
+              </div>
+              <p class="suave" x-show="!cambios.length" style="margin-top: 0.5rem">Todavía no hay cambios de esta prenda.</p>
+              <ul class="lista" style="margin-top: 0.5rem">
+                <template x-for="h in cambios" :key="h.id">
+                  <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+                    <div style="min-width: 0"><span x-text="textoCambio(h)"></span><br /><span class="fila-sub" x-text="$u.haceCuanto(h.fecha)"></span></div>
+                    <button type="button" class="boton chico" x-show="h.accion !== 'deshacer'" @click="deshacerCambio(h)">Deshacer</button>
+                  </li>
+                </template>
+              </ul>
+            </section>
+          </div>
+          <div class="hoja-pie" style="justify-content: space-between">
+            <div class="fila-botones">
+              <button type="button" class="boton" @click="duplicar()"><svg class="ico" aria-hidden="true"><use href="#i-copiar"/></svg> Duplicar</button>
+              <button type="button" class="boton peligro" x-show="ficha.estado !== 'archivado'" @click="archivar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Archivar</button>
+              <button type="button" class="boton" x-show="ficha.estado === 'archivado'" @click="restaurar()"><svg class="ico" aria-hidden="true"><use href="#i-deshacer"/></svg> Restaurar</button>
+            </div>
+            <button type="button" class="boton primario" @click="fichaAbierta = false">Listo</button>
+          </div>
+        </div>
+      </template>
+    </dialog>
+
+    <!-- Alta rápida: varias fotos → un borrador por foto -->
+    <dialog class="hoja" x-modal="alta" aria-labelledby="alta-titulo">
+      <template x-if="alta">
+        <div class="hoja-interior" x-data="altaRapida()">
+          <div class="hoja-cabecera">
+            <h2 id="alta-titulo">Subir fotos de prendas</h2>
+            <button type="button" class="boton icono texto" aria-label="Cerrar" @click="$dispatch('cerrar-alta')"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+          </div>
+          <div class="hoja-cuerpo">
+            <p>Elige varias fotos a la vez: creamos un borrador por cada una. Después completas el nombre y el precio.</p>
+            <label class="campo">
+              <span class="campo-etiqueta">¿De qué categoría son?</span>
+              <select x-model="categoria" autofocus>
+                <option value="">Elige una categoría</option>
+                <template x-for="c in categorias" :key="c.id"><option :value="c.id" x-text="c.nombre"></option></template>
+              </select>
+              <span class="campo-ayuda">Si mezclas categorías, sube las fotos en tandas.</span>
+            </label>
+            <div class="zona-soltar" :class="{ encima: bib.arrastrando }" :aria-disabled="!categoria"
+                 @dragover.prevent="bib.arrastrando = true" @dragleave="bib.arrastrando = false" @drop.prevent="bib.arrastrando = false; procesar($event.dataTransfer.files)">
+              <p><strong>Arrastra tus fotos aquí</strong></p>
+              <p class="campo-ayuda" x-show="!categoria">Primero elige la categoría.</p>
+              <div class="fila-botones" style="justify-content: center; margin-top: 0.75rem">
+                <label class="boton primario" :aria-disabled="!categoria || trabajando" :style="(!categoria || trabajando) ? 'opacity:.55;pointer-events:none' : ''">
+                  <svg class="ico" aria-hidden="true"><use href="#i-subir"/></svg>
+                  <span>Elegir fotos</span>
+                  <input type="file" class="solo-lector" accept="image/*" multiple :disabled="!categoria || trabajando" @change="procesar($event.target.files); $event.target.value = ''" />
+                </label>
+                <label class="boton" :aria-disabled="!categoria || trabajando" :style="(!categoria || trabajando) ? 'opacity:.55;pointer-events:none' : ''">
+                  <svg class="ico" aria-hidden="true"><use href="#i-camara"/></svg>
+                  <span>Tomar foto</span>
+                  <input type="file" class="solo-lector" accept="image/*" capture="environment" :disabled="!categoria || trabajando" @change="procesar($event.target.files); $event.target.value = ''" />
+                </label>
+              </div>
+            </div>
+            <p class="nota aviso" x-show="bib.aviso" x-text="bib.aviso"></p>
+            <ul class="lista" x-show="bib.subidas.length" aria-label="Estado de las fotos">
+              <template x-for="(s, i) in bib.subidas" :key="i">
+                <li class="subida">
+                  <span class="fila-titulo" x-text="s.nombre" style="grid-column: 1 / -1"></span>
+                  <span class="fila-sub" :class="{ 'campo-error': s.estado === 'error' }" x-text="s.texto"></span>
+                  <div class="progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="s.pct" :aria-label="'Progreso de ' + s.nombre"><i :style="'transform: scaleX(' + s.pct / 100 + ')'"></i></div>
+                </li>
+              </template>
+            </ul>
+            <p class="nota error" x-show="falla" x-text="falla"></p>
+            <p class="nota ok" role="status" x-show="resumen" x-text="resumen"></p>
+          </div>
+          <div class="hoja-pie">
+            <button type="button" class="boton" @click="$dispatch('cerrar-alta')">Cerrar</button>
+            <button type="button" class="boton primario" x-show="creados" @click="$dispatch('ver-borradores')">Ver los borradores</button>
+          </div>
+        </div>
+      </template>
+    </dialog>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var L = P.logica;
+  var U = P.util;
+  var ESTADOS = [['borrador', 'Borrador'], ['publicado', 'Publicada'], ['agotado', 'Agotada'], ['archivado', 'Archivada']];
+  var AYUDA_ESTADO = {
+    borrador: 'Solo la ves tú. No sale en tu catálogo.',
+    publicado: 'Tus clientas la ven en el catálogo cuando publicas.',
+    agotado: 'Se muestra como agotada.',
+    archivado: 'Guardada, pero fuera del catálogo.',
+  };
+
+  A.data('vistaProductos', function () {
+    var base = P.mixinEditor('productos');
+    // Los getters van en el literal; Object.assign copiaría su valor, así que lo único que se copia es el mixin (sin getters).
+    return Object.assign({
+      filtros: { texto: '', categoria: '', estado: '', sinFoto: false, sinPrecio: false },
+      orden: 'recientes',
+      limite: 30,
+      listo: false,
+      error: '',
+      creando: false,
+      fichaId: null,
+      fichaAbierta: false,
+      alta: false,
+      cambios: [],
+      estados: ESTADOS,
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('productos'), d.cargar('categorias'), d.cargar('vendedoras')]).then(
+          function () { self.listo = true; },
+          function (e) { self.error = e.amable || 'No pude cargar tus prendas.'; self.listo = true; }
+        );
+        this.$watch('filtros', function () { self.limite = 30; });
+        this.$el.addEventListener('cerrar-alta', function () { self.alta = false; });
+        this.$el.addEventListener('ver-borradores', function () { self.alta = false; self.filtros.estado = 'borrador'; self.orden = 'recientes'; });
+        this.$watch('fichaAbierta', function (v) { if (!v) self.fichaId = null; });
+        this.$watch('visibles', function (v) { A.store('min').pedir(v.slice(0, self.limite).map(function (p) { return p.fotos[0]; })); });
+      },
+
+      get todas() { return A.store('datos').lista('productos'); },
+      get categorias() { return A.store('datos').lista('categorias'); },
+      get vendedoras() { return A.store('datos').lista('vendedoras').filter(function (v) { return v.activa; }); },
+      get visibles() { return L.ordenarProductos(L.filtrarProductos(this.todas, this.filtros), this.orden); },
+      get pagina() { return this.visibles.slice(0, this.limite); },
+      get hayFiltros() { var f = this.filtros; return !!(f.texto || f.categoria || f.estado || f.sinFoto || f.sinPrecio); },
+      get textoContador() {
+        if (!this.listo) return '';
+        var n = this.visibles.length;
+        return n === 1 ? '1 prenda' : n + ' prendas';
+      },
+      get ficha() { return this.fichaId ? A.store('datos').buscar('productos', this.fichaId) : null; },
+      get errores() { return this.ficha ? P.validar.producto(this.ficha) : {}; },
+      get textoFaltantes() { return this.ficha ? L.textoFaltantes(this.ficha) : ''; },
+
+      err: function (p) { return P.validar.producto(p); },
+      nombreCategoria: function (id) {
+        var c = A.store('datos').buscar('categorias', id);
+        return c ? c.nombre : '';
+      },
+      ayudaEstado: function (e) { return AYUDA_ESTADO[e] || ''; },
+      limpiar: function () { this.filtros = { texto: '', categoria: '', estado: '', sinFoto: false, sinPrecio: false }; },
+
+      /** Para publicar hacen falta nombre, precio y foto: se avisa antes de que el servidor la rechace. */
+      cambiarEstado: function (p, e) {
+        var nuevo = e.target.value;
+        if (nuevo === 'publicado') {
+          var falta = L.textoFaltantes(p);
+          if (falta) {
+            e.target.value = p.estado;
+            A.store('toasts').mostrar({ tipo: 'aviso', texto: falta });
+            return;
+          }
+        }
+        A.store('datos').guardar('productos', p, 'estado', nuevo);
+      },
+      alternarAgotada: function (t, e) {
+        var f = this.ficha;
+        var lista = f.tallas_agotadas.filter(function (x) { return x !== t; });
+        if (e.target.checked) lista.push(t);
+        A.store('datos').guardar('productos', f, 'tallas_agotadas', lista);
+      },
+
+      abrir: function (id) {
+        this.fichaId = id;
+        this.fichaAbierta = true;
+        var p = this.ficha;
+        if (p) A.store('min').pedir(p.fotos);
+        this.cargarCambios();
+      },
+      cargarCambios: function () {
+        var self = this;
+        var id = this.fichaId;
+        if (!id) return Promise.resolve();
+        return P.servidor.llamar('historial', { entidad: 'productos', id: id, limite: 6 }).then(
+          function (h) { if (self.fichaId === id) self.cambios = h; },
+          function () { self.cambios = []; }
+        );
+      },
+      textoCambio: function (h) {
+        return L.describirCambio(h, { simbolo: A.store('panel').config.moneda_simbolo || 'S/', etiqueta: function (ent, id) { var p = A.store('datos').buscar('productos', id); return p ? p.codigo : id; } });
+      },
+      deshacerCambio: function (h) {
+        var self = this;
+        return A.store('datos').deshacer(h.id, 'productos').then(function () { return self.cargarCambios(); });
+      },
+      agregarFotos: function () {
+        var f = this.ficha;
+        return P.elegirFotos({ multiple: true, destino: 'producto', titulo: 'Agregar fotos a la prenda', excluir: f.fotos }).then(function (ids) {
+          if (ids && ids.length) {
+            A.store('datos').guardar('productos', f, 'fotos', f.fotos.concat(ids.filter(function (i) { return f.fotos.indexOf(i) === -1; })));
+            A.store('min').pedir(ids);
+          }
+        });
+      },
+
+      nueva: function () {
+        var self = this;
+        var cat = this.filtros.categoria || (this.categorias[0] && this.categorias[0].id);
+        if (!cat) { A.store('toasts').mostrar({ tipo: 'aviso', texto: 'Primero crea una categoría.' }); return Promise.resolve(); }
+        this.creando = true;
+        return A.store('datos').crear('productos', { categoria_id: cat }, { alInicio: true }).then(
+          function (f) { self.creando = false; self.limpiar(); self.abrir(f.id); },
+          function () { self.creando = false; }
+        );
+      },
+      duplicar: function () {
+        var self = this;
+        return A.store('datos').duplicarProducto(this.fichaId).then(function (f) {
+          A.store('toasts').mostrar({ tipo: 'ok', texto: 'Dupliqué la prenda como borrador.' });
+          self.abrir(f.id);
+        }, function () {});
+      },
+      archivar: function () {
+        var self = this;
+        var f = this.ficha;
+        this.fichaAbierta = false;
+        return A.store('datos').eliminar('productos', f, { mensaje: 'Archivé la prenda. Ya no sale en tu catálogo.' });
+      },
+      restaurar: function () {
+        A.store('datos').guardar('productos', this.ficha, 'estado', 'borrador');
+        A.store('toasts').mostrar({ tipo: 'ok', texto: 'Restauré la prenda como borrador.' });
+      },
+    }, base);
+  });
+
+  A.data('altaRapida', function () {
+    var d = A.store('datos');
+    return {
+      categoria: '',
+      bib: P.crearBiblioteca({ servidor: P.servidor, miniaturas: A.store('min'), subirFotos: P.fotos.subirFotos }, { modo: 'ver', destino: 'producto' }),
+      trabajando: false,
+      resumen: '',
+      falla: '',
+      creados: 0,
+      get categorias() { return d.lista('categorias'); },
+
+      procesar: function (archivos) {
+        var self = this;
+        if (!this.categoria || this.trabajando) return Promise.resolve();
+        this.trabajando = true;
+        this.falla = '';
+        this.resumen = '';
+        return this.bib.subir(archivos).then(function (resultados) {
+          var ids = resultados.filter(function (r) { return r.estado === 'listo'; }).map(function (r) { return r.foto.id; });
+          if (!ids.length) { self.resumen = L.resumenAltaRapida(resultados, 0); return; }
+          return P.servidor.llamar('altaRapida', ids, { categoria_id: self.categoria }).then(function (filas) {
+            d.agregarFilas('productos', filas);
+            self.creados += filas.length;
+            self.resumen = L.resumenAltaRapida(resultados, filas.length);
+          });
+        }).catch(function (e) {
+          self.falla = (e && e.amable) || 'No pude crear los borradores. Las fotos quedaron en tu biblioteca.';
+        }).then(function () { self.trabajando = false; });
+      },
+    };
+  });
+});
+</script>

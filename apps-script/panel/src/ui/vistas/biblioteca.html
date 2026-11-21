@@ -1,0 +1,86 @@
+<!-- Fotos: biblioteca con todas las fotos subidas y dónde se usa cada una -->
+<template x-if="$store.panel.ruta === 'biblioteca' && !$store.panel.cargando">
+  <section class="vista" x-data="biblioteca({ modo: 'ver', destino: 'producto' })" x-init="cargar()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Fotos</h1>
+    </div>
+    <p class="vista-intro">Aquí están todas las fotos que has subido. Puedes reutilizarlas, por ejemplo en una temporada, sin volver a subirlas. Son privadas: solo se publican las que uses en tu catálogo.</p>
+
+    <section class="tarjeta" aria-labelledby="bib-subir">
+      <h2 id="bib-subir">Subir fotos</h2>
+      <label class="campo" x-show="!carpeta">
+        <span class="campo-etiqueta">¿Para qué son?</span>
+        <select x-model="destino">
+          <option value="producto">Prendas</option>
+          <option value="temporada">Temporadas</option>
+          <option value="portada">Portadas</option>
+          <option value="marca">Marca (logo)</option>
+        </select>
+      </label>
+      <p class="campo-ayuda" x-show="carpeta">Las fotos nuevas se guardan en la carpeta que elegiste abajo.</p>
+      <div class="zona-soltar" :class="{ encima: arrastrando }" @dragover.prevent="arrastrando = true" @dragleave="arrastrando = false" @drop.prevent="alSoltar($event)">
+        <p><strong>Arrastra tus fotos aquí</strong> <span class="suave">o elígelas</span></p>
+        <p class="campo-ayuda">Las achicamos y les quitamos la ubicación antes de subirlas.</p>
+        <div class="fila-botones" style="justify-content: center; margin-top: 0.75rem">
+          <label class="boton primario">
+            <svg class="ico" aria-hidden="true"><use href="#i-subir"/></svg>
+            <span>Elegir fotos</span>
+            <input type="file" class="solo-lector" accept="image/*" multiple @change="subir($event.target.files); $event.target.value = ''" />
+          </label>
+          <label class="boton">
+            <svg class="ico" aria-hidden="true"><use href="#i-camara"/></svg>
+            <span>Tomar foto</span>
+            <input type="file" class="solo-lector" accept="image/*" capture="environment" @change="subir($event.target.files); $event.target.value = ''" />
+          </label>
+        </div>
+      </div>
+      <p class="nota aviso" x-show="aviso" x-text="aviso"></p>
+      <ul class="lista" x-show="subidas.length" aria-label="Estado de las fotos">
+        <template x-for="(s, i) in subidas" :key="i">
+          <li class="subida">
+            <span class="fila-titulo" x-text="s.nombre" style="grid-column: 1 / -1"></span>
+            <span class="fila-sub" :class="{ 'campo-error': s.estado === 'error' }" x-text="s.texto"></span>
+            <div class="progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="s.pct" :aria-label="'Progreso de ' + s.nombre"><i :style="'transform: scaleX(' + s.pct / 100 + ')'"></i></div>
+          </li>
+        </template>
+      </ul>
+      <div class="fila-botones" x-show="subidas.length && !subiendo">
+        <button type="button" class="boton chico" @click="quitarAvisosDeSubida()">Quitar estos avisos</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="bib-fotos">
+      <div class="tarjeta-cabecera">
+        <h2 id="bib-fotos">Tu biblioteca</h2>
+        <span class="contador num" x-text="total === 1 ? '1 foto' : total + ' fotos'"></span>
+      </div>
+      <fieldset style="margin-top: 0.75rem">
+        <legend class="solo-lector">Carpeta</legend>
+        <div class="grupo-opciones">
+          <template x-for="c in [['', 'Todas'], ['fotos', 'Prendas'], ['temporadas', 'Temporadas'], ['portadas', 'Portadas'], ['marca', 'Marca']]" :key="c[0]">
+            <label class="pastilla"><input type="radio" name="bib-carpeta" :value="c[0]" :checked="carpeta === c[0]" @change="elegirCarpeta(c[0])" /><span x-text="c[1]"></span></label>
+          </template>
+        </div>
+      </fieldset>
+      <p class="nota error" style="margin-top: 0.75rem" x-show="error" x-text="error"></p>
+      <p class="suave" style="margin-top: 0.75rem" x-show="cargando && !fotos.length" role="status">Cargando fotos…</p>
+      <div class="vacio tarjeta" style="margin-top: 0.75rem" x-show="!cargando && !fotos.length && !error">
+        <svg class="ico" aria-hidden="true"><use href="#i-foto"/></svg>
+        <h3>Todavía no hay fotos en esta carpeta</h3>
+        <p>Sube las primeras con el botón «Elegir fotos».</p>
+      </div>
+      <ul class="rejilla-fotos" style="margin-top: 0.75rem">
+        <template x-for="f in fotos" :key="f.id">
+          <li class="foto-celda">
+            <div class="miniatura" :class="{ cargando: !$foto(f.id) }"><img :src="$foto(f.id)" :alt="'Foto ' + f.nombre" /></div>
+            <span class="etiqueta" x-text="f.nombre"></span>
+            <span class="chip" :class="f.usos.length ? 'ok' : 'aviso'" style="align-self: flex-start" x-text="usosTexto(f)"></span>
+          </li>
+        </template>
+      </ul>
+      <div class="fila-botones" style="margin-top: 1rem; justify-content: center" x-show="hayMas">
+        <button type="button" class="boton" @click="masFotos()" :disabled="cargando">Ver más fotos</button>
+      </div>
+    </section>
+  </section>
+</template>

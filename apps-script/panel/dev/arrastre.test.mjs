@@ -18,6 +18,16 @@ describe('indiceDestino', () => {
   });
 });
 
+describe('indiceMasCercano (listas en cuadrícula)', () => {
+  const centros = [{ x: 50, y: 50 }, { x: 150, y: 50 }, { x: 50, y: 150 }, { x: 150, y: 150 }];
+  it('elige la celda cuyo centro queda más cerca', () => {
+    expect(A.indiceMasCercano(centros, 60, 40)).toBe(0);
+    expect(A.indiceMasCercano(centros, 140, 60)).toBe(1);
+    expect(A.indiceMasCercano(centros, 40, 160)).toBe(2);
+    expect(A.indiceMasCercano(centros, 400, 400)).toBe(3);
+  });
+});
+
 describe('desplazamientos', () => {
   it('al bajar de la posición 0 a la 2, los elementos 1 y 2 suben una fila', () => {
     expect(A.desplazamientos(4, 0, 2)).toEqual([0, -1, -1, 0]);

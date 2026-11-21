@@ -15,7 +15,10 @@
     <?!= include('ui/js/validar') ?>
     <?!= include('ui/js/estado') ?>
     <?!= include('ui/js/arrastre') ?>
+    <?!= include('ui/js/logica') ?>
+    <?!= include('ui/js/biblioteca') ?>
     <?!= include('ui/componentes/dialogo') ?>
+    <?!= include('ui/componentes/editor') ?>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   </head>
   <body>
@@ -26,7 +29,7 @@
     <noscript><p style="padding:1rem">Para usar el panel necesitas activar JavaScript en tu navegador.</p></noscript>
     <div id="anuncios" class="solo-lector" role="status" aria-live="polite"></div>
 
-    <div class="app" x-data x-cloak x-init="document.getElementById('cargando-inicial') && document.getElementById('cargando-inicial').remove()">
+    <div class="app" id="panel" x-data x-cloak x-init="document.getElementById('cargando-inicial') && document.getElementById('cargando-inicial').remove()">
       <!-- Barra superior -->
       <header class="barra" x-show="!$store.panel.falla">
         <div class="marca">
@@ -104,10 +107,16 @@
       <!-- Contenido -->
       <main id="contenido" tabindex="-1" x-show="!$store.panel.falla">
         <p class="suave" x-show="$store.panel.cargando" role="status">Cargando tu panel…</p>
+        <?!= include('ui/vistas/resumen') ?>
+        <?!= include('ui/vistas/productos') ?>
+        <?!= include('ui/vistas/biblioteca') ?>
+        <?!= include('ui/vistas/historial') ?>
+        <?!= include('ui/vistas/documentos') ?>
       </main>
 
       <!-- Pantallas de problema -->
       <main id="contenido-falla" x-show="$store.panel.falla">
+        <?!= include('ui/vistas/instalacion') ?>
         <section class="vista tarjeta" x-show="$store.panel.falla === 'no_autorizado'" style="max-width: 32rem; margin: 3rem auto">
           <h1>Esta cuenta no tiene acceso</h1>
           <p>Este panel es solo para quien administra el catálogo. Entra con la cuenta de Google de la tienda.</p>
@@ -118,6 +127,8 @@
           <button type="button" class="boton primario" @click="$store.panel.iniciar()">Intentar de nuevo</button>
         </section>
       </main>
+
+      <?!= include('ui/componentes/selector-fotos') ?>
 
       <!-- Avisos flotantes -->
       <div class="avisos" role="region" aria-label="Avisos" aria-live="polite">

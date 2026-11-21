@@ -1,0 +1,94 @@
+<!-- Documentos: revistas, catálogo y reportes que el Panel guarda en tu Drive -->
+<template x-if="$store.panel.ruta === 'documentos' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaDocumentos()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Documentos</h1>
+      <button type="button" class="boton" @click="cargar()" :disabled="cargando">Actualizar</button>
+    </div>
+    <p class="vista-intro">Cada vez que publicas se guardan en tu Drive la revista de cada temporada, las imágenes para redes y el catálogo en PDF. Solo queda la última versión.</p>
+
+    <p class="nota error" x-show="error" x-text="error"></p>
+    <p class="suave" x-show="cargando && !docs" role="status">Cargando…</p>
+
+    <template x-if="docs">
+      <div class="vista">
+        <article class="tarjeta" aria-labelledby="doc-revistas">
+          <h2 id="doc-revistas">Revistas de temporada</h2>
+          <div class="vacio" x-show="!docs.revistas.length">
+            <svg class="ico" aria-hidden="true"><use href="#i-documento"/></svg>
+            <h3>Todavía no hay revistas</h3>
+            <p>Se crean solas cuando publicas una temporada que tenga la revista activada.</p>
+          </div>
+          <ul class="lista">
+            <template x-for="r in docs.revistas" :key="r.temporada_id">
+              <li class="fila" style="grid-template-columns: minmax(0, 1fr)">
+                <div>
+                  <strong class="fila-titulo" x-text="r.nombre"></strong>
+                  <span class="fila-sub" x-show="r.pdf && r.pdf.actualizado" x-text="'Actualizada el ' + $u.formatoFecha(r.pdf.actualizado)"></span>
+                </div>
+                <div class="fila-botones">
+                  <a class="boton" target="_blank" rel="noopener" :href="r.pdf.url" x-show="r.pdf && r.pdf.url">
+                    Abrir revista (PDF)
+                    <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg>
+                  </a>
+                  <a class="boton" target="_blank" rel="noopener" :href="r.carrusel.url" x-show="r.carrusel && r.carrusel.url">
+                    <span x-text="'Imágenes para redes (' + r.carrusel.cantidad + ')'"></span>
+                    <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg>
+                  </a>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="doc-catalogo">
+          <h2 id="doc-catalogo">Catálogo en PDF</h2>
+          <p class="suave" x-show="!docs.catalogo">Todavía no hay catálogo. Se crea solo cuando publicas.</p>
+          <div class="fila-botones" x-show="docs.catalogo">
+            <a class="boton" target="_blank" rel="noopener" :href="docs.catalogo && docs.catalogo.url">
+              Abrir catálogo (PDF)
+              <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg>
+            </a>
+            <span class="suave" x-show="docs.catalogo && docs.catalogo.actualizado" x-text="docs.catalogo ? 'Actualizado el ' + $u.formatoFecha(docs.catalogo.actualizado) : ''"></span>
+          </div>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="doc-reportes">
+          <h2 id="doc-reportes">Reportes de consultas</h2>
+          <p class="suave">Se arman solos el día 1 de cada mes, con las prendas más consultadas del mes anterior.</p>
+          <p class="suave" x-show="!docs.reportes.length">Aún no hay reportes. El primero aparece el día 1 del próximo mes.</p>
+          <ul class="lista">
+            <template x-for="r in docs.reportes" :key="r.mes">
+              <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+                <span x-text="'Reporte de ' + r.mes"></span>
+                <a class="boton chico" target="_blank" rel="noopener" :href="r.url">Abrir</a>
+              </li>
+            </template>
+          </ul>
+        </article>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  window.Alpine.data('vistaDocumentos', function () {
+    return {
+      docs: null,
+      cargando: false,
+      error: '',
+      init: function () { this.cargar(); },
+      cargar: function () {
+        var self = this;
+        this.cargando = true;
+        this.error = '';
+        return window.Panel.servidor.llamar('documentos').then(
+          function (d) { self.docs = d; self.cargando = false; },
+          function (e) { self.error = e.amable; self.cargando = false; }
+        );
+      },
+    };
+  });
+});
+</script>

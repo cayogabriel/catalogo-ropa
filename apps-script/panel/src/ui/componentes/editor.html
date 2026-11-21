@@ -1,0 +1,41 @@
+<script>
+/* Ayudas para editar una entidad con autoguardado desde una vista.
+ *
+ *   Alpine.data('vistaX', () => ({ ...Panel.mixinEditor('ofertas'), … }))
+ *
+ * En el HTML:  <input :value="f.nombre" @input="g(f, 'nombre', $event)">
+ *   g  → texto, número, casilla o lista desplegable (guarda al escribir; la cola espera un momento)
+ *   gl → lista separada por comas (guarda al salir del campo, para no pelear con la coma que se escribe)
+ *   gf → fecha y hora de Lima
+ */
+(function (P) {
+  P.mixinEditor = function (entidad) {
+    function datos() { return window.Alpine.store('datos'); }
+    return {
+      entidad: entidad,
+      g: function (f, campo, e) {
+        var t = e.target;
+        return datos().guardar(this.entidad, f, campo, t.type === 'checkbox' ? t.checked : t.value);
+      },
+      gv: function (f, campo, valor) { return datos().guardar(this.entidad, f, campo, valor); },
+      gl: function (f, campo, e) { return datos().guardar(this.entidad, f, campo, P.util.textoALista(e.target.value)); },
+      gf: function (f, campo, e) { return datos().guardar(this.entidad, f, campo, P.util.localAIso(e.target.value)); },
+      lista: function (f, campo) { return P.util.listaATexto(f[campo]); },
+      fecha: function (f, campo) { return P.util.isoALocal(f[campo]); },
+      /** Mueve un elemento de una lista guardada en la fila (fotos, objetivos…). */
+      moverEn: function (f, campo, de, a) {
+        var l = f[campo] || [];
+        if (a < 0 || a >= l.length || de === a) return;
+        datos().guardar(this.entidad, f, campo, P.util.moverElemento(l, de, a));
+        if (this.$anunciar) this.$anunciar('Moví el elemento a la posición ' + (a + 1) + ' de ' + l.length + '.');
+      },
+      quitarDe: function (f, campo, indice) {
+        datos().guardar(this.entidad, f, campo, (f[campo] || []).filter(function (_, i) { return i !== indice; }));
+      },
+    };
+  };
+
+  /** Abre el selector de fotos y devuelve una Promesa con los ids elegidos (o null si cancela). */
+  P.elegirFotos = function (opciones) { return window.Alpine.store('selector').abrir(opciones || {}); };
+})((window.Panel = window.Panel || {}));
+</script>

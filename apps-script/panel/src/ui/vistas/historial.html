@@ -1,0 +1,77 @@
+<!-- Historial: los últimos cambios, con «Deshacer» -->
+<template x-if="$store.panel.ruta === 'historial' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaHistorial()">
+    <div class="vista-cabecera">
+      <h1 id="titulo-vista" tabindex="-1">Historial</h1>
+      <button type="button" class="boton" @click="cargar()" :disabled="cargando">Actualizar</button>
+    </div>
+    <p class="vista-intro">Aquí ves lo último que cambió en tu catálogo. Si algo salió mal, puedes deshacerlo. Lo que edites a mano en la hoja de cálculo no aparece aquí.</p>
+
+    <p class="nota error" x-show="error" x-text="error"></p>
+    <p class="suave" x-show="cargando && !lista.length" role="status">Cargando…</p>
+    <div class="vacio tarjeta" x-show="!cargando && !lista.length && !error">
+      <svg class="ico" aria-hidden="true"><use href="#i-historial"/></svg>
+      <h2>Todavía no hay cambios</h2>
+      <p>Cuando edites algo, lo verás aquí.</p>
+    </div>
+
+    <ul class="lista">
+      <template x-for="h in lista" :key="h.id">
+        <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+          <div style="min-width: 0">
+            <span x-text="texto(h)" style="overflow-wrap: anywhere"></span>
+            <span class="fila-sub" x-text="cuando(h)"></span>
+          </div>
+          <button type="button" class="boton chico" x-show="h.accion !== 'deshacer'" :disabled="trabajando === h.id" @click="deshacer(h)">Deshacer</button>
+        </li>
+      </template>
+    </ul>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+
+  A.data('vistaHistorial', function () {
+    return {
+      lista: [],
+      cargando: false,
+      error: '',
+      trabajando: null,
+      init: function () {
+        // Para ponerle nombre a cada fila (por ejemplo, el código de la prenda) hacen falta las listas.
+        var d = A.store('datos');
+        var self = this;
+        Promise.all(['productos', 'ofertas', 'secciones', 'portadas', 'temporadas', 'categorias', 'vendedoras', 'paletas'].map(function (e) { return d.cargar(e).catch(function () {}); }))
+          .then(function () { self.cargar(); });
+      },
+      cargar: function () {
+        var self = this;
+        this.cargando = true;
+        this.error = '';
+        return P.servidor.llamar('historial', { limite: 50 }).then(
+          function (h) { self.lista = h; self.cargando = false; },
+          function (e) { self.error = e.amable; self.cargando = false; }
+        );
+      },
+      etiqueta: function (entidad, id) {
+        var f = A.store('datos').buscar(entidad, id);
+        if (!f) return id || '';
+        return f.codigo || f.nombre || f.titulo || f.slug || id;
+      },
+      texto: function (h) {
+        var self = this;
+        return P.logica.describirCambio(h, { simbolo: A.store('panel').config.moneda_simbolo || 'S/', etiqueta: function (e, id) { return self.etiqueta(e, id); } });
+      },
+      cuando: function (h) { return P.util.haceCuanto(h.fecha) + (h.fecha ? ' · ' + P.util.formatoFecha(h.fecha) : ''); },
+      deshacer: function (h) {
+        var self = this;
+        this.trabajando = h.id;
+        return A.store('datos').deshacer(h.id, h.entidad).then(function () { return self.cargar(); }).then(function () { self.trabajando = null; });
+      },
+    };
+  });
+});
+</script>

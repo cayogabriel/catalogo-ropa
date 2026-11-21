@@ -32,7 +32,7 @@
   function normalizar(entidad, campo, valor) {
     if ((NUMERICOS[entidad] || []).indexOf(campo) !== -1) {
       if (valor === '' || valor === null || valor === undefined) return null;
-      var n = Number(valor);
+      var n = Number(String(valor).replace(',', '.'));
       return isNaN(n) ? valor : n;
     }
     return valor;
@@ -291,8 +291,10 @@
       /** Guarda un campo: cambia la fila al instante y lo encola. false si no pasa la validación local. */
       guardar: function (entidad, fila, campo, valor) {
         if (valor === undefined) valor = fila[campo];
+        var crudo = valor;
         valor = normalizar(entidad, campo, valor);
-        fila[campo] = valor;
+        // Mientras escribe se conserva el texto tal cual («8.» o «66,5»); al servidor viaja el número.
+        fila[campo] = typeof crudo === 'string' && typeof valor === 'number' ? crudo : valor;
         var fn = VALIDADOR[entidad];
         if (fn) {
           var errores = V[fn](fila, this.lista(entidad));
@@ -337,6 +339,16 @@
           },
           function (e) { fallar(e, 'No pude crearlo.'); throw e; }
         );
+      },
+
+      /** Suma filas que ya existen en el servidor (alta rápida, importaciones) a la lista local. */
+      agregarFilas: function (entidad, filas) {
+        var lista = this.listas[entidad] || (this.listas[entidad] = []);
+        filas.forEach(function (f) {
+          cola.registrarVersion(entidad, f.id, f.version);
+          lista.push(f);
+        });
+        otro('panel').cambiosSinPublicar = true;
       },
 
       duplicarProducto: function (id) {
@@ -569,6 +581,7 @@
         reintentar: function () { miniaturas.reintentar(); },
       });
 
+      Alpine.magic('foto', function () { return function (id) { return Alpine.store('min').src(id) || null; }; });
       Alpine.magic('u', function () { return P.util; });
       Alpine.magic('v', function () { return P.validar; });
 

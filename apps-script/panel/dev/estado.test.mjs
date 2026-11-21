@@ -77,6 +77,16 @@ describe('datos: autoguardado', () => {
     expect(m.stores.panel.cambiosSinPublicar).toBe(true);
   });
 
+  it('un precio escrito con coma se envía como número y la fila conserva lo escrito', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    const f = (await d.cargar('productos')).find((x) => x.id === 'prd_00000001');
+    expect(d.guardar('productos', f, 'precio_regular', '66,5')).toBe(true);
+    expect(f.precio_regular).toBe('66,5');
+    await avanzar(700);
+    expect(servidorDe(m, 'productos', f.id).precio_regular).toBe(66.5);
+  });
+
   it('un valor que no pasa la validación local no se envía y devuelve false', async () => {
     const m = await listo();
     const d = m.stores.datos;
@@ -163,6 +173,21 @@ describe('datos: autoguardado', () => {
     d.guardar('ofertas', nueva, 'valor', 15);
     await avanzar(700);
     expect(servidorDe(m, 'ofertas', nueva.id).valor).toBe(15);
+  });
+
+  it('agregarFilas suma las filas nuevas (por ejemplo, de la alta rápida) y las deja editables', async () => {
+    const m = await listo();
+    const d = m.stores.datos;
+    await d.cargar('productos');
+    const cat = (await d.cargar('categorias'))[0];
+    const filas = await m.gas.llamar('altaRapida', [['fx_00000001'], { categoria_id: cat.id }]);
+    d.agregarFilas('productos', filas);
+    const f = d.buscar('productos', filas[0].id);
+    expect(f).toBeTruthy();
+    d.guardar('productos', f, 'nombre', 'Con foto nueva');
+    await avanzar(700);
+    expect(servidorDe(m, 'productos', f.id).nombre).toBe('Con foto nueva');
+    expect(m.stores.panel.cambiosSinPublicar).toBe(true);
   });
 
   it('duplicarProducto agrega el borrador a la lista', async () => {

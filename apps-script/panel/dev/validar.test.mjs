@@ -49,6 +49,11 @@ describe('producto', () => {
     expect(V.producto({ ...base, precio_regular: 0, estado: 'borrador' }).precio_regular).toBeTruthy();
     expect(V.producto({ ...base, precio_regular: -5 }).precio_regular).toBeTruthy();
   });
+  it('el precio acepta coma o punto decimal, como lo escribe la dueña', () => {
+    expect(V.producto({ ...base, precio_regular: '66,5' })).toEqual({});
+    expect(V.producto({ ...base, precio_regular: '8.' })).toEqual({});
+    expect(V.producto({ ...base, precio_regular: 'abc' }).precio_regular).toBeTruthy();
+  });
   it('descripción de más de 600', () => {
     expect(V.producto({ ...base, descripcion: 'x'.repeat(601) }).descripcion).toMatch(/600/);
   });

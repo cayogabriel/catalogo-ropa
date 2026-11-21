@@ -90,6 +90,8 @@
     return /^#[0-9a-fA-F]{6}$/.test(String(t || '')) ? '' : 'Escribe el color como #RRGGBB, por ejemplo #1B2B34.';
   }
 
+  /** Acepta coma o punto decimal («66,5» o «66.5»). */
+  function num(x) { return Number(String(x === null || x === undefined ? '' : x).replace(',', '.')); }
   function ms(iso) { return iso ? new Date(iso).getTime() : null; }
   function finAntes(desde, hasta) { return desde && hasta && ms(hasta) <= ms(desde); }
   var MSJ_FIN = 'La fecha de fin debe ser posterior a la de inicio.';
@@ -106,7 +108,7 @@
     var precio = f.precio_regular;
     if (precio === null || precio === undefined || precio === '') {
       if (!borrador) e.precio_regular = 'Falta el precio.';
-    } else if (!(Number(precio) > 0)) {
+    } else if (!(num(precio) > 0)) {
       e.precio_regular = 'El precio debe ser mayor que 0.';
     }
     var tallas = f.tallas || [];
@@ -119,7 +121,7 @@
   function oferta(f) {
     var e = {};
     if (!String(f.nombre || '').trim()) e.nombre = 'Ponle un nombre para reconocerla.';
-    var v = Number(f.valor);
+    var v = num(f.valor);
     if (!(v > 0)) e.valor = 'El valor debe ser mayor que 0.';
     else if (f.tipo === 'porcentaje' && (v < 1 || v > 90)) e.valor = 'El porcentaje va de 1 a 90.';
     if (finAntes(f.desde, f.hasta)) e.hasta = MSJ_FIN;

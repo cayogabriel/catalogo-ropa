@@ -16,6 +16,16 @@
     }
     return mejor;
   }
+  /** Igual, pero en 2D (cuadrículas de fotos): centros = [{x, y}]. */
+  function indiceMasCercano(centros, x, y) {
+    var mejor = 0;
+    var distancia = Infinity;
+    for (var i = 0; i < centros.length; i++) {
+      var d = Math.pow(centros[i].x - x, 2) + Math.pow(centros[i].y - y, 2);
+      if (d < distancia) { distancia = d; mejor = i; }
+    }
+    return mejor;
+  }
   /** Cuánto se corre cada elemento (en filas) mientras `de` se arrastra hasta `a`. */
   function desplazamientos(n, de, a) {
     var r = [];
@@ -36,7 +46,7 @@
     return P.util.moverElemento(filas, de, a).map(function (f) { return f.id; });
   }
 
-  P.arrastre = { indiceDestino: indiceDestino, desplazamientos: desplazamientos, destinoBoton: destinoBoton, ordenNuevo: ordenNuevo };
+  P.arrastre = { indiceDestino: indiceDestino, indiceMasCercano: indiceMasCercano, desplazamientos: desplazamientos, destinoBoton: destinoBoton, ordenNuevo: ordenNuevo };
 
   if (typeof document === 'undefined') return;
   document.addEventListener('alpine:init', function () {
@@ -50,22 +60,25 @@
         var items = Array.prototype.slice.call(el.children).filter(function (c) { return c.hasAttribute('data-item'); });
         var de = items.indexOf(item);
         var cajas = items.map(function (i) { return i.getBoundingClientRect(); });
-        var centros = cajas.map(function (c) { return c.top + c.height / 2; });
-        var paso = cajas.length > 1 ? cajas[1].top - cajas[0].top : cajas[0].height;
+        var centros = cajas.map(function (c) { return { x: c.left + c.width / 2, y: c.top + c.height / 2 }; });
+        var inicioX = e.clientX;
         var inicioY = e.clientY;
         var a = de;
         item.classList.add('arrastrando');
         try { asa.setPointerCapture(e.pointerId); } catch (err) {}
 
         function mover(ev) {
+          var dx = ev.clientX - inicioX;
           var dy = ev.clientY - inicioY;
-          item.style.transform = 'translateY(' + dy + 'px)';
-          a = indiceDestino(centros, centros[de] + dy);
+          item.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+          a = indiceMasCercano(centros, centros[de].x + dx, centros[de].y + dy);
           var d = desplazamientos(items.length, de, a);
           items.forEach(function (o, i) {
             if (o === item) return;
             o.style.transition = 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)';
-            o.style.transform = d[i] ? 'translateY(' + d[i] * paso + 'px)' : '';
+            // Cada elemento ocupa el lugar de su vecino: sirve igual en listas y en cuadrículas.
+            var destino = centros[i + d[i]];
+            o.style.transform = d[i] ? 'translate(' + (destino.x - centros[i].x) + 'px, ' + (destino.y - centros[i].y) + 'px)' : '';
           });
           if (ev.clientY < 70) window.scrollBy(0, -12);
           else if (ev.clientY > window.innerHeight - 90) window.scrollBy(0, 12);
