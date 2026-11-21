@@ -3,6 +3,7 @@
 import datos from '../../../data/catalogo.json';
 import Redireccion from '../../../components/imprimir/Redireccion.astro';
 import { urlTemporada } from '../../../compartido/enlaces.mjs';
+import { texto } from '../../../components/imprimir/plan.mjs';
 
 export function getStaticPaths() {
   return datos.temporadas.map((temporada) => ({ params: { slug: temporada.slug }, props: { temporada } }));
@@ -14,6 +15,6 @@ const { temporada } = Astro.props;
 <Redireccion
   destino={urlTemporada(datos, temporada.slug)}
   evento={{ t: 'vista', s: temporada.id }}
-  mensaje={`Abriendo ${temporada.nombre}…`}
-  boton="Ver la revista web"
+  mensaje={`Abriendo la revista ${temporada.nombre}…`}
+  boton={texto(datos, 'temporada.ver_revista')}
 />

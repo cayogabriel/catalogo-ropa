@@ -94,6 +94,14 @@ const variables = [
     max-width: none;
     object-fit: cover;
   }
+  /* Contorno apenas visible: separa del fondo las fotos de fondo claro. */
+  .prenda__foto,
+  .doble__foto,
+  .sola__foto,
+  .fila__foto {
+    outline: 1px solid rgb(0 0 0 / 0.08);
+    outline-offset: -1px;
+  }
 
   /* Una página = 1080 × 1350. En pantalla se apilan con aire entre ellas. */
   .pagina {
@@ -127,6 +135,10 @@ const variables = [
     left: 72px;
     position: absolute;
     right: 72px;
+  }
+  .pie__pagina {
+    display: flex;
+    gap: 24px;
   }
   .pie__vigencia {
     color: var(--color-texto);
@@ -172,6 +184,7 @@ const variables = [
   /* Precio: «ahora» grande; «antes» tachado y más chico, solo con oferta real. */
   .precio {
     align-items: baseline;
+    font-variant-numeric: tabular-nums;
     display: flex;
     flex-wrap: wrap;
     gap: 6px 18px;

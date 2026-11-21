@@ -27,6 +27,7 @@ const RESPALDO = {
   'contacto.facebook': 'Facebook',
   'contacto.tiktok': 'TikTok',
   'contacto.whatsapp': 'WhatsApp',
+  'temporada.ver_revista': 'Ver revista web',
 };
 
 // Texto de la tienda con sus variables ({tienda} siempre disponible).

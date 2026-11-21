@@ -19,6 +19,7 @@ const { pagina: p, nota, pedir, paleta } = Astro.props;
 const tienda = datos.tienda.nombre;
 const antes = texto(datos, 'precio.antes');
 const codigo = (c: string) => texto(datos, 'producto.codigo', { codigo: c });
+const tallas = (t: string[]) => (t.length === 1 ? `Talla ${/^única$/i.test(t[0]) ? 'única' : t[0]}` : `Tallas ${t.join(', ')}`);
 const qr = p.tipo === 'portada-catalogo' ? await qrSvg(p.url, paleta.tokens['--color-texto']) : '';
 const pie = { nota, tienda, numero: p.numero, total: p.total };
 ---
@@ -78,7 +79,7 @@ const pie = { nota, tienda, numero: p.numero, total: p.total };
             <h2 class="fila__nombre">{x.producto.nombre}</h2>
             <p class="fila__detalle">
               {codigo(x.producto.codigo)}
-              {x.tallas.length > 0 && <>. {x.tallas.length === 1 ? 'Talla' : 'Tallas'} {x.tallas.join(', ')}</>}
+              {x.tallas.length > 0 && <>. {tallas(x.tallas)}</>}
             </p>
             <div class="fila__compra">
               <Precio precio={x.precio} antesTexto={antes} />

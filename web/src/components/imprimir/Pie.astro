@@ -12,5 +12,5 @@ const { nota, tienda, numero, total, sobreFoto = false } = Astro.props;
 
 <footer class:list={['pie', { 'pie--sobre-foto': sobreFoto }]}>
   <span class="pie__vigencia">{nota}</span>
-  <span>{tienda} {numero}/{total}</span>
+  <span class="pie__pagina"><span>{tienda}</span><span>{numero} de {total}</span></span>
 </footer>
