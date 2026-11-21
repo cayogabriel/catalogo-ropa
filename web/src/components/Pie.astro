@@ -1,0 +1,28 @@
+---
+import Contacto from './Contacto.astro';
+import { catalogo, t } from '../lib/sitio.mjs';
+
+const { tienda } = catalogo;
+---
+
+<footer class="pie">
+  <div class="contenedor">
+    <section aria-labelledby="pie-contacto">
+      <h2 id="pie-contacto">{t('contacto.titulo')}</h2>
+      <p class="texto-suave" style="margin-bottom: 1rem">{t('contacto.subtitulo')}</p>
+      <Contacto compacto />
+    </section>
+    <section aria-labelledby="pie-horario">
+      <h2 id="pie-horario">Horario</h2>
+      <p>{tienda.horario || t('pie.horario')}</p>
+    </section>
+    <section aria-labelledby="pie-envios">
+      <h2 id="pie-envios">Envíos</h2>
+      <p>{tienda.envios || t('pie.envios')}</p>
+    </section>
+    <div class="pie-legal">
+      <p>{t('pie.precios_nota')}</p>
+      <p>{t('pie.derechos')}</p>
+    </div>
+  </div>
+</footer>

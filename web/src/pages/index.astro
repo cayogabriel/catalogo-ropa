@@ -1,33 +1,13 @@
 ---
-// Página provisional de S1 (prueba de punta a punta). S3 la reemplaza por el inicio real.
-import datos from '../data/catalogo.json';
-
-const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-const { tienda, productos, imagenes } = datos;
-const primeraWebp = (id) => base + Object.values(imagenes[id].webp)[0];
+import Base from '../layouts/Base.astro';
+import TarjetaProducto from '../components/TarjetaProducto.astro';
+import { catalogo, t } from '../lib/sitio.mjs';
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{tienda.nombre}</title>
-  </head>
-  <body style="font-family: system-ui, sans-serif; margin: 0 auto; max-width: 960px; padding: 1rem">
-    <h1>{tienda.nombre}</h1>
-    <p>Sitio provisional mientras se construye la web completa.</p>
-    <ul style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); list-style: none; padding: 0">
-      {
-        productos.map((p) => (
-          <li>
-            <a href={`${base}p/${p.codigo.toLowerCase()}/`}>
-              <img src={primeraWebp(p.fotos[0].id)} alt={p.fotos[0].alt} width="240" height="300" loading="lazy" style="height: auto; width: 100%" />
-              {p.nombre}
-            </a>
-          </li>
-        ))
-      }
+<Base titulo={t('inicio.meta.titulo')} descripcion={t('inicio.meta.descripcion')} ruta="" actual="inicio">
+  <div class="contenedor bloque">
+    <ul class="grilla">
+      {catalogo.productos.map((p) => <li><TarjetaProducto producto={p} /></li>)}
     </ul>
-  </body>
-</html>
+  </div>
+</Base>

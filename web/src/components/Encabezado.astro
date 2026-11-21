@@ -1,0 +1,25 @@
+---
+import Icono from './Icono.astro';
+import { catalogo, t, url } from '../lib/sitio.mjs';
+
+interface Props {
+  actual?: 'inicio' | 'catalogo' | 'contacto' | 'lista';
+}
+const { actual } = Astro.props;
+const marcar = (pagina: string) => (actual === pagina ? 'page' : undefined);
+---
+
+<header class="encabezado">
+  <div class="contenedor">
+    <a class="marca" href={url()} aria-current={marcar('inicio')}>{catalogo.tienda.nombre}</a>
+    <nav class="nav" aria-label="Principal">
+      <a href={url('catalogo/')} aria-current={marcar('catalogo')}>{t('catalogo.titulo')}</a>
+      <a href={url('contacto/')} aria-current={marcar('contacto')}>{t('contacto.titulo')}</a>
+      <a href={url('lista/')} aria-current={marcar('lista')}>
+        <Icono nombre="corazon" />
+        <span class="nav-texto-opcional">{t('lista.titulo')}</span>
+        <span class="contador" data-contador-lista hidden></span>
+      </a>
+    </nav>
+  </div>
+</header>

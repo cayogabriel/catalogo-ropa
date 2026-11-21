@@ -1,0 +1,23 @@
+---
+// Precio vigente al construir. El navegador lo vuelve a calcular (cliente/precios.mjs)
+// con los datos de [data-precio] del contenedor.
+import { ahora, monto, t } from '../lib/sitio.mjs';
+import { presentarPrecio } from '../lib/vista-precio.mjs';
+
+interface Props {
+  producto: any;
+  clase?: string;
+}
+const { producto, clase = '' } = Astro.props;
+const p = presentarPrecio(producto, ahora);
+---
+
+<p class:list={['precio', clase]} data-oferta={p.oferta ? '' : undefined}>
+  <span class="sr" data-etiqueta-ahora hidden={!p.oferta}>{t('precio.ahora')}:</span>
+  <span class="precio-ahora" data-ahora>{monto(p.precio)}</span>
+  <span data-bloque-antes hidden={p.antes === null}>
+    <span class="sr">{t('precio.antes')}:</span>
+    <s class="precio-antes" data-antes>{p.antes !== null ? monto(p.antes) : ''}</s>
+  </span>
+  <span class="precio-pct" data-pct hidden={p.pct === null}>{p.pct !== null ? t('precio.descuento', { porcentaje: p.pct }) : ''}</span>
+</p>

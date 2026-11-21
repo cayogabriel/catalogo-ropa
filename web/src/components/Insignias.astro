@@ -1,0 +1,14 @@
+---
+// Insignias según la regla 4 de datos-web.md. El navegador las rehace si cambia la ventana.
+import { ahora, t } from '../lib/sitio.mjs';
+import { insignias } from '../lib/vista-precio.mjs';
+
+interface Props {
+  producto: any;
+}
+const lista = insignias(Astro.props.producto, ahora, t);
+---
+
+<ul class="insignias" data-insignias>
+  {lista.map((i) => <li class={`insignia insignia-${i.tipo}`}>{i.texto}</li>)}
+</ul>

@@ -1,0 +1,93 @@
+---
+// Layout de todas las páginas públicas: tema en :root, SEO/Open Graph, encabezado, pie y aviso.
+import '../estilos/global.css';
+import Encabezado from '../components/Encabezado.astro';
+import Pie from '../components/Pie.astro';
+import { catalogo, t, urlAbsoluta, imagen, URL_BASE, tiendaCliente, textosCliente, paletaDe } from '../lib/sitio.mjs';
+import { estiloTokens, urlFuentes } from '../lib/tema.mjs';
+import { ogAbsoluta } from '../lib/imagenes.mjs';
+
+interface Props {
+  titulo: string;
+  descripcion: string;
+  ruta: string; // relativa a la base, p. ej. 'p/ves-001/'
+  ogFoto?: { id: string; alt: string } | null;
+  ogTipo?: 'website' | 'product' | 'article';
+  paleta?: any;
+  origen?: 'web' | 'revista_web';
+  productoId?: string | null;
+  temporadaId?: string | null;
+  actual?: 'inicio' | 'catalogo' | 'contacto' | 'lista';
+}
+
+const {
+  titulo,
+  descripcion,
+  ruta,
+  ogFoto = null,
+  ogTipo = 'website',
+  paleta = paletaDe(catalogo.tema_paleta_id),
+  origen = 'web',
+  productoId = null,
+  temporadaId = null,
+  actual,
+} = Astro.props;
+
+// Vista previa por defecto: portada de la temporada activa, o la primera foto del catálogo.
+const activa = catalogo.temporadas.find((x) => x.id === catalogo.temporada_activa_id);
+const fotoOg = ogFoto ?? activa?.foto_portada ?? catalogo.productos[0]?.fotos[0] ?? null;
+const og = fotoOg ? ogAbsoluta(imagen(fotoOg.id), URL_BASE) : null;
+const canonica = urlAbsoluta(ruta);
+const fuentes = urlFuentes(paleta);
+---
+
+<!doctype html>
+<html lang="es" style={estiloTokens(paleta)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{titulo}</title>
+    <meta name="description" content={descripcion} />
+    <link rel="canonical" href={canonica} />
+    <meta name="theme-color" content={paleta.tokens['--color-fondo']} />
+    <link rel="icon" href={`${import.meta.env.BASE_URL.replace(/\/?$/, '/')}favicon.svg`} type="image/svg+xml" />
+
+    <meta property="og:type" content={ogTipo} />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:site_name" content={catalogo.tienda.nombre} />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={canonica} />
+    {og && <meta property="og:image" content={og} />}
+    {fotoOg && <meta property="og:image:alt" content={fotoOg.alt} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href={fuentes} media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href={fuentes} /></noscript>
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <slot name="head" />
+  </head>
+  <body
+    data-origen={origen}
+    data-producto-id={productoId ?? undefined}
+    data-temporada-id={temporadaId ?? undefined}
+    data-tienda={JSON.stringify(tiendaCliente)}
+    data-textos={JSON.stringify(textosCliente)}
+  >
+    <a class="saltar" href="#contenido">{t('accesibilidad.saltar_contenido')}</a>
+    <Encabezado actual={actual} />
+    <main id="contenido" tabindex="-1">
+      <slot />
+    </main>
+    <Pie />
+    <div class="aviso" role="status" aria-live="polite" data-aviso><p></p></div>
+    <script>
+      import { iniciarComun } from '../cliente/comun.mjs';
+      import { iniciarPrecios } from '../cliente/precios.mjs';
+      iniciarComun();
+      iniciarPrecios();
+    </script>
+  </body>
+</html>
