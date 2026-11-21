@@ -221,6 +221,7 @@ legend { padding: 0; font-weight: 600; font-size: 0.9375rem; margin-bottom: 0.37
 .rejilla-fotos { display: grid; gap: 0.625rem; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); list-style: none; margin: 0; padding: 0; }
 .foto-celda { position: relative; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
 .foto-celda .miniatura { width: 100%; }
+.foto-celda .chip { white-space: normal; max-width: 100%; overflow-wrap: anywhere; border-radius: 10px; }
 .foto-celda .etiqueta { font-size: 0.75rem; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .foto-celda .esquina { position: absolute; top: 0.25rem; right: 0.25rem; display: flex; gap: 0.25rem; }
 .foto-celda .esquina .boton { min-height: 2rem; width: 2rem; padding: 0; background: rgb(255 255 255 / 0.92); border-color: transparent; }
@@ -262,7 +263,10 @@ button.miniatura:disabled { cursor: default; }
 .tabla { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 .tabla th { text-align: left; font-weight: 600; color: var(--texto-suave); padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--borde); }
 .tabla td { padding: 0.5rem; border-bottom: 1px solid var(--borde); vertical-align: middle; }
-.tabla .num { text-align: right; }
+.tabla .num { text-align: right; width: 4.75rem; }
+.tabla { table-layout: fixed; }
+.tabla td > div { min-width: 0; }
+@media (max-width: 480px) { .tabla th { font-size: 0.75rem; padding-left: 0.25rem; padding-right: 0.25rem; } .tabla td { padding-left: 0.25rem; padding-right: 0.25rem; } .tabla .num { width: 4rem; } }
 .cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.625rem; }
 .cifra { background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra); padding: 0.75rem; }
 .cifra b { display: block; font-size: 1.625rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
