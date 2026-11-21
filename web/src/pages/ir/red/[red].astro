@@ -1,0 +1,18 @@
+---
+// ir/red/<instagram|facebook|tiktok>/ → cuenta el clic y abre el chat (o el
+// perfil, en TikTok). Solo existe para las redes cargadas en la tienda.
+import datos from '../../../data/catalogo.json';
+import Redireccion from '../../../components/imprimir/Redireccion.astro';
+import { REDES, texto } from '../../../components/imprimir/plan.mjs';
+import { urlRed } from '../../../compartido/enlaces.mjs';
+
+export function getStaticPaths() {
+  return REDES.filter((red) => datos.tienda.redes[red]).map((red) => ({ params: { red }, props: { red } }));
+}
+
+const { red } = Astro.props;
+const destino = urlRed(red, datos.tienda.redes[red]);
+const nombre = texto(datos, `contacto.${red}`);
+---
+
+<Redireccion destino={destino} evento={{ t: 'vista' }} mensaje={`Abriendo ${nombre}…`} boton={`Abrir ${nombre}`} />

@@ -1,0 +1,19 @@
+---
+// ir/temporada/<slug>/ → cuenta el clic y lleva a la revista web.
+import datos from '../../../data/catalogo.json';
+import Redireccion from '../../../components/imprimir/Redireccion.astro';
+import { urlTemporada } from '../../../compartido/enlaces.mjs';
+
+export function getStaticPaths() {
+  return datos.temporadas.map((temporada) => ({ params: { slug: temporada.slug }, props: { temporada } }));
+}
+
+const { temporada } = Astro.props;
+---
+
+<Redireccion
+  destino={urlTemporada(datos, temporada.slug)}
+  evento={{ t: 'vista', s: temporada.id }}
+  mensaje={`Abriendo ${temporada.nombre}…`}
+  boton="Ver la revista web"
+/>
