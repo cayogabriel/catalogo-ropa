@@ -7,19 +7,22 @@ const PUNTERO = 'catalogo-ropa.config.json';
 
 // Arma un Drive con carpeta raíz y, si se pide, foto, copia publicada y puntero.
 // La visita es anónima (usuario vacío), como en la web pública.
-function preparar({ conPuntero = true, publicar = true, fotoBytes = [1, 2, 3, -1] } = {}) {
+function preparar({ conPuntero = true, publicar = true, fotoBytes = [1, 2, 3, -1], documentoPublicado = false } = {}) {
   const dobles = crearDobles({ usuario: '', dueno: 'duena@example.com' });
   const { DriveApp, Utilities } = dobles;
   const raiz = DriveApp.createFolder('Catálogo Ropa');
   const foto = raiz.createFile(Utilities.newBlob(fotoBytes, 'image/jpeg', 'VES-001.jpg'));
   const privada = raiz.createFile(Utilities.newBlob([9, 9, 9], 'image/jpeg', 'privada.jpg'));
-  const publicado = { version_esquema: 1, productos: [], fotos: { [foto.getId()]: { actualizado: '2026-12-01T10:00:00-05:00' } } };
+  const documento = raiz.createFile('notas privadas', 'secreto', 'application/vnd.google-apps.document');
+  const fotos = { [foto.getId()]: { actualizado: '2026-12-01T10:00:00-05:00' } };
+  if (documentoPublicado) fotos[documento.getId()] = { actualizado: '2026-12-01T10:00:00-05:00' };
+  const publicado = { version_esquema: 1, productos: [], fotos };
   const archivoPublicado = publicar ? raiz.createFile('catalogo-publicado.json', JSON.stringify(publicado), 'application/json') : null;
   const puntero = conPuntero
     ? raiz.createFile(PUNTERO, JSON.stringify({ version: 1, hoja_id: 'x', carpetas: { raiz: raiz.getId() }, publicado_id: archivoPublicado?.getId() ?? null }), 'application/json')
     : null;
   const { ctx } = cargarGas('api', { dobles });
-  return { ctx, dobles, foto, privada, publicado, puntero, raiz };
+  return { ctx, dobles, foto, privada, documento, publicado, puntero, raiz };
 }
 
 const llamar = (ctx, parametros) => JSON.parse(ctx.doGet({ parameter: parametros }).getContent());
@@ -52,7 +55,7 @@ describe('?r=foto', () => {
     const r = llamar(ctx, { r: 'foto', id: foto.getId() });
     expect(r.ok).toBe(true);
     expect(r.datos.mime).toBe('image/jpeg');
-    expect(r.datos.nombre).toBe('VES-001.jpg');
+    expect(Object.keys(r.datos).sort()).toEqual(['base64', 'mime']);
     expect([...Buffer.from(r.datos.base64, 'base64')]).toEqual([1, 2, 3, 255]);
   });
 
@@ -72,6 +75,11 @@ describe('?r=foto', () => {
     expect(llamar(ctx, { r: 'foto', id: foto.getId() })).toEqual({ ok: false, error: 'foto_muy_grande' });
   });
 
+  test('un id publicado que no es una imagen (p. ej. un Doc) no se entrega', () => {
+    const { ctx, documento } = preparar({ documentoPublicado: true });
+    expect(llamar(ctx, { r: 'foto', id: documento.getId() })).toEqual({ ok: false, error: 'foto_no_disponible' });
+  });
+
   test('una foto publicada que se borró de Drive responde foto_no_disponible', () => {
     const { ctx, foto } = preparar();
     foto.setTrashed(true);
@@ -86,24 +94,37 @@ describe('rutas y puntero', () => {
     expect(llamar(ctx, {})).toEqual({ ok: false, error: 'ruta_desconocida' });
   });
 
-  test('con dos punteros usa el modificado más recientemente', () => {
+  test('con dos punteros usa el modificado más recientemente, también si ya había uno guardado', () => {
     const { ctx, dobles, raiz, puntero } = preparar();
-    const viejo = raiz.createFile(PUNTERO, JSON.stringify({ version: 1, hoja_id: 'x', carpetas: {}, publicado_id: null }), 'application/json');
+    expect(llamar(ctx, { r: 'catalogo' }).ok).toBe(true); // guarda el puntero bueno
+    const nuevo = raiz.createFile(PUNTERO, JSON.stringify({ version: 1, hoja_id: 'x', carpetas: {}, publicado_id: null }), 'application/json');
     expect(llamar(ctx, { r: 'catalogo' }).error).toBe('sin_publicacion'); // el más nuevo no tiene publicación
-    dobles._drive.fijarActualizado(viejo.getId(), '2026-01-01T00:00:00-05:00');
+    dobles._drive.fijarActualizado(nuevo.getId(), '2026-01-01T00:00:00-05:00');
     dobles._drive.fijarActualizado(puntero.getId(), '2026-12-31T00:00:00-05:00');
-    dobles.PropertiesService.getScriptProperties().deleteProperty('CR_PUNTERO_ID');
     expect(llamar(ctx, { r: 'catalogo' }).ok).toBe(true);
   });
 
-  test('después de encontrarlo una vez no vuelve a buscar por nombre', () => {
-    const { ctx, dobles } = preparar();
-    const original = dobles.DriveApp.getFilesByName;
-    let busquedas = 0;
-    dobles.DriveApp.getFilesByName = (n) => (busquedas++, original(n));
+  test('?r=catalogo vuelve a buscar el puntero; ?r=foto usa el ya encontrado', () => {
+    const { ctx, dobles, foto } = preparar();
     llamar(ctx, { r: 'catalogo' });
+    llamar(ctx, { r: 'foto', id: foto.getId() });
+    llamar(ctx, { r: 'foto', id: foto.getId() });
+    expect(dobles._drive.llamadas.searchFiles).toHaveLength(1);
     llamar(ctx, { r: 'catalogo' });
-    expect(busquedas).toBe(1);
+    expect(dobles._drive.llamadas.searchFiles).toHaveLength(2);
+  });
+
+  test('un puntero en la papelera no cuenta', () => {
+    const { ctx, puntero } = preparar();
+    puntero.setTrashed(true);
+    expect(llamar(ctx, { r: 'catalogo' })).toEqual({ ok: false, error: 'sin_instalacion' });
+  });
+
+  test('un puntero compartido por otra cuenta no cuenta, aunque sea más nuevo', () => {
+    const { ctx, dobles, publicado } = preparar();
+    const falso = dobles._drive.crearAjeno('catalogo-publicado.json', JSON.stringify({ fotos: {} }), 'application/json', 'intrusa@example.com');
+    dobles._drive.crearAjeno(PUNTERO, JSON.stringify({ version: 1, hoja_id: 'x', carpetas: {}, publicado_id: falso.getId() }), 'application/json', 'intrusa@example.com');
+    expect(llamar(ctx, { r: 'catalogo' })).toEqual({ ok: true, datos: publicado });
   });
 
   test('si el puntero guardado ya no existe, lo vuelve a buscar', () => {
