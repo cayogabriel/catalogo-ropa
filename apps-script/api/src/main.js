@@ -1,35 +1,44 @@
 // API pública del catálogo. Contrato: docs/contracts/api-publica.md
-// Solo lectura: catálogo publicado y fotos publicadas. Los eventos (doPost) los completa S2.
+// Solo lectura (catálogo publicado y fotos publicadas) y una única escritura: agregar un evento anónimo.
+// doGet y doPost nunca lanzan: ante cualquier fallo responden {ok:false,error:'interno'} sin detalles.
 
 function doGet(e) {
-  const ruta = (e && e.parameter && e.parameter.r) || '';
-  if (ruta !== 'catalogo' && ruta !== 'foto') return error_('ruta_desconocida');
+  try {
+    const ruta = (e && e.parameter && e.parameter.r) || '';
+    if (ruta !== 'catalogo' && ruta !== 'foto') return error_('ruta_desconocida');
 
-  const config = config_(ruta === 'catalogo');
-  if (!config) return error_('sin_instalacion');
-  const publicado = leerPublicado_(config);
-  if (!publicado) return error_('sin_publicacion');
+    const config = config_(ruta === 'catalogo');
+    if (!config) return error_('sin_instalacion');
+    if (ruta === 'foto') return foto_(config, e.parameter.id);
 
-  if (ruta === 'catalogo') return ok_(publicado);
-  return foto_(publicado, e.parameter.id);
-}
-
-// Lista blanca: solo se abre en Drive un id que figura en la copia publicada,
-// y solo se entrega si es una imagen (nunca un documento convertido a PDF).
-// Devuelve los bytes tal como están guardados: el Panel solo guarda imágenes
-// re-codificadas en el navegador, sin EXIF (ver api-panel.md, subirFoto).
-function foto_(publicado, id) {
-  const indice = publicado.fotos || {};
-  if (!id || !Object.prototype.hasOwnProperty.call(indice, id)) return error_('foto_no_publicada');
-  const archivo = abrirArchivo_(id);
-  if (!archivo || TIPOS_FOTO.indexOf(archivo.getMimeType()) === -1) return error_('foto_no_disponible');
-  if (archivo.getSize() > MAX_BYTES_FOTO) return error_('foto_muy_grande');
-  const blob = archivo.getBlob();
-  return ok_({ mime: blob.getContentType(), base64: Utilities.base64Encode(blob.getBytes()) });
+    const publicado = leerPublicado_(config);
+    if (!publicado) return error_('sin_publicacion');
+    return ok_(publicado);
+  } catch (err) {
+    return fallo_(err);
+  }
 }
 
 function doPost(e) {
-  return error_('no_implementado');
+  try {
+    const evento = leerEvento_(e);
+    if (!evento) return error_('evento_invalido');
+    const resultado = registrarEvento_(evento);
+    if (resultado === 'sin_instalacion') return error_('sin_instalacion');
+    return json_(resultado === 'descartado' ? { ok: true, descartado: true } : { ok: true });
+  } catch (err) {
+    return fallo_(err);
+  }
+}
+
+// El detalle va al registro de Google (solo lo ve la dueña); la respuesta pública no lleva nada.
+function fallo_(err) {
+  try {
+    console.error(String((err && err.message) || err));
+  } catch (e) {
+    // sin registro, igual se responde
+  }
+  return error_('interno');
 }
 
 // Ejecutarla una vez desde el editor hace que Google pida los permisos del manifiesto.

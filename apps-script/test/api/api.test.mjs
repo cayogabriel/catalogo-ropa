@@ -135,11 +135,6 @@ describe('rutas y puntero', () => {
 });
 
 describe('el proyecto público es de solo lectura', () => {
-  test('doPost todavía no registra eventos (lo completa S2)', () => {
-    const { ctx } = preparar();
-    expect(JSON.parse(ctx.doPost({ postData: { contents: '{}' } }).getContent())).toEqual({ ok: false, error: 'no_implementado' });
-  });
-
   test('no define funciones de escritura ni de administración', () => {
     const dir = new URL('../../api/src/', import.meta.url);
     for (const nombre of readdirSync(dir).filter((n) => n.endsWith('.js'))) {
