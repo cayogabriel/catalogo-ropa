@@ -50,13 +50,54 @@ export function crearCache(reloj) {
 // Un solo hilo en los tests: el candado siempre se concede, pero se cuenta.
 export function crearCandado() {
   const estado = { tomado: false, tomas: 0 };
+  // estado.fallar = true simula que otra ejecución tiene el candado (en Google puede pasar).
   const lock = {
-    tryLock: () => ((estado.tomado = true), estado.tomas++, true),
-    waitLock: () => void ((estado.tomado = true), estado.tomas++),
+    tryLock: () => {
+      if (estado.fallar) return false;
+      estado.tomado = true;
+      estado.tomas++;
+      return true;
+    },
+    waitLock: () => {
+      if (estado.fallar) throw new Error('Exception: Could not obtain lock after 1 seconds.');
+      estado.tomado = true;
+      estado.tomas++;
+    },
     releaseLock: () => void (estado.tomado = false),
     hasLock: () => estado.tomado,
   };
   return { LockService: { getScriptLock: () => lock, getDocumentLock: () => lock }, estado };
+}
+
+// ScriptApp: solo los activadores por reloj que usa el proyecto.
+export function crearScriptApp() {
+  const activadores = [];
+  let secuencia = 0;
+  const EventType = { CLOCK: 'CLOCK' };
+  const ScriptApp = {
+    EventType,
+    getProjectTriggers: () => [...activadores],
+    deleteTrigger: (t) => void activadores.splice(activadores.indexOf(t), 1),
+    newTrigger: (funcion) => {
+      const detalle = { funcion };
+      const reloj = {
+        everyDays: (n) => ((detalle.cadaDias = n), reloj),
+        everyHours: (n) => ((detalle.cadaHoras = n), reloj),
+        everyMinutes: (n) => ((detalle.cadaMinutos = n), reloj),
+        onMonthDay: (d) => ((detalle.diaMes = d), reloj),
+        atHour: (h) => ((detalle.hora = h), reloj),
+        after: (ms) => ((detalle.despues = ms), reloj),
+        create: () => {
+          const id = `trigger-${++secuencia}`;
+          const t = { getHandlerFunction: () => funcion, getUniqueId: () => id, getEventType: () => EventType.CLOCK, _detalle: detalle };
+          activadores.push(t);
+          return t;
+        },
+      };
+      return { timeBased: () => reloj };
+    },
+  };
+  return { ScriptApp, activadores };
 }
 
 export function crearUrlFetch() {
