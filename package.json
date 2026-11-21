@@ -1,0 +1,22 @@
+{
+  "name": "catalogo-ropa",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps-script",
+    "contratos",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixtures": "node fixtures/generar-imagenes.mjs && node fixtures/generar-catalogo.mjs"
+  },
+  "devDependencies": {
+    "sharp": "0.35.5",
+    "vitest": "5.1.1"
+  }
+}

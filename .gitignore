@@ -1,0 +1,20 @@
+node_modules/
+.superpowers/
+
+# Apps Script: ids de proyecto y credenciales quedan fuera del repo público
+.clasp.json
+.clasprc.json
+
+# Variables locales (URLs de despliegue, tokens)
+.env*
+!.env.example
+
+# Web: salidas de build y datos generados al publicar
+web/dist/
+web/.astro/
+web/.cache/
+web/src/data/catalogo.json
+web/public/img/
+
+# Borrador antiguo del plan (el vigente está en docs/superpowers/specs/)
+plan.md

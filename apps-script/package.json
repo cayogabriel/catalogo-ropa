@@ -1,0 +1,5 @@
+{
+  "name": "@catalogo/apps-script",
+  "private": true,
+  "type": "module"
+}
