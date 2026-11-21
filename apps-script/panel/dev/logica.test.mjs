@@ -48,6 +48,20 @@ describe('productos', () => {
   });
 });
 
+describe('categorías', () => {
+  it('prefijoDeCategoria usa las 3 primeras letras sin tildes en mayúscula', () => {
+    expect(L.prefijoDeCategoria('Vestidos', [])).toBe('VES');
+    expect(L.prefijoDeCategoria('Blusas y tops', [])).toBe('BLU');
+    expect(L.prefijoDeCategoria('Ñandú', [])).toBe('NAN');
+    expect(L.prefijoDeCategoria('Ab', [])).toBe('ABX');
+  });
+  it('si el prefijo ya existe busca otro con las letras del nombre y, si no, con A–Z', () => {
+    expect(L.prefijoDeCategoria('Vestidos', ['VES'])).toBe('VET');
+    expect(L.prefijoDeCategoria('Vestidos', ['VES', 'VET'])).toBe('VEI');
+    expect(L.prefijoDeCategoria('Abc', ['ABC'])).toBe('ABA');
+  });
+});
+
 describe('historial legible', () => {
   const ctx = { etiqueta: (entidad, id) => (id === 'p1' ? 'VES-001' : id), simbolo: 'S/' };
   it('edición de precio', () => {

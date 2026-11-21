@@ -244,7 +244,25 @@
     return base + ' ' + n;
   }
 
+  /** Prefijo de 3 letras para los códigos de una categoría nueva («Vestidos» → VES), sin repetir los usados. */
+  function prefijoDeCategoria(nombre, usados) {
+    var letras = U.sinTildes(nombre).replace(/[^a-z]/g, '').toUpperCase();
+    while (letras.length < 3) letras += 'X';
+    var libre = function (p) { return usados.indexOf(p) === -1; };
+    var base = letras.slice(0, 3);
+    if (libre(base)) return base;
+    for (var i = 3; i < letras.length; i++) {
+      if (libre(base.slice(0, 2) + letras[i])) return base.slice(0, 2) + letras[i];
+    }
+    var abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (var j = 0; j < abc.length; j++) {
+      if (libre(base.slice(0, 2) + abc[j])) return base.slice(0, 2) + abc[j];
+    }
+    return base;
+  }
+
   P.logica = {
+    prefijoDeCategoria: prefijoDeCategoria,
     filtrarProductos: filtrarProductos, ordenarProductos: ordenarProductos, textoFaltantes: textoFaltantes,
     resumenAltaRapida: resumenAltaRapida, describirCambio: describirCambio, valorLegible: valorLegible,
     estadoTemporada: estadoTemporada, urlVistaPrevia: urlVistaPrevia, variablesPaleta: variablesPaleta,

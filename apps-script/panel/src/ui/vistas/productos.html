@@ -12,6 +12,7 @@
           <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>
           Prenda sin foto
         </button>
+        <button type="button" class="boton texto" @click="catAbierta = true">Categorías</button>
       </div>
     </div>
     <p class="vista-intro">Tus cambios se guardan solos. Para que tus clientas los vean, pulsa «Publicar».</p>
@@ -264,6 +265,47 @@
       </template>
     </dialog>
 
+    <!-- Categorías -->
+    <dialog class="hoja" x-modal="catAbierta" aria-labelledby="cat-titulo">
+      <template x-if="catAbierta">
+        <div class="hoja-interior">
+          <div class="hoja-cabecera">
+            <h2 id="cat-titulo">Categorías</h2>
+            <button type="button" class="boton icono texto" aria-label="Cerrar" @click="catAbierta = false"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+          </div>
+          <div class="hoja-cuerpo">
+            <p>Son los grupos en que ordenas tus prendas, por ejemplo «Vestidos» o «Blusas». Las letras de cada categoría forman el código de sus prendas (VES-001).</p>
+            <ul class="lista">
+              <template x-for="(c, i) in categoriasOrdenadas" :key="c.id">
+                <li class="fila" style="grid-template-columns: minmax(0, 1fr); gap: 0.5rem">
+                  <label class="campo">
+                    <span class="campo-etiqueta">Nombre</span>
+                    <input type="text" :value="c.nombre" @input="gCat(c, 'nombre', $event)" />
+                  </label>
+                  <div class="fila-botones">
+                    <span class="chip" x-text="'Código ' + c.prefijo_codigo"></span>
+                    <label class="opcion"><input type="checkbox" :checked="c.visible" @change="gCat(c, 'visible', $event)" /><span>Se ve en el catálogo</span></label>
+                    <span class="espaciado"></span>
+                    <button type="button" class="boton icono texto" :disabled="i === 0" :aria-label="'Subir ' + c.nombre" @click="moverCategoria(i, i - 1)"><svg class="ico" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                    <button type="button" class="boton icono texto" :disabled="i === categoriasOrdenadas.length - 1" :aria-label="'Bajar ' + c.nombre" @click="moverCategoria(i, i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-abajo"/></svg></button>
+                  </div>
+                </li>
+              </template>
+            </ul>
+            <form @submit.prevent="crearCategoria()" class="tarjeta" style="box-shadow: none; background: var(--fondo)">
+              <label class="campo">
+                <span class="campo-etiqueta">Nueva categoría</span>
+                <input type="text" placeholder="Por ejemplo: Conjuntos" x-model="nuevaCategoria" autocomplete="off" />
+              </label>
+              <button type="submit" class="boton primario" :disabled="!nuevaCategoria.trim() || creandoCategoria">Agregar categoría</button>
+            </form>
+            <p class="campo-ayuda">Para dejar de mostrar una categoría, quítale la marca «Se ve en el catálogo». No se borran, para no perder sus prendas.</p>
+          </div>
+          <div class="hoja-pie"><button type="button" class="boton primario" @click="catAbierta = false">Listo</button></div>
+        </div>
+      </template>
+    </dialog>
+
     <!-- Alta rápida: varias fotos → un borrador por foto -->
     <dialog class="hoja" x-modal="alta" aria-labelledby="alta-titulo">
       <template x-if="alta">
@@ -349,6 +391,9 @@ document.addEventListener('alpine:init', function () {
       fichaId: null,
       fichaAbierta: false,
       alta: false,
+      catAbierta: false,
+      nuevaCategoria: '',
+      creandoCategoria: false,
       cambios: [],
       estados: ESTADOS,
 
@@ -377,11 +422,39 @@ document.addEventListener('alpine:init', function () {
         var n = this.visibles.length;
         return n === 1 ? '1 prenda' : n + ' prendas';
       },
+      get categoriasOrdenadas() { return this.categorias.slice().sort(function (a, b) { return a.orden - b.orden; }); },
       get ficha() { return this.fichaId ? A.store('datos').buscar('productos', this.fichaId) : null; },
       get errores() { return this.ficha ? P.validar.producto(this.ficha) : {}; },
       get textoFaltantes() { return this.ficha ? L.textoFaltantes(this.ficha) : ''; },
 
       err: function (p) { return P.validar.producto(p); },
+      gCat: function (c, campo, e) {
+        var t = e.target;
+        return A.store('datos').guardar('categorias', c, campo, t.type === 'checkbox' ? t.checked : t.value);
+      },
+      moverCategoria: function (de, a) {
+        var lista = this.categoriasOrdenadas;
+        if (a < 0 || a >= lista.length) return;
+        A.store('datos').reordenar('categorias', P.arrastre.ordenNuevo(lista, de, a));
+      },
+      crearCategoria: function () {
+        var self = this;
+        var nombre = this.nuevaCategoria.trim();
+        if (!nombre) return Promise.resolve();
+        var existentes = this.categorias;
+        var slug = U.slug(nombre) || 'categoria';
+        var base = slug;
+        var n = 2;
+        while (existentes.some(function (c) { return c.slug === slug; })) slug = base + '-' + n++;
+        this.creandoCategoria = true;
+        return A.store('datos').crear('categorias', {
+          nombre: nombre, slug: slug, visible: true,
+          prefijo_codigo: L.prefijoDeCategoria(nombre, existentes.map(function (c) { return c.prefijo_codigo; })),
+        }).then(
+          function () { self.nuevaCategoria = ''; self.creandoCategoria = false; A.store('toasts').mostrar({ tipo: 'ok', texto: 'Agregué la categoría «' + nombre + '».' }); },
+          function () { self.creandoCategoria = false; }
+        );
+      },
       nombreCategoria: function (id) {
         var c = A.store('datos').buscar('categorias', id);
         return c ? c.nombre : '';
