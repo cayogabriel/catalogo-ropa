@@ -1,0 +1,26 @@
+---
+// Foto para imprimir (JPG de img/imprimir/, ver rutas.mjs) con su alt.
+import datos from '../../data/catalogo.json';
+import { rutaImpresion } from './rutas.mjs';
+
+interface Props {
+  foto: { id: string; alt: string };
+  ancho?: 1080 | 540;
+  class?: string;
+  posicion?: string;
+}
+
+const { foto, ancho = 1080, class: clase, posicion = 'center' } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const meta = datos.imagenes[foto.id];
+---
+
+<img
+  class={clase}
+  src={base + rutaImpresion(foto.id, ancho)}
+  alt={foto.alt}
+  width={meta?.ancho}
+  height={meta?.alto}
+  style={`object-position:${posicion}`}
+  decoding="sync"
+/>

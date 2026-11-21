@@ -1,0 +1,13 @@
+---
+// Precio vigente de una tarjeta del plan: «antes» solo si la oferta es real.
+interface Props {
+  precio: { ahora: string; antes: string | null };
+  antesTexto: string;
+}
+const { precio, antesTexto } = Astro.props;
+---
+
+<p class:list={['precio', { 'precio--oferta': precio.antes }]}>
+  <span class="precio__ahora">{precio.ahora}</span>
+  {precio.antes && <s class="precio__antes" aria-label={`${antesTexto} ${precio.antes}`}>{precio.antes}</s>}
+</p>

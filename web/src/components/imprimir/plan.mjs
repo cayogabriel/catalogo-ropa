@@ -56,9 +56,11 @@ const diaLima = (ms) => new Date(ms - 5 * 3_600_000).toISOString().slice(0, 10);
 
 // El precio impreso solo puede subir cuando termina una oferta. La vigencia del
 // catálogo es el último día de la oferta vigente más próxima a terminar, o
-// 15 días desde hoy si no hay ninguna antes (la misma regla de la revista).
+// 15 días desde la publicación (generado_en) si no hay ninguna antes: la misma
+// regla de la revista. Contar desde generado_en hace que el build y la
+// verificación lleguen a la misma fecha aunque corran en minutos distintos.
 export function vigenciaCatalogo(catalogo, ahora) {
-  let fin = diaLima(ahora + VIGENCIA_DIAS * DIA_MS);
+  let fin = diaLima(Date.parse(catalogo.generado_en) + VIGENCIA_DIAS * DIA_MS);
   for (const p of catalogo.productos) {
     const v = precioVigente(p, ahora);
     if (v.oferta_id === null || v.hasta === null) continue;
@@ -83,7 +85,7 @@ function insignias(catalogo, producto, v) {
   if (producto.ultimas_unidades) lista.push(texto(catalogo, 'insignia.ultimas_unidades'));
   if (producto.nuevo) lista.push(texto(catalogo, 'insignia.nuevo'));
   if (producto.popularidad >= 1 && producto.popularidad <= 3) lista.push(texto(catalogo, 'insignia.mas_consultado'));
-  return lista.slice(0, 2);
+  return [...new Set(lista)].slice(0, 2);
 }
 
 // Todo lo que una tarjeta de prenda necesita, ya calculado.

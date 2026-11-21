@@ -1,0 +1,14 @@
+---
+// Catálogo PDF 4:5 (4 prendas por página), listo para imprimir con Chromium
+// (web/scripts/documentos.mjs). No se despliega: se borra de dist/ al terminar.
+import datos from '../../data/catalogo.json';
+import Documento from '../../components/imprimir/Documento.astro';
+import PaginaCatalogo from '../../components/imprimir/PaginaCatalogo.astro';
+import { planCatalogo } from '../../components/imprimir/plan.mjs';
+
+const plan = planCatalogo(datos, Date.now());
+---
+
+<Documento titulo={`Catálogo · ${datos.tienda.nombre}`} paleta={plan.paleta}>
+  {plan.paginas.map((pagina) => <PaginaCatalogo pagina={pagina} nota={plan.nota} pedir={plan.pedir} paleta={plan.paleta} />)}
+</Documento>

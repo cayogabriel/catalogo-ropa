@@ -1,0 +1,19 @@
+---
+// Revista 4:5 de una temporada, lista para imprimir con Chromium
+// (web/scripts/documentos.mjs). No se despliega: se borra de dist/ al terminar.
+import datos from '../../../data/catalogo.json';
+import Documento from '../../../components/imprimir/Documento.astro';
+import PaginaRevista from '../../../components/imprimir/PaginaRevista.astro';
+import { planRevista, revistasDe } from '../../../components/imprimir/plan.mjs';
+
+export function getStaticPaths() {
+  return revistasDe(datos).map((temporada) => ({ params: { slug: temporada.slug }, props: { temporada } }));
+}
+
+const { temporada } = Astro.props;
+const plan = planRevista(datos, temporada, Date.now());
+---
+
+<Documento titulo={`${temporada.nombre} · ${datos.tienda.nombre}`} paleta={plan.paleta}>
+  {plan.paginas.map((pagina) => <PaginaRevista pagina={pagina} nota={plan.nota} pedir={plan.pedir} paleta={plan.paleta} />)}
+</Documento>

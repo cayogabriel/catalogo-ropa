@@ -7,7 +7,8 @@
     "build": "astro build",
     "build:fixture": "node scripts/publicar.mjs --origen=fixture && astro build",
     "publicar": "node scripts/publicar.mjs --origen=api",
-    "verificar:build": "node scripts/verificar-build.mjs"
+    "verificar:build": "node scripts/verificar-build.mjs",
+    "documentos": "node scripts/documentos.mjs"
   },
   "dependencies": {
     "@catalogo/contratos": "*",

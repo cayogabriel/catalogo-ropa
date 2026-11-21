@@ -1,0 +1,231 @@
+---
+// Una página del catálogo PDF: la portada o 4 prendas en filas.
+import datos from '../../data/catalogo.json';
+import Foto from './Foto.astro';
+import Pie from './Pie.astro';
+import Precio from './Precio.astro';
+import Boton from './Boton.astro';
+import { texto } from './plan.mjs';
+import { qrSvg } from './qr.mjs';
+
+interface Props {
+  pagina: any;
+  nota: string;
+  pedir: string;
+  paleta: { tokens: Record<string, string> };
+}
+
+const { pagina: p, nota, pedir, paleta } = Astro.props;
+const tienda = datos.tienda.nombre;
+const antes = texto(datos, 'precio.antes');
+const codigo = (c: string) => texto(datos, 'producto.codigo', { codigo: c });
+const qr = p.tipo === 'portada-catalogo' ? await qrSvg(p.url, paleta.tokens['--color-texto']) : '';
+const pie = { nota, tienda, numero: p.numero, total: p.total };
+---
+
+{
+  p.tipo === 'portada-catalogo' && (
+    <section class="pagina cportada">
+      {p.foto && <Foto foto={p.foto} class="cportada__foto" posicion="center 30%" />}
+      <div class="cportada__cuerpo">
+        <p class="cportada__tienda">{p.tienda}</p>
+        <h1 class="cportada__titulo">{p.titulo}</h1>
+        {p.eslogan && <p class="cportada__eslogan">{p.eslogan}</p>}
+        <div class="cportada__pie">
+          <div class="cportada__contacto">
+            <ul class="contra__contactos">
+              {p.contactos.map((c: any) => (
+                <li>
+                  <span class="contra__nombre">{c.nombre}</span> {c.telefono}
+                </li>
+              ))}
+            </ul>
+            {p.horario && <p class="contra__nota">{p.horario}</p>}
+            {p.redes.length > 0 && (
+              <p class="contra__redes">
+                {p.redes.map((r: any) => (
+                  <Boton href={r.enlace} variante="borde">
+                    {r.nombre}
+                  </Boton>
+                ))}
+              </p>
+            )}
+          </div>
+          <a class="cportada__qr" href={p.url}>
+            <span class="contra__qr" set:html={qr} role="img" aria-label={`Código QR de ${p.url}`} />
+            <span>{p.url.replace(/^https:\/\//, '')}</span>
+          </a>
+        </div>
+      </div>
+      <Pie {...pie} />
+    </section>
+  )
+}
+
+{
+  p.tipo === 'catalogo' && (
+    <section class="pagina cpagina">
+      {p.prendas.map((x: any) => (
+        <article class="fila">
+          <Foto foto={x.foto} ancho={540} class="fila__foto" posicion="center top" />
+          <div class="fila__datos">
+            <p class="fila__cabecera">
+              <span class="fila__categoria">{x.categoria}</span>
+              {x.insignias.map((i: string, n: number) => (
+                <span class:list={['insignia', { 'insignia--oferta': n === 0 && x.precio.antes }]}>{i}</span>
+              ))}
+            </p>
+            <h2 class="fila__nombre">{x.producto.nombre}</h2>
+            <p class="fila__detalle">
+              {codigo(x.producto.codigo)}
+              {x.tallas.length > 0 && <>. {x.tallas.length === 1 ? 'Talla' : 'Tallas'} {x.tallas.join(', ')}</>}
+            </p>
+            <div class="fila__compra">
+              <Precio precio={x.precio} antesTexto={antes} />
+              <Boton href={x.enlace}>
+                {pedir}
+              </Boton>
+            </div>
+          </div>
+        </article>
+      ))}
+      <Pie {...pie} />
+    </section>
+  )
+}
+
+<style is:global>
+  .cportada {
+    display: flex;
+    flex-direction: column;
+  }
+  .cportada__foto {
+    flex: none;
+    height: 560px;
+    width: 100%;
+  }
+  .cportada__cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 56px 72px 120px;
+  }
+  .cportada__tienda {
+    font-size: 34px;
+    font-weight: 700;
+  }
+  .cportada__titulo {
+    font-size: 150px;
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+    margin-top: 8px;
+  }
+  .cportada__eslogan {
+    color: var(--color-texto-suave);
+    font-size: 36px;
+    margin-top: 20px;
+    max-width: 800px;
+  }
+  .cportada__pie {
+    align-items: flex-end;
+    display: flex;
+    gap: 48px;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+  .cportada__qr {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 26px;
+    gap: 14px;
+    text-decoration: none;
+  }
+  .cportada__qr .contra__qr {
+    height: 220px;
+    width: 220px;
+  }
+
+  /* 4 filas: foto 4:5 a la izquierda; datos arriba y, abajo, precio y botón. */
+  .cpagina {
+    display: grid;
+    gap: 20px;
+    grid-template-rows: repeat(4, 280px);
+    padding: 64px 72px 0;
+  }
+  .fila {
+    border-bottom: 3px solid var(--color-borde);
+    display: grid;
+    gap: 36px;
+    grid-template-columns: 216px minmax(0, 1fr);
+    padding-bottom: 20px;
+  }
+  .fila:last-of-type {
+    border-bottom: 0;
+  }
+  .fila__foto {
+    border-radius: calc(var(--radio) * 0.75);
+    height: 260px;
+    width: 208px;
+  }
+  .fila__datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .fila__cabecera {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    min-height: 44px;
+  }
+  .fila__categoria {
+    color: var(--color-texto-suave);
+    font-size: 26px;
+    margin-right: auto;
+  }
+  .fila .insignia {
+    font-size: 24px;
+    padding: 10px 16px;
+  }
+  .fila__nombre {
+    font-size: 40px;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fila__detalle {
+    color: var(--color-texto-suave);
+    font-size: 26px;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fila__compra {
+    align-items: center;
+    display: flex;
+    gap: 24px;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+  .fila .precio {
+    flex-wrap: nowrap;
+    gap: 12px;
+    white-space: nowrap;
+  }
+  .fila .precio__ahora {
+    font-size: 44px;
+  }
+  .fila .precio__antes {
+    font-size: 28px;
+  }
+  .fila .boton {
+    flex: none;
+    font-size: 28px;
+    padding: 0 32px;
+  }
+</style>

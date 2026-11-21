@@ -43,8 +43,9 @@ describe('vigenciaCatalogo', () => {
     expect(vigenciaCatalogo(ejemplo, AHORA)).toBe('2026-12-01');
   });
 
-  test('sin ofertas, son 15 días desde hoy (hora de Lima)', () => {
+  test('sin ofertas, son 15 días desde la publicación (hora de Lima)', () => {
     const c = structuredClone(ejemplo);
+    c.generado_en = '2026-11-21T23:30:00-05:00';
     for (const p of c.productos) p.precio.ventanas = [{ ...p.precio.ventanas[0], hasta: null, precio: p.precio.regular }];
     expect(vigenciaCatalogo(c, Date.parse('2026-11-21T23:30:00-05:00'))).toBe('2026-12-06');
   });
@@ -94,6 +95,11 @@ describe('planRevista', () => {
     const ves001 = plan.paginas.flatMap((p) => p.prendas ?? []).find((x) => x.producto.codigo === 'VES-001');
     expect(ves001.precio).toMatchObject({ ahora: 'S/ 66.75', antes: 'S/ 89' });
     expect(ves001.insignias[0]).toBe('-25%');
+  });
+
+  test('las insignias no se repiten (etiqueta «Liquidación» y liquidación)', () => {
+    const acc002 = plan.paginas.flatMap((p) => p.prendas ?? []).find((x) => x.producto.codigo === 'ACC-002');
+    expect(new Set(acc002.insignias).size).toBe(acc002.insignias.length);
   });
 
   test('las editoriales enlazan las prendas de sus créditos', () => {

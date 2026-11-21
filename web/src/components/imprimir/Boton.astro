@@ -1,0 +1,21 @@
+---
+// Botón con enlace (en el PDF se puede tocar). icono: 'chat' | 'ninguno'.
+interface Props {
+  href: string;
+  variante?: 'primario' | 'claro' | 'borde';
+  icono?: 'chat' | 'ninguno';
+  class?: string;
+}
+const { href, variante = 'primario', icono = 'ninguno', class: clase } = Astro.props;
+---
+
+<a class:list={['boton', variante !== 'primario' && `boton--${variante}`, clase]} href={href}>
+  {
+    icono === 'chat' && (
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5 5.4 16A8 8 0 1 1 8 18.6Z" />
+      </svg>
+    )
+  }
+  <slot />
+</a>
