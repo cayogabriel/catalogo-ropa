@@ -1,0 +1,169 @@
+<script>
+/* Fotos: se comprimen en el navegador antes de subir.
+ *
+ * Siempre se vuelven a codificar en un canvas (lado mayor 2000 px, JPEG 0.85, orientación EXIF ya aplicada).
+ * Eso elimina los datos EXIF, entre ellos la ubicación GPS de una foto sacada en casa. El servidor lo exige.
+ */
+(function (P) {
+  var MAXIMO = 2000;
+  var CALIDADES = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35];
+  var MAX_BYTES = 8 * 1024 * 1024;
+
+  function fallo(codigo, amable) {
+    var e = new Error(codigo + ': ' + amable);
+    e.codigo = codigo;
+    e.detalle = amable;
+    e.amable = amable;
+    return e;
+  }
+
+  /** Lado mayor a `max`, sin deformar y sin agrandar. */
+  function calcularTamano(ancho, alto, max) {
+    max = max || MAXIMO;
+    var mayor = Math.max(ancho, alto);
+    if (mayor <= max) return { ancho: ancho, alto: alto };
+    var f = max / mayor;
+    return { ancho: Math.max(1, Math.round(ancho * f)), alto: Math.max(1, Math.round(alto * f)) };
+  }
+
+  function depsPorDefecto() {
+    return {
+      createImageBitmap: function (archivo, opciones) { return window.createImageBitmap(archivo, opciones); },
+      cargarImagen: function (archivo) {
+        return new Promise(function (resolver, rechazar) {
+          var url = URL.createObjectURL(archivo);
+          var img = new Image();
+          img.onload = function () { URL.revokeObjectURL(url); resolver(img); };
+          img.onerror = function () { URL.revokeObjectURL(url); rechazar(new Error('no se pudo leer')); };
+          img.src = url;
+        });
+      },
+      crearCanvas: function (ancho, alto) {
+        var c = document.createElement('canvas');
+        c.width = ancho;
+        c.height = alto;
+        return c;
+      },
+      liberarCanvas: function (c) { c.width = 0; c.height = 0; },
+      leerDataUrl: function (blob) {
+        return new Promise(function (resolver, rechazar) {
+          var lector = new FileReader();
+          lector.onload = function () { resolver(String(lector.result)); };
+          lector.onerror = function () { rechazar(lector.error || new Error('no se pudo leer')); };
+          lector.readAsDataURL(blob);
+        });
+      },
+    };
+  }
+  function conDefectos(deps) { return Object.assign(depsPorDefecto(), deps || {}); }
+
+  function aBlob(canvas, calidad) {
+    return new Promise(function (resolver, rechazar) {
+      canvas.toBlob(function (b) { b ? resolver(b) : rechazar(fallo('invalido', 'No pude preparar la foto. Prueba con otra.')); }, 'image/jpeg', calidad);
+    });
+  }
+
+  /** Foto → JPEG ≤ 2000 px y ≤ 8 MB, sin EXIF. Devuelve { blob, ancho, alto, mime }. */
+  function comprimirImagen(archivo, deps) {
+    var d = conDefectos(deps);
+    if (!archivo || !/^image\//.test(archivo.type || '')) {
+      return Promise.reject(fallo('invalido', 'Ese archivo no es una foto. Elige una imagen JPG, PNG o WebP.'));
+    }
+    var leer = Promise.resolve()
+      .then(function () { return d.createImageBitmap(archivo, { imageOrientation: 'from-image' }); })
+      .catch(function () { return d.cargarImagen(archivo); })
+      .catch(function () { throw fallo('invalido', 'No pude leer esa foto. Prueba con otra.'); });
+    return leer.then(function (bitmap) {
+      var t = calcularTamano(bitmap.width, bitmap.height, d.maximo || MAXIMO);
+      var canvas = d.crearCanvas(t.ancho, t.alto);
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; // una PNG transparente no debe quedar negra al pasar a JPEG
+      ctx.fillRect(0, 0, t.ancho, t.alto);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bitmap, 0, 0, t.ancho, t.alto);
+      if (bitmap.close) bitmap.close();
+      var maxBytes = d.maxBytes || MAX_BYTES;
+      var calidades = d.calidad ? [d.calidad].concat(CALIDADES.filter(function (c) { return c < d.calidad; })) : CALIDADES;
+      function probar(i) {
+        if (i >= calidades.length) {
+          if (d.liberarCanvas) d.liberarCanvas(canvas);
+          throw fallo('limite', 'La foto pesa demasiado, incluso reducida. Prueba con otra.');
+        }
+        return aBlob(canvas, calidades[i]).then(function (blob) {
+          if (blob.size <= maxBytes) {
+            if (d.liberarCanvas) d.liberarCanvas(canvas);
+            return { blob: blob, ancho: t.ancho, alto: t.alto, mime: 'image/jpeg' };
+          }
+          return probar(i + 1);
+        });
+      }
+      return probar(0);
+    });
+  }
+
+  /** Blob → base64 sin el prefijo data:. */
+  function blobABase64(blob, deps) {
+    return conDefectos(deps).leerDataUrl(blob).then(function (url) { return url.slice(url.indexOf(',') + 1); });
+  }
+
+  /** Foto → { nombre, mime, base64, ancho, alto } lista para subirFoto. */
+  function codificar(archivo, deps) {
+    return comprimirImagen(archivo, deps).then(function (r) {
+      return blobABase64(r.blob, deps).then(function (base64) {
+        return {
+          nombre: String(archivo.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg',
+          mime: 'image/jpeg', base64: base64, ancho: r.ancho, alto: r.alto,
+        };
+      });
+    });
+  }
+
+  /**
+   * Sube varias fotos, de a `concurrencia`. onProgreso(indice, estado, extra):
+   * en_espera → comprimiendo → subiendo → listo | error. Una que falla no detiene a las otras.
+   */
+  function subirFotos(archivos, o) {
+    var comprimir = o.comprimir || function (a) { return codificar(a); };
+    var subir = o.subir || function (p) { return P.servidor.llamar('subirFoto', p); };
+    var progreso = o.onProgreso || function () {};
+    var limite = o.concurrencia || 2;
+    var resultados = archivos.map(function (a) { return { archivo: a, estado: 'en_espera' }; });
+    archivos.forEach(function (a, i) { progreso(i, 'en_espera'); });
+    var siguiente = 0;
+
+    function uno(i) {
+      progreso(i, 'comprimiendo');
+      return Promise.resolve()
+        .then(function () { return comprimir(archivos[i]); })
+        .then(function (c) {
+          var payload = { nombre: c.nombre, mime: c.mime, base64: c.base64, destino: o.destino };
+          if (o.temporada_id) payload.temporada_id = o.temporada_id;
+          progreso(i, 'subiendo');
+          return subir(payload);
+        })
+        .then(function (foto) {
+          resultados[i] = { archivo: archivos[i], estado: 'listo', foto: foto };
+          progreso(i, 'listo', foto);
+        })
+        .catch(function (e) {
+          var texto = (e && (e.amable || e.message)) || 'No pude subir esta foto.';
+          resultados[i] = { archivo: archivos[i], estado: 'error', error: texto };
+          progreso(i, 'error', texto);
+        });
+    }
+    function trabajador() {
+      if (siguiente >= archivos.length) return Promise.resolve();
+      var i = siguiente++;
+      return uno(i).then(trabajador);
+    }
+    var trabajadores = [];
+    for (var n = 0; n < Math.min(limite, archivos.length); n++) trabajadores.push(trabajador());
+    return Promise.all(trabajadores).then(function () { return resultados; });
+  }
+
+  P.fotos = {
+    calcularTamano: calcularTamano, comprimirImagen: comprimirImagen, blobABase64: blobABase64,
+    codificar: codificar, subirFotos: subirFotos, MAXIMO: MAXIMO, MAX_BYTES: MAX_BYTES,
+  };
+})((window.Panel = window.Panel || {}));
+</script>
