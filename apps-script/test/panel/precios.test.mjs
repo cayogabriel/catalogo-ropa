@@ -100,11 +100,11 @@ describe('redondeo', () => {
   test('ninguno deja céntimos (a 2 decimales)', () => {
     expect(calcular([oferta({ valor: 15 })], { redondeo: 'ninguno' }, producto).ventanas[0].precio).toBe(75.65);
   });
-  test('entero redondea al sol más cercano', () => {
-    expect(calcular([oferta({ valor: 15 })], { redondeo: 'entero' }, producto).ventanas[0]).toMatchObject({ precio: 76, descuento_pct: 14 });
+  test('entero redondea hacia abajo, al sol entero', () => {
+    expect(calcular([oferta({ valor: 15 })], { redondeo: 'entero' }, producto).ventanas[0]).toMatchObject({ precio: 75, descuento_pct: 15 });
   });
-  test('90 deja el precio terminado en .90 más cercano', () => {
-    expect(calcular([oferta({ valor: 15 })], { redondeo: '90' }, producto).ventanas[0]).toMatchObject({ precio: 75.9, descuento_pct: 14 });
+  test('90 deja el precio terminado en .90 hacia abajo', () => {
+    expect(calcular([oferta({ valor: 15 })], { redondeo: '90' }, producto).ventanas[0]).toMatchObject({ precio: 74.9, descuento_pct: 15 });
     expect(calcular([oferta({ valor: 20 })], { redondeo: '90' }, producto).ventanas[0].precio).toBe(70.9);
   });
   test('el precio final que escribe la dueña no se redondea', () => {
@@ -116,8 +116,8 @@ describe('redondeo', () => {
 });
 
 describe('ofertas que no sirven', () => {
-  test('si el redondeo deja el precio igual al regular, la oferta no cuenta', () => {
-    const r = calcular([oferta({ valor: 1 })], { redondeo: 'entero' }, { ...PRODUCTO, precio_regular: 10 });
+  test('si al redondear hacia abajo el precio queda en 0 o menos, la oferta no cuenta', () => {
+    const r = calcular([oferta({ tipo: 'monto', valor: 9.5 })], { redondeo: 'entero' }, { ...PRODUCTO, precio_regular: 10 });
     expect(r.ventanas).toHaveLength(1);
     expect(r.ventanas[0].oferta_id).toBe(null);
   });

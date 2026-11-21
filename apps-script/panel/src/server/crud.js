@@ -398,7 +398,21 @@ function contarReferencias_(entidad, id) {
       const n = cuenta('productos', function (p) {
         return p.categoria_id === id && p.estado !== 'archivado';
       });
-      return n ? 'tiene ' + n + ' prenda(s): muévelas o archívalas primero' : '';
+      if (n) return 'tiene ' + n + ' prenda(s): muévelas o archívalas primero';
+      const usos =
+        cuenta('secciones', function (s) {
+          return s.tipo === 'categoria' && s.parametro === id;
+        }) +
+        cuenta('ofertas', function (o) {
+          return o.alcance === 'categoria' && o.objetivos.indexOf(id) !== -1;
+        });
+      return usos ? 'la usan ' + usos + ' sección(es) u oferta(s): cámbialas primero' : '';
+    }
+    case 'secciones': {
+      const n = cuenta('ofertas', function (o) {
+        return o.alcance === 'seccion' && o.objetivos.indexOf(id) !== -1;
+      });
+      return n ? 'la usan ' + n + ' oferta(s): quítala de sus objetivos primero' : '';
     }
     case 'temporadas': {
       const n =
@@ -411,7 +425,11 @@ function contarReferencias_(entidad, id) {
         cuenta('secciones', function (s) {
           return s.temporada_id === id;
         });
-      return n ? 'tiene ' + n + ' foto(s), portada(s) o sección(es) asociadas: quítalas primero' : '';
+      if (n) return 'tiene ' + n + ' foto(s), portada(s) o sección(es) asociadas: quítalas primero';
+      const ofertas = cuenta('ofertas', function (o) {
+        return o.alcance === 'temporada' && o.objetivos.indexOf(id) !== -1;
+      });
+      return ofertas ? 'la usan ' + ofertas + ' oferta(s): quítala de sus objetivos primero' : '';
     }
     case 'paletas': {
       const n = cuenta('temporadas', function (t) {

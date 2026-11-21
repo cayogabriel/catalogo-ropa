@@ -125,6 +125,26 @@ function reemplazarDesde_(entidad, tabla, desdeIndice, nuevas) {
   if (exceso > 0) tabla.hoja.deleteRows(usadas + FILAS_DE_SOBRA + 1, exceso);
 }
 
+// Quita las filas viejas del PRINCIPIO de la hoja de eventos (los eventos entran en orden cronológico).
+// No reescribe el resto: la API puede estar agregando eventos al final en este mismo momento y
+// (cada proyecto tiene su propio candado) una reescritura se los llevaría por delante.
+// → cantidad de eventos borrados.
+function podarEventosViejos_(eventos, corte) {
+  let viejos = 0;
+  while (viejos < eventos.filas.length) {
+    const f = eventos.filas[viejos];
+    if (f._n !== viejos + 2 || (f.fecha && f.fecha.slice(0, 10) >= corte)) break; // la primera fila no vieja (o un hueco) corta el prefijo
+    viejos++;
+  }
+  if (!viejos) return 0;
+  const hoja = eventos.hoja;
+  // Google no deja borrar todas las filas que no están congeladas: siempre queda al menos una.
+  const quitar = Math.min(viejos, hoja.getMaxRows() - 2);
+  if (quitar > 0) hoja.deleteRows(2, quitar);
+  if (viejos > quitar) hoja.getRange(2, 1, viejos - quitar, eventos.encabezados.length).clearContent();
+  return viejos;
+}
+
 // Eventos → estadisticas_diarias (se vuelven a calcular los días que aún tienen eventos) y poda de
 // los eventos de más de 35 días. Idempotente.
 function consolidar_(ahora) {
@@ -148,19 +168,15 @@ function consolidar_(ahora) {
       const cola = conservadas.concat(nuevas).sort(function (a, b) {
         return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0;
       });
-      reemplazarDesde_('estadisticas_diarias', estadisticas, primero, cola);
+      // Desde la fila REAL de la hoja (las filas vacías que dejó la dueña no cuentan en la lista leída).
+      reemplazarDesde_('estadisticas_diarias', estadisticas, estadisticas.filas[primero]._n - 2, cola);
     } else if (nuevas.length) {
       agregarFilas_('estadisticas_diarias', estadisticas, nuevas.slice().sort(function (a, b) {
         return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0;
       }));
     }
 
-    const corte = sumarDias_(hoy, -DIAS_RETENCION_EVENTOS);
-    const conservados = eventos.filas.filter(function (e) {
-      return e.fecha && e.fecha.slice(0, 10) >= corte;
-    });
-    const borrados = eventos.filas.length - conservados.length;
-    if (borrados > 0) reemplazarDesde_('eventos', eventos, 0, conservados);
+    const borrados = podarEventosViejos_(eventos, sumarDias_(hoy, -DIAS_RETENCION_EVENTOS));
     return { dias: Object.keys(dias).length, filas: nuevas.length, borrados: borrados };
   });
 }
@@ -257,6 +273,7 @@ function reporteMensual_() {
   if (hoja) hoja.clear();
   else hoja = libro.insertSheet(mes);
   // Código/origen y nombre van como texto: nada que escriba la dueña puede volverse fórmula.
+  if (valores.length > hoja.getMaxRows()) hoja.insertRowsAfter(hoja.getMaxRows(), valores.length - hoja.getMaxRows());
   hoja.getRange(1, 1, valores.length, 2).setNumberFormat('@');
   hoja.getRange(1, 1, valores.length, 7).setValues(valores);
   if (hojaPorDefecto) libro.deleteSheet(hojaPorDefecto); // solo la pestaña vacía de un libro recién creado

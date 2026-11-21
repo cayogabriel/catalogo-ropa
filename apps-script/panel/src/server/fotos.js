@@ -17,7 +17,7 @@ function jpegTieneExif_(b) {
   };
   let i = 2; // después de FF D8
   while (i + 3 < b.length) {
-    if (byte(i) !== 0xff) return false; // cabecera mal formada: no seguimos adivinando
+    if (byte(i) !== 0xff) return true; // cabecera mal formada: no se puede garantizar que no esconda un EXIF, así que se rechaza
     const marcador = byte(i + 1);
     if (marcador === 0xff) {
       i += 1; // relleno

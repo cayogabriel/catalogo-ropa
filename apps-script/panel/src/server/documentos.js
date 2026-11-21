@@ -93,6 +93,32 @@ function copiarArchivo_(carpeta, base, ruta, nombre, mime) {
   return nuevo;
 }
 
+const MAX_COPIA_DOCUMENTOS_MS = 10 * 60 * 1000;
+
+// Una sola copia a la vez (la consulta de la interfaz y el activador por hora pueden coincidir; dos copias
+// a la vez dejarían archivos repetidos). La marca vence a los 10 minutos por si una ejecución murió a medias.
+// → el resultado de guardarDocumentos_(), o null si ya hay otra copia en curso.
+function guardarDocumentosUnaVez_() {
+  const props = PropertiesService.getScriptProperties();
+  let tomada = false;
+  try {
+    tomada = conCandado_(function () {
+      const marca = Number(props.getProperty(PROP.DOCS_EN_CURSO) || 0);
+      if (marca && ahora_().getTime() - marca < MAX_COPIA_DOCUMENTOS_MS) return false;
+      props.setProperty(PROP.DOCS_EN_CURSO, String(ahora_().getTime()));
+      return true;
+    });
+  } catch (e) {
+    return null; // sin candado ahora: otra operación está escribiendo; se reintenta en la próxima consulta
+  }
+  if (!tomada) return null;
+  try {
+    return guardarDocumentos_();
+  } finally {
+    props.deleteProperty(PROP.DOCS_EN_CURSO);
+  }
+}
+
 // Copia a Drive lo que lista documentos.json del sitio; solo se guarda la última versión.
 // → { guardados: cantidad de archivos }
 function guardarDocumentos_() {

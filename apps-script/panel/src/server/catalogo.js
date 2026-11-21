@@ -126,7 +126,7 @@ function armarCatalogo_(datos, ahora, resolverFoto) {
       vendedora_id: p.vendedora_id && idsVendedora.indexOf(p.vendedora_id) !== -1 ? p.vendedora_id : null,
       orden: p.orden === null ? 0 : p.orden,
       nuevo: ahora.getTime() - publicadoEn <= diasNuevo * 86400000,
-      ultimas_unidades: p.stock !== null && p.stock >= 1 && p.stock <= umbral,
+      ultimas_unidades: p.estado === 'publicado' && p.stock !== null && p.stock >= 1 && p.stock <= umbral,
       popularidad: null,
       precio: { regular: precio.regular, ventanas: precio.ventanas },
       _publicadoEn: publicadoEn,
@@ -293,17 +293,10 @@ function armarCatalogo_(datos, ahora, resolverFoto) {
     return { id: c.id, nombre: c.nombre, slug: c.slug, orden: c.orden === null ? 0 : c.orden, foto: fotoONull(c.foto, c.nombre, 'la categoría «' + c.nombre + '»') };
   });
 
-  // --- índice de fotos (lista blanca exacta): cada foto usada y nada más
-  const indice = {};
-  Object.keys(usadas).forEach(function (id) {
-    indice[id] = { actualizado: resolverFoto(id, usadas[id]) };
-  });
-
   productos.forEach(function (p) {
     delete p._publicadoEn;
   });
-  return {
-    catalogo: {
+  const catalogo = {
       version_esquema: 1,
       generado_en: aIso_(ahora),
       tienda: {
@@ -329,10 +322,59 @@ function armarCatalogo_(datos, ahora, resolverFoto) {
       portadas: portadas,
       temporadas: temporadas,
       temporada_activa_id: activaId,
-      fotos: indice,
-    },
-    nuevosPublicados: nuevosPublicados,
+      fotos: {},
   };
+  // Lo que pasa el máximo del contrato se detecta aquí, con un mensaje claro, y no en el workflow.
+  verificarCopia_(catalogo);
+
+  // --- índice de fotos (lista blanca exacta): cada foto usada y nada más
+  Object.keys(usadas).forEach(function (id) {
+    catalogo.fotos[id] = { actualizado: resolverFoto(id, usadas[id]) };
+  });
+  return { catalogo: catalogo, nuevosPublicados: nuevosPublicados };
+}
+
+// Largos máximos (y textos que no pueden estar vacíos) de catalog.schema.json. Lanza `invalido` con el nombre de la prenda,
+// temporada, etc. Las pruebas comparan además con validarCatalogo; aquí no hay ajv.
+function verificarCopia_(c) {
+  const revisar = function (donde, objeto, reglas) {
+    Object.keys(reglas).forEach(function (campo) {
+      const [max, minimo] = reglas[campo];
+      const v = objeto[campo];
+      if (typeof v !== 'string') return;
+      if (v.length > max) fallar_('invalido', donde + ': «' + campo + '» pasa de ' + max + ' caracteres (tiene ' + v.length + ')');
+      if (minimo && v.length < minimo) fallar_('invalido', donde + ': «' + campo + '» está vacío');
+    });
+  };
+  revisar('la tienda', c.tienda, { nombre: [80, 1], eslogan: [160], horario: [200], envios: [400] });
+  c.categorias.forEach(function (x) {
+    revisar('la categoría «' + x.nombre + '»', x, { nombre: [60, 1] });
+  });
+  c.vendedoras.forEach(function (x) {
+    revisar('la vendedora ' + x.id, x, { nombre: [60, 1] });
+  });
+  Object.keys(c.paletas).forEach(function (id) {
+    revisar('la paleta «' + id + '»', c.paletas[id], { nombre: [200, 1] });
+    revisar('la paleta «' + id + '»', c.paletas[id].fuentes, { titulos: [60, 1], texto: [60, 1] });
+  });
+  c.productos.forEach(function (p) {
+    revisar('la prenda ' + p.codigo, p, { nombre: [80, 1], descripcion: [600] });
+    p.precio.ventanas.forEach(function (v) {
+      if (v.etiqueta !== null) revisar('la prenda ' + p.codigo, { etiqueta: v.etiqueta }, { etiqueta: [24, 1] });
+    });
+  });
+  c.secciones.forEach(function (s) {
+    revisar('la sección «' + s.titulo + '»', s, { titulo: [80, 1], subtitulo: [160] });
+  });
+  c.portadas.forEach(function (p) {
+    revisar('la portada «' + p.titulo + '»', p, { titulo: [80], subtitulo: [160], boton_texto: [30] });
+  });
+  c.temporadas.forEach(function (t) {
+    revisar('la temporada «' + t.nombre + '»', t, { nombre: [60, 1], titulo: [80], subtitulo: [160], intro: [1200], cierre: [1200] });
+    t.fotos.forEach(function (f) {
+      revisar('una foto de la temporada «' + t.nombre + '»', f, { texto: [300] });
+    });
+  });
 }
 
 function porOrden_(a, b) {

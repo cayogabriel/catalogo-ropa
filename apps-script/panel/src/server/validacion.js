@@ -279,8 +279,10 @@ function validarFila_(entidad, fila, memo) {
       break;
     case 'paletas':
       if (!fila.nombre) mal('la paleta necesita un nombre');
+      if (!fila.fuente_titulos || !fila.fuente_texto) mal('la paleta necesita las dos fuentes (títulos y texto)');
       break;
     case 'vendedoras':
+      if (!fila.nombre) mal('la vendedora necesita un nombre');
       if (fila.activa && !fila.whatsapp) mal('para activar a la vendedora falta su número de WhatsApp');
       if (fila.por_defecto && !fila.activa) mal('la vendedora por defecto debe estar activa');
       break;

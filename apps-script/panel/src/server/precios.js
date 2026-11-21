@@ -12,10 +12,12 @@ function aCentimos_(x) {
   return Math.round(x * 100) / 100;
 }
 
+// Siempre hacia abajo: el cliente paga lo prometido o menos, nunca más (marketing honesto).
+// El 1e-9 evita que 74.999999999 por error de coma flotante pierda un sol entero.
 function redondear_(x, modo) {
-  if (modo === 'entero') return Math.round(x);
-  if (modo === '90') return aCentimos_(Math.round(x - 0.9) + 0.9);
-  return aCentimos_(x);
+  if (modo === 'entero') return Math.floor(x + 1e-9);
+  if (modo === '90') return aCentimos_(Math.floor(x - 0.9 + 1e-9) + 0.9);
+  return Math.floor(x * 100 + 1e-6) / 100;
 }
 
 // Precio que daría la oferta sobre el precio regular, o null si no sirve (no baja el precio o queda en 0 o menos).

@@ -65,9 +65,11 @@ function publicarInterno_(manual) {
     const ahora = ahora_();
     const armado = armarCatalogo_(leerDatosParaPublicar_(ahora), ahora, resolverFotoDrive_);
     guardarCopiaPublicada_(armado.catalogo);
+    avisarAGithub_(token);
+    // Solo si GitHub aceptó el aviso se da por publicado: si falló, «cambios sin publicar» sigue prendido
+    // y las prendas nuevas no empiezan a contar su ventana de «Nuevo» sin estar en la web.
     estamparPublicadoEn_(armado.nuevosPublicados, ahora);
     marcarPublicacion_();
-    avisarAGithub_(token);
     const props = PropertiesService.getScriptProperties();
     props.setProperty(PROP.PUBLICADO_EN, String(ahora.getTime()));
     props.setProperty(PROP.DOCS_PENDIENTE, '1');

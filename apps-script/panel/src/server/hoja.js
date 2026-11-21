@@ -81,8 +81,13 @@ function haciaCelda_(tipo, valor) {
   }
 }
 
+// Solo la pestaña y sus encabezados, sin leer las filas (para agregar al final: historial, eventos).
+function abrirTabla_(entidad) {
+  return leerTabla_(entidad, true);
+}
+
 // → { hoja, entidad, encabezados, indices: {columna: posición}, filas: [Fila + _n (número de fila en la hoja) + _crudo] }
-function leerTabla_(entidad) {
+function leerTabla_(entidad, soloEncabezados) {
   const columnas = ESQUEMA[entidad];
   if (!columnas) fallar_('invalido', 'entidad desconocida: ' + entidad);
   const hoja = libro_().getSheetByName(entidad);
@@ -99,7 +104,7 @@ function leerTabla_(entidad) {
   });
   const ultima = hoja.getLastRow();
   const filas = [];
-  if (ultima >= 2) {
+  if (ultima >= 2 && !soloEncabezados) {
     const valores = hoja.getRange(2, 1, ultima - 1, ancho).getValues();
     const clave = columnas[0];
     valores.forEach(function (crudo, i) {

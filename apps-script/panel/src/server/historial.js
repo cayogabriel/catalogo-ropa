@@ -15,7 +15,7 @@ const LIMITE_HISTORIAL_MAX = 500;
 // (se guardan como JSON) o null cuando no aplican.
 function registrarCambios_(entradas) {
   if (!entradas.length) return;
-  const tabla = leerTabla_('historial');
+  const tabla = abrirTabla_('historial'); // el autoguardado no debe leer todo el historial en cada cambio
   const ahora = ahora_();
   const filas = entradas.map(function (e) {
     return {

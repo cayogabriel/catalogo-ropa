@@ -151,7 +151,10 @@ function calcularEstadoPublicacion_(conDocumentos) {
   base.mensaje = 'Publicado';
   if (!base.documentos_guardados && conDocumentos && props.getProperty(PROP.DOCS_PENDIENTE)) {
     try {
-      guardarDocumentos_();
+      if (guardarDocumentosUnaVez_() === null) {
+        base.mensaje = 'Copiando los documentos a Drive…';
+        return base;
+      }
       props.setProperty(PROP.DOCS_RUN, corrida);
       props.deleteProperty(PROP.DOCS_PENDIENTE);
       props.deleteProperty(PROP.DOCS_INTENTOS);

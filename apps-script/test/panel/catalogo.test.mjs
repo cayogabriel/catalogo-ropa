@@ -237,7 +237,7 @@ describe('precios dentro de la copia', () => {
     const v1 = copia(t).productos.find((p) => p.codigo === 'VES-001');
     expect(v1.precio.regular).toBe(89);
     expect(v1.precio.ventanas.map((v) => [v.desde, v.hasta, v.precio, v.descuento_pct])).toEqual([
-      [null, '2026-12-10T00:00:00-05:00', 67, 24],
+      [null, '2026-12-10T00:00:00-05:00', 66, 25],
       ['2026-12-10T00:00:00-05:00', null, 89, null],
     ]);
     expect(v1.precio.ventanas[0]).toMatchObject({ antes: 89, cuenta_regresiva: true, oferta_id: t.ids.oferta.id });

@@ -8,7 +8,7 @@
 function instalar() {
   requireAdmin_();
   const candado = LockService.getScriptLock();
-  candado.waitLock(30000);
+  if (!candado.tryLock(30000)) fallar_('conflicto', 'hay otra operación en curso; vuelve a intentarlo en unos segundos');
   try {
     return instalarConCandado_();
   } finally {
