@@ -12,10 +12,16 @@ describe('doGet()', () => {
     expect(salida.getTitle()).toBe('Panel · Catálogo');
   });
 
-  test('el panel provisional ofrece instalar y publicar la prueba sin abrir el editor', () => {
+  test('el panel ofrece completar la instalación y publicar sin abrir el editor', () => {
     const html = conUsuario('duena@example.com').doGet({ parameter: {} }).getContent();
-    expect(html).toContain("correr('instalar'");
-    expect(html).toContain("correr('publicarPrueba'");
+    expect(html).toContain('Completar instalación');
+    expect(html).toContain('$store.publicacion.publicar()');
+  });
+
+  test('ya no expone la publicación de prueba de S1', () => {
+    const ctx = conUsuario('duena@example.com');
+    expect(typeof ctx.publicarPrueba).toBe('undefined');
+    expect(ctx.doGet({ parameter: {} }).getContent()).not.toContain('publicarPrueba');
   });
 
   test('a cualquier otra persona le muestra «Acceso restringido» y nada del panel', () => {
