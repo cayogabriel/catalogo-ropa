@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estiloTokens, urlFuentes } from '../../src/lib/tema.mjs';
 import { srcset, srcMayor, ogAbsoluta } from '../../src/lib/imagenes.mjs';
-import { crearTextos } from '../../src/lib/textos.mjs';
+import { crearTextos, cantidadPrendas } from '../../src/lib/textos.mjs';
 import { TOKENS } from '@catalogo/contratos';
 import paletas from '../../../content/paletas.json' with { type: 'json' };
 
@@ -75,6 +75,15 @@ describe('textos', () => {
     expect(t('vacio')).toBe('');
     expect(t('no.existe')).toBe('');
   });
+  it('cantidad de prendas en singular y plural', () => {
+    const t3 = crearTextos({ tienda: { nombre: 'X' }, textos: { 'catalogo.resultados': '{cantidad} prendas' } }, {});
+    expect(cantidadPrendas(t3, 3)).toBe('3 prendas');
+    expect(cantidadPrendas(t3, 0)).toBe('0 prendas');
+    expect(cantidadPrendas(t3, 1)).toBe('1 prenda');
+    const t4 = crearTextos({ tienda: { nombre: 'X' }, textos: { 'catalogo.resultado_uno': 'Una prenda' } }, {});
+    expect(cantidadPrendas(t4, 1)).toBe('Una prenda');
+  });
+
   it('variables extra', () => {
     const t2 = crearTextos({ tienda: { nombre: 'X' }, textos: { a: '{cantidad} prendas' } }, {});
     expect(t2('a', { cantidad: 3 })).toBe('3 prendas');

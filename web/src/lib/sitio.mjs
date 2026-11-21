@@ -51,6 +51,7 @@ const CLAVES_CLIENTE = [
   'producto.quitar_lista',
   'producto.copiado',
   'catalogo.resultados',
+  'catalogo.resultado_uno',
 ];
 export const textosCliente = Object.fromEntries(CLAVES_CLIENTE.map((k) => [k, catalogo.textos[k] ?? respaldoTextos[k] ?? '']));
 

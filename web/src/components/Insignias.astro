@@ -10,5 +10,5 @@ const lista = insignias(Astro.props.producto, ahora, t);
 ---
 
 <ul class="insignias" data-insignias>
-  {lista.map((i) => <li class={`insignia insignia-${i.tipo}`}>{i.texto}</li>)}
+  {lista.map((i) => <li class:list={['insignia', `insignia-${i.tipo}`, { 'repite-pct': i.repitePct }]}>{i.texto}</li>)}
 </ul>

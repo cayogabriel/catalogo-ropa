@@ -23,7 +23,7 @@ const id = `hoja-${p.codigo.toLowerCase()}`;
       <span class="sr">{t('accesibilidad.cerrar')}</span>
     </button>
   </div>
-  <div class="hoja-cuerpo" data-precio={JSON.stringify(datosPrecio(p))}>
+  <div class="hoja-cuerpo con-pct" data-precio={JSON.stringify(datosPrecio(p))}>
     <div class="marco-foto hoja-foto">
       <Imagen foto={p.fotos[0]} sizes="(min-width: 48rem) 20rem, 40vw" />
       <Insignias producto={p} />

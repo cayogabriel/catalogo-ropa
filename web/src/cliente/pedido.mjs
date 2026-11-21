@@ -56,6 +56,13 @@ function prepararPedido(raiz) {
     avisarCambioLista();
   });
 
+  // Si ya está en Mi lista, se muestra la talla y el color que eligió.
+  const guardado = lista.leer().find((i) => i.codigo === producto.codigo);
+  for (const [nombre, valor] of [['talla', guardado?.talla], ['color', guardado?.color]]) {
+    const radio = valor ? [...raiz.querySelectorAll(`input[name$="-${nombre}"]`)].find((r) => r.value === valor) : null;
+    if (radio && !radio.disabled) radio.checked = true;
+  }
+
   document.addEventListener('lista:cambio', () => sincronizarLista(raiz, producto.codigo));
   sincronizarLista(raiz, producto.codigo);
   actualizarEnlace();

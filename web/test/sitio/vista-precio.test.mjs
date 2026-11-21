@@ -66,14 +66,21 @@ describe('insignias (regla 4: ninguna se inventa)', () => {
     const p = producto({ nuevo: true, popularidad: 1 }, { oferta: { etiqueta: '-25%' } });
     expect(insignias(p, EN_OFERTA, textos)).toEqual([
       { tipo: 'nuevo', texto: 'Nuevo' },
-      { tipo: 'descuento', texto: '-25%' },
+      { tipo: 'descuento', texto: '-25%', repitePct: true },
       { tipo: 'consultado', texto: 'Más consultado' },
     ]);
   });
 
   it('sin etiqueta usa -NN %', () => {
     const p = producto({}, { oferta: {} });
-    expect(insignias(p, EN_OFERTA, textos)).toEqual([{ tipo: 'descuento', texto: '-30 %' }]);
+    expect(insignias(p, EN_OFERTA, textos)).toEqual([{ tipo: 'descuento', texto: '-30 %', repitePct: true }]);
+  });
+
+  it('marca si la insignia de descuento solo repite el % (para no duplicarla junto al precio)', () => {
+    const conPct = insignias(producto({}, { oferta: { etiqueta: '-30%' } }), EN_OFERTA, textos)[0];
+    const sinEtiqueta = insignias(producto({}, { oferta: {} }), EN_OFERTA, textos)[0];
+    const propia = insignias(producto({}, { oferta: { etiqueta: 'Cyber Wow' } }), EN_OFERTA, textos)[0];
+    expect([conPct.repitePct, sinEtiqueta.repitePct, propia.repitePct]).toEqual([true, true, false]);
   });
 
   it('popularidad 4 o mayor no da «Más consultado»', () => {

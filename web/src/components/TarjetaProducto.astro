@@ -3,7 +3,7 @@
 import Imagen from './Imagen.astro';
 import Precio from './Precio.astro';
 import Insignias from './Insignias.astro';
-import { url, datosPrecio } from '../lib/sitio.mjs';
+import { url, t, datosPrecio } from '../lib/sitio.mjs';
 import { rutaProducto } from '../compartido/enlaces.mjs';
 
 interface Props {
@@ -34,4 +34,12 @@ const Titulo = titulo;
     <a class="tarjeta-enlace" href={url(rutaProducto(p.codigo))}>{p.nombre}</a>
   </Titulo>
   <Precio producto={p} />
+  {p.estado === 'agotado' && <p class="texto-suave tarjeta-agotado">{t('producto.agotado')}</p>}
 </article>
+
+<style>
+  .tarjeta-agotado {
+    font-size: 0.875rem;
+    margin-top: -0.375rem;
+  }
+</style>

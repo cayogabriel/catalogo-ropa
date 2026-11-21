@@ -408,6 +408,11 @@ main {
   color: var(--color-texto);
 }
 
+/* Junto a un precio que ya dice «-NN %», la insignia igual se omite. */
+.con-pct .repite-pct {
+  display: none;
+}
+
 .insignia-nuevo {
   background: var(--color-acento);
   color: var(--color-sobre-acento);

@@ -30,7 +30,12 @@ export function insignias(producto, ahora, textos) {
   const lista = [];
   if (producto.nuevo) lista.push({ tipo: 'nuevo', texto: textos('insignia.nuevo') });
   if (p.oferta && (p.etiqueta || p.pct)) {
-    lista.push({ tipo: 'descuento', texto: p.etiqueta ?? textos('precio.descuento', { porcentaje: p.pct }) });
+    lista.push({
+      tipo: 'descuento',
+      texto: p.etiqueta ?? textos('precio.descuento', { porcentaje: p.pct }),
+      // true si solo dice «-NN %»: junto a un precio que ya muestra el % se puede ocultar.
+      repitePct: p.etiqueta === null || /^-?\s*\d+\s*%$/.test(p.etiqueta.trim()),
+    });
   }
   if (p.liquidacion) lista.push({ tipo: 'liquidacion', texto: textos('insignia.liquidacion') });
   if (producto.ultimas_unidades) lista.push({ tipo: 'ultimas', texto: textos('insignia.ultimas_unidades') });

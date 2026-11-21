@@ -9,6 +9,7 @@ import Imagen from '../components/Imagen.astro';
 import { catalogo, t, url, ahora } from '../lib/sitio.mjs';
 import { temporadaActiva, temporadasArchivo, portadasVigentes, seccionesInicio } from '../lib/datos.mjs';
 import { rutaTemporada } from '../compartido/enlaces.mjs';
+import { cantidadPrendas } from '../lib/textos.mjs';
 
 const activa = temporadaActiva(catalogo);
 const primeroTemporada = catalogo.tienda.inicio_modo === 'temporada' && activa !== null;
@@ -50,7 +51,7 @@ const categorias = [...catalogo.categorias]
                   </span>
                 )}
                 <span class="categoria-nombre">{c.nombre}</span>
-                <span class="texto-suave categoria-cantidad">{t('catalogo.resultados', { cantidad: c.cantidad })}</span>
+                <span class="texto-suave categoria-cantidad">{cantidadPrendas(t, c.cantidad)}</span>
               </a>
             </li>
           ))}

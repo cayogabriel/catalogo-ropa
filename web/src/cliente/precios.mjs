@@ -37,7 +37,7 @@ function pintarPrecio(el, datos, ahora, simbolo) {
       ul.replaceChildren(
         ...nuevas.map((i) => {
           const li = document.createElement('li');
-          li.className = `insignia insignia-${i.tipo}`;
+          li.className = `insignia insignia-${i.tipo}${i.repitePct ? ' repite-pct' : ''}`;
           li.textContent = i.texto;
           return li;
         }),

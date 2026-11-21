@@ -1,46 +1,184 @@
 ---
-// Ficha provisional de S1: prueba la vista previa (og:image) de cada producto. S3 la reemplaza.
-import datos from '../../data/catalogo.json';
+// Ficha de producto: galería, precio antes/ahora, insignias, tallas, colores, WhatsApp,
+// Mi lista y compartir. og:image = foto principal (lo revisa verificar:build).
+import Base from '../../layouts/Base.astro';
+import Galeria from '../../components/Galeria.astro';
+import Precio from '../../components/Precio.astro';
+import Insignias from '../../components/Insignias.astro';
+import SelectorPedido from '../../components/SelectorPedido.astro';
+import TarjetaProducto from '../../components/TarjetaProducto.astro';
+import Icono from '../../components/Icono.astro';
+import { catalogo, t, url, monto, ahora, categoriaDe, datosPrecio } from '../../lib/sitio.mjs';
+import { presentarPrecio, restante } from '../../lib/vista-precio.mjs';
+import { rutaProducto, urlProducto } from '../../compartido/enlaces.mjs';
 
 export function getStaticPaths() {
-  return datos.productos.map((p) => ({ params: { codigo: p.codigo.toLowerCase() }, props: { p } }));
+  return catalogo.productos.map((p) => ({ params: { codigo: p.codigo.toLowerCase() }, props: { p } }));
 }
 
 const { p } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-const img = datos.imagenes[p.fotos[0].id];
-const absoluta = (ruta) => new URL(base + ruta, Astro.site).href;
-const ahora = Date.now();
-const vigente =
-  p.precio.ventanas.find(
-    (v) => (v.desde === null || Date.parse(v.desde) <= ahora) && (v.hasta === null || ahora < Date.parse(v.hasta)),
-  ) ?? p.precio.ventanas[0];
-const precio = `${datos.tienda.moneda.simbolo} ${vigente.precio}`;
+const precio = presentarPrecio(p, ahora);
+const falta = precio.cuentaRegresiva ? restante(precio.hasta, ahora) : null;
+const textoFalta = falta
+  ? [falta.dias ? `${falta.dias} ${t('cuenta_regresiva.dias')}` : '', falta.dias || falta.horas ? `${falta.horas} ${t('cuenta_regresiva.horas')}` : '', `${falta.minutos} ${t('cuenta_regresiva.minutos')}`]
+      .filter(Boolean)
+      .join(' ')
+  : '';
+const categoria = categoriaDe(p.categoria_id);
+const relacionados = catalogo.productos.filter((x) => x.categoria_id === p.categoria_id && x.id !== p.id).slice(0, 4);
+const enlace = urlProducto(catalogo, p.codigo);
+const descripcion = p.descripcion || `${p.nombre} · ${monto(precio.precio)}`;
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{p.nombre} · {datos.tienda.nombre}</title>
-    <meta name="description" content={p.descripcion} />
-    <meta property="og:type" content="product" />
-    <meta property="og:title" content={p.nombre} />
-    <meta property="og:description" content={`${p.codigo} · ${precio}`} />
-    <meta property="og:image" content={absoluta(img.og)} />
-    <meta property="og:url" content={absoluta(`p/${p.codigo.toLowerCase()}/`)} />
-  </head>
-  <body style="font-family: system-ui, sans-serif; margin: 0 auto; max-width: 640px; padding: 1rem">
-    <a href={base}>← Volver</a>
-    <h1>{p.nombre}</h1>
-    <img
-      src={base + Object.values(img.webp).at(-1)}
-      alt={p.fotos[0].alt}
-      width={img.ancho}
-      height={img.alto}
-      style="height: auto; width: 100%"
-    />
-    <p>{p.codigo} · {precio}</p>
-  </body>
-</html>
+<Base
+  titulo={`${p.nombre} · ${catalogo.tienda.nombre}`}
+  descripcion={`${monto(precio.precio)} · ${descripcion}`.slice(0, 200)}
+  ruta={rutaProducto(p.codigo)}
+  ogFoto={p.fotos[0]}
+  ogTipo="product"
+  productoId={p.id}
+>
+  <div class="contenedor ficha">
+    <nav class="migas" aria-label="Estás en">
+      <a href={url('catalogo/')}>{t('catalogo.titulo')}</a>
+      {
+        categoria && (
+          <>
+            <span aria-hidden="true">/</span>
+            <a href={url(`catalogo/?categoria=${categoria.slug}`)}>{categoria.nombre}</a>
+          </>
+        )
+      }
+    </nav>
+
+    <div class="ficha-grilla">
+      <Galeria producto={p} />
+
+      <div class="ficha-info con-pct" data-precio={JSON.stringify(datosPrecio(p))}>
+        <Insignias producto={p} />
+        <h1>{p.nombre}</h1>
+        <p class="texto-suave ficha-codigo">{t('producto.codigo', { codigo: p.codigo })}</p>
+        <Precio producto={p} clase="ficha-precio" />
+        <p class="ficha-cuenta" data-cuenta hidden={!falta}>
+          {t('cuenta_regresiva.termina_en')} <span data-cuenta-valor>{textoFalta}</span>
+        </p>
+        {p.descripcion && <p class="ficha-descripcion">{p.descripcion}</p>}
+
+        <SelectorPedido producto={p} prefijo="ficha" />
+
+        <div class="ficha-compartir">
+          <button type="button" class="boton boton-secundario" data-compartir data-url={enlace} data-titulo={p.nombre} data-texto={`${p.nombre} · ${monto(precio.precio)}`} data-p={p.id}>
+            <Icono nombre="compartir" />
+            {t('producto.compartir')}
+          </button>
+          <button type="button" class="boton boton-secundario" data-copiar data-url={enlace} data-p={p.id}>
+            <Icono nombre="enlace" />
+            Copiar enlace
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {
+      relacionados.length > 0 && (
+        <section class="bloque" aria-labelledby="titulo-relacionados">
+          <div class="cabecera-bloque">
+            <h2 id="titulo-relacionados">{t('producto.relacionados')}</h2>
+          </div>
+          <ul class="carrusel">
+            {relacionados.map((r) => (
+              <li>
+                <TarjetaProducto producto={r} sizes="(min-width: 48rem) 22vw, 44vw" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+
+  <script>
+    import { iniciarPedidos } from '../../cliente/pedido.mjs';
+    import { iniciarCompartir } from '../../cliente/compartir.mjs';
+    iniciarPedidos();
+    iniciarCompartir();
+  </script>
+</Base>
+
+<style>
+  .ficha {
+    padding-top: 0.5rem;
+  }
+  .migas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-texto-suave);
+  }
+  .migas a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--color-texto-suave);
+  }
+  .ficha-grilla {
+    display: grid;
+    gap: 1.5rem;
+  }
+  @media (max-width: 47.99rem) {
+    .ficha-grilla :global(.galeria) {
+      margin-inline: calc(var(--margen) * -1);
+    }
+    .ficha-grilla :global(.galeria-pista) {
+      border-radius: 0;
+    }
+  }
+  @media (min-width: 48rem) {
+    .ficha-grilla {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+    .ficha-info {
+      position: sticky;
+      top: calc(var(--alto-encabezado) + 1.5rem);
+    }
+  }
+  .ficha-info {
+    display: grid;
+    gap: 0.875rem;
+    align-content: start;
+  }
+  .ficha-info h1 {
+    font-size: clamp(1.875rem, 6vw, 2.75rem);
+  }
+  .ficha-codigo {
+    font-size: 0.875rem;
+    margin-top: -0.375rem;
+  }
+  .ficha-info :global(.ficha-precio) {
+    font-size: 1.5rem;
+  }
+  .ficha-cuenta {
+    font-weight: 700;
+    color: var(--color-texto);
+  }
+  .ficha-descripcion {
+    max-width: var(--ancho-lectura);
+  }
+  .ficha-info :global(.pedido) {
+    margin-top: 0.5rem;
+  }
+  .ficha-compartir {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .ficha-compartir .boton {
+    flex: 1 1 9rem;
+    padding-inline: 0.75rem;
+    white-space: nowrap;
+  }
+</style>
