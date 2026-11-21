@@ -15,12 +15,17 @@ function doGet(e) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-// Para las plantillas: <?!= include('ui/estilos') ?>
-function include(ruta) {
+// Para las plantillas: <?!= include_('ui/estilos') ?>
+// Termina en _ (privada): una función pública no puede llamarse desde el navegador sin
+// requireAdmin_(), y las plantillas la usan en el servidor, donde el guion bajo no estorba.
+function include_(ruta) {
   return HtmlService.createHtmlOutputFromFile(ruta).getContent();
 }
 
 // Ejecutarla una vez desde el editor hace que Google pida los permisos del manifiesto.
+// EXCEPCIÓN documentada: no llama a requireAdmin_() porque no lee ni cambia nada, y la
+// persona que la corre desde el editor es la dueña (la convención se vigila en
+// test/panel/convenciones.test.mjs).
 function autorizar() {
   return 'ok';
 }

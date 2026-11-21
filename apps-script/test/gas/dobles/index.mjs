@@ -7,6 +7,7 @@ import {
   crearCache,
   crearCandado,
   crearUrlFetch,
+  crearScriptApp,
   crearUtilidades,
   crearSesion,
   crearContenido,
@@ -28,6 +29,7 @@ export function crearDobles({ usuario = 'duena@example.com', dueno = 'duena@exam
   const cache = crearCache(reloj);
   const candado = crearCandado();
   const url = crearUrlFetch();
+  const script = crearScriptApp();
   const html = crearHtml();
   const registro = [];
 
@@ -39,6 +41,7 @@ export function crearDobles({ usuario = 'duena@example.com', dueno = 'duena@exam
     CacheService: cache.CacheService,
     LockService: candado.LockService,
     UrlFetchApp: url.UrlFetchApp,
+    ScriptApp: script.ScriptApp,
     ...crearUtilidades(),
     ...crearSesion({ usuario, dueno }),
     ...crearContenido(),

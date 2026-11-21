@@ -17,8 +17,12 @@ function convertir(valor) {
 
 const leer = (valor) => (valor && typeof valor === 'object' && 'formula' in valor ? '#ERROR!' : valor ?? '');
 
+let secuenciaHoja = 0;
+
 function crearPestana(nombreInicial, libro) {
+  const idHoja = secuenciaHoja++;
   let nombre = nombreInicial;
+  const validaciones = new Map(); // "fila,col" → regla de validación
   let filasCongeladas = 0;
   let maxFilas = FILAS_INICIALES;
   let maxColumnas = COLUMNAS_INICIALES;
@@ -72,16 +76,32 @@ function crearPestana(nombreInicial, libro) {
       },
       setValue: (v) => r.setValues([[v]]),
       setNumberFormat: (formato) => (celdas((f, c) => formatos.set(`${f},${c}`, formato)), r),
+      setNumberFormats: (matriz) => {
+        if (matriz.length !== numFilas || matriz.some((f) => f.length !== numCols)) {
+          throw new Error('Exception: The number of rows or columns in the data does not match the range.');
+        }
+        celdas((f, c, i, j) => formatos.set(`${f},${c}`, matriz[i][j]));
+        return r;
+      },
       getNumberFormat: () => formatos.get(`${fila},${col}`) ?? 'General',
+      clearContent: () => {
+        celdas((f, c) => {
+          if (datos[f - 1]) datos[f - 1][c - 1] = '';
+        });
+        libro._tocar();
+        return r;
+      },
       setFontWeight: () => r,
       setBackground: () => r,
-      setDataValidation: () => r,
+      setDataValidation: (regla) => (celdas((f, c) => validaciones.set(`${f},${c}`, regla)), r),
+      getDataValidation: () => validaciones.get(`${fila},${col}`) ?? null,
     };
     return r;
   }
 
   const pestana = {
     getName: () => nombre,
+    getSheetId: () => idHoja,
     setName: (n) => ((nombre = n), pestana),
     getRange: rango,
     getDataRange: () => rango(1, 1, Math.max(ultimaFila(), 1), Math.max(ultimaColumna(), 1)),
@@ -100,6 +120,24 @@ function crearPestana(nombreInicial, libro) {
       maxFilas = Math.max(maxFilas, f);
       valores.forEach((v, j) => escribir(f, j + 1, v));
       libro._tocar();
+      return pestana;
+    },
+    deleteRows: (desde, cuantas) => {
+      if (desde < 1 || cuantas < 1 || desde + cuantas - 1 > maxFilas) {
+        throw new Error(`Exception: The parameters (${desde},${cuantas}) do not correspond to an existing range.`);
+      }
+      if (cuantas >= maxFilas - filasCongeladas) throw new Error("Exception: You can't delete all the non-frozen rows on a sheet.");
+      datos.splice(desde - 1, cuantas);
+      maxFilas -= cuantas;
+      libro._tocar();
+      return pestana;
+    },
+    insertColumnsAfter: (_despues, cuantas) => {
+      maxColumnas += cuantas;
+      return pestana;
+    },
+    insertRowsAfter: (_despues, cuantas) => {
+      maxFilas += cuantas;
       return pestana;
     },
     deleteRow: (n) => {
@@ -149,6 +187,11 @@ export function crearHojas(drive) {
   }
 
   const SpreadsheetApp = {
+    newDataValidation: () => {
+      const regla = { tipo: null };
+      const b = { requireCheckbox: () => ((regla.tipo = 'checkbox'), b), build: () => ({ ...regla }) };
+      return b;
+    },
     create: (nombre) => crearLibro(nombre),
     openById: (id) => {
       const libro = libros.get(id);

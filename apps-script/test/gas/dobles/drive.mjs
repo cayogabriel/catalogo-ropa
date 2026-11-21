@@ -73,6 +73,8 @@ export function crearDrive(reloj, { dueno }) {
       getBlob: () => crearBlob(item.contenido, item.mime, item.nombre),
       setContent: (texto) => ((item.contenido = Buffer.from(texto, 'utf8')), tocar(), archivo),
       getDateCreated: () => new Date(item.creado),
+      // Google devuelve un PNG/JPEG pequeño; el doble devuelve los mismos bytes como imagen.
+      getThumbnail: () => crearBlob(item.contenido.length ? item.contenido : Buffer.from([0]), 'image/png', `thumbnail-${item.nombre}`),
     };
     return archivo;
   }
