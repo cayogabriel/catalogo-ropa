@@ -59,12 +59,15 @@ Cuerpo:
 | Campo | Valores |
 |---|---|
 | `t` | `vista`, `whatsapp`, `favorito`, `compartir` o `revista_descarga` |
-| `p` | id `prd` o `null` |
-| `s` | id `tem` o `null` |
+| `p` | id `prd` de una prenda **de la copia publicada**, o `null` |
+| `s` | id `tem` de una temporada **de la copia publicada**, o `null` |
 | `o` | `web`, `revista_web`, `pdf` o `catalogo_pdf` |
 | `pg` | ruta que cumple `^/[A-Za-z0-9/_.?=&%-]{0,199}$`. Así nunca empieza con `=`, y además la columna tiene formato de texto: nada se vuelve fórmula |
 | `ss` | 8 a 32 caracteres `[a-z0-9]`, aleatorio por pestaña del navegador |
 
-- **Límite:** 120 eventos por minuto en total. Lo que pase el límite se descarta en silencio y la respuesta es `{ ok: true, descartado: true }`.
+- **Descartes en silencio:** en estos casos la respuesta es `{ ok: true, descartado: true }` y no se escribe nada.
+  - **Límite por minuto:** pasan 120 eventos por minuto en total; el resto se descarta.
+  - **Ids que no existen:** se descarta el evento si `p` o `s` no figuran en la copia publicada, o si no hay copia. Así nadie llena `estadisticas_diarias` con ids inventados. La lista de ids se guarda en caché y se renueva sola con cada publicación.
+  - **Tope de filas:** la pestaña `eventos` admite como máximo 100 000 filas (700 000 celdas). Al llegar al tope se descarta todo hasta que `diario_()` borre los eventos de más de 35 días. El libro es el mismo de los productos, y Google admite 10 millones de celdas por libro: un abuso sostenido no puede llenarlo.
 - **Privacidad:** no se guarda IP, correo, nombre ni nada que identifique a la clienta.
 - **Desde el navegador:** se envía con `navigator.sendBeacon(CATALOG_API_URL, JSON.stringify(evento))`. Un string viaja como `text/plain`, así que no hay *preflight* de CORS.

@@ -3,13 +3,29 @@ import { cargarGas } from '../gas/cargar.mjs';
 import { panelInstalado } from '../panel/ayudas.mjs';
 
 // El Panel ya instalado (hoja, carpetas y puntero) y la API leyendo lo mismo; la visita es anónima.
-function preparar() {
+// Por defecto hay una copia publicada con la prenda y la temporada de los eventos de ejemplo.
+function preparar({ publicar: conCopia = true } = {}) {
   const p = panelInstalado();
   const api = cargarGas('api', { dobles: p.dobles });
   api.ctx.ahora_ = () => new Date(p.dobles._reloj.ahora());
   const post = (cuerpo) => JSON.parse(api.ctx.doPost({ postData: { contents: typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo) } }).getContent());
   const filas = () => p.ctx.leerTabla_('eventos').filas;
-  return { ...p, api: api.ctx, post, filas };
+  const listo = { ...p, api: api.ctx, post, filas };
+  if (conCopia) publicar(listo);
+  return listo;
+}
+
+// Escribe una copia publicada mínima y la apunta desde el puntero, como hace publicar() en el Panel.
+function publicar(p, { productos = ['prd_1a2b3c4d'], temporadas = ['tem_00000001'] } = {}) {
+  const { DriveApp, PropertiesService } = p.dobles;
+  const puntero = DriveApp.getFileById(PropertiesService.getScriptProperties().getProperty('CR_PUNTERO_ID'));
+  const copia = DriveApp.getFolderById(p.instalacion.carpetaRaizId).createFile(
+    'catalogo-publicado.json',
+    JSON.stringify({ productos: productos.map((id) => ({ id })), temporadas: temporadas.map((id) => ({ id })), fotos: {} }),
+    'application/json',
+  );
+  puntero.setContent(JSON.stringify({ ...JSON.parse(puntero.getBlob().getDataAsString()), publicado_id: copia.getId() }));
+  return copia;
 }
 
 const BUENO = { t: 'whatsapp', p: 'prd_1a2b3c4d', s: null, o: 'web', pg: '/p/ves-014/', ss: 'a1b2c3d4' };
@@ -151,6 +167,70 @@ describe('doPost: límite de 120 por minuto', () => {
     dobles._candado.fallar = true;
     expect(post(BUENO)).toEqual({ ok: true, descartado: true });
     expect(filas()).toHaveLength(0);
+  });
+});
+
+// Un abuso sostenido no debe poder llenar el libro (10 millones de celdas, el mismo de los productos):
+// ni con filas en `eventos` ni con ids inventados que luego crecen en `estadisticas_diarias`.
+describe('doPost: solo prendas y temporadas publicadas', () => {
+  test('descarta en silencio un evento con una prenda que no está publicada', () => {
+    const { post, filas } = preparar();
+    expect(post({ ...BUENO, p: 'prd_ffffffff' })).toEqual({ ok: true, descartado: true });
+    expect(filas()).toHaveLength(0);
+  });
+
+  test('descarta en silencio un evento con una temporada que no está publicada', () => {
+    const { post, filas } = preparar();
+    expect(post({ ...BUENO, p: null, s: 'tem_ffffffff' })).toEqual({ ok: true, descartado: true });
+    expect(filas()).toHaveLength(0);
+  });
+
+  test('sin copia publicada solo acepta eventos que no nombran prenda ni temporada', () => {
+    const { post, filas } = preparar({ publicar: false });
+    expect(post(BUENO)).toEqual({ ok: true, descartado: true });
+    expect(post({ ...BUENO, p: null })).toEqual({ ok: true });
+    expect(filas()).toHaveLength(1);
+  });
+
+  test('una publicación nueva actualiza la lista: la prenda recién publicada ya cuenta', () => {
+    const p = preparar();
+    expect(p.post({ ...BUENO, p: 'prd_99999999' })).toEqual({ ok: true, descartado: true });
+    publicar(p, { productos: ['prd_1a2b3c4d', 'prd_99999999'] });
+    expect(p.post({ ...BUENO, p: 'prd_99999999' })).toEqual({ ok: true });
+    expect(p.filas()).toHaveLength(1);
+  });
+
+  test('no vuelve a leer la copia publicada en cada evento', () => {
+    const p = preparar();
+    const copia = publicar(p);
+    const lecturas = [];
+    const original = p.dobles.DriveApp.getFileById;
+    p.dobles.DriveApp.getFileById = (id) => {
+      const f = original(id);
+      if (id === copia.getId()) {
+        const blob = f.getBlob;
+        f.getBlob = () => (lecturas.push(id), blob());
+      }
+      return f;
+    };
+    for (let i = 0; i < 5; i++) expect(p.post(BUENO)).toEqual({ ok: true });
+    expect(lecturas).toHaveLength(1);
+  });
+});
+
+describe('doPost: tope de filas de la pestaña eventos', () => {
+  test('al llegar al tope descarta en vez de seguir agrandando el libro', () => {
+    const p = preparar();
+    p.api.topeFilasEventos_ = () => 3;
+    for (let i = 0; i < 3; i++) expect(p.post(BUENO)).toEqual({ ok: true });
+    expect(p.post(BUENO)).toEqual({ ok: true, descartado: true });
+    expect(p.filas()).toHaveLength(3);
+  });
+
+  test('el tope real deja el libro muy por debajo de los 10 millones de celdas y alcanza para una tienda', () => {
+    const { api } = preparar();
+    expect(api.topeFilasEventos_() * 7).toBeLessThanOrEqual(1_000_000);
+    expect(api.topeFilasEventos_()).toBeGreaterThanOrEqual(50_000); // ~1 400 eventos por día durante los 35 días que se guardan
   });
 });
 
