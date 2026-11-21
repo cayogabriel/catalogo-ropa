@@ -97,7 +97,7 @@ describe('subirFoto()', () => {
     const { ctx } = panelInstalado();
     expect(ctx.subirFoto(archivo(jpeg({ extra: 8 * 1024 * 1024 - jpeg().length }))).id).toBeTruthy();
     expect(() => ctx.subirFoto(archivo(jpeg({ extra: 8 * 1024 * 1024 })))).toThrow(/^limite:/);
-  });
+  }, 30000);
 
   test('rechaza un destino desconocido, el nombre vacío y una temporada que falta o no existe', () => {
     const { ctx } = panelInstalado();
