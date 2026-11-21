@@ -1,0 +1,346 @@
+<!-- Ofertas: tipo, alcance, fechas y prioridad, con vista previa del precio final y atajo de Liquidación -->
+<template x-if="$store.panel.ruta === 'ofertas' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaOfertas()">
+
+    <!-- Lista -->
+    <template x-if="!edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <h1 id="titulo-vista" tabindex="-1">Ofertas</h1>
+          <div class="fila-botones">
+            <button type="button" class="boton primario" @click="nueva()" :disabled="creando"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Nueva oferta</button>
+            <button type="button" class="boton" @click="liquidacion()" :disabled="creando">Crear liquidación</button>
+          </div>
+        </div>
+        <p class="vista-intro">Las ofertas no se suman: si dos coinciden, gana la de mayor prioridad. El precio «antes» siempre es tu precio regular.</p>
+        <p class="nota error" x-show="error" x-text="error"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando…</p>
+        <div class="vacio tarjeta" x-show="listo && !ofertas.length">
+          <svg class="ico" aria-hidden="true"><use href="#i-oferta"/></svg>
+          <h2>Aún no tienes ofertas</h2>
+          <p>Crea una para bajar el precio de una prenda, una categoría o toda la tienda.</p>
+          <button type="button" class="boton primario" @click="nueva()">Nueva oferta</button>
+        </div>
+        <ul class="lista">
+          <template x-for="o in ofertas" :key="o.id">
+            <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+              <button type="button" class="fila-principal" @click="abrir(o.id)">
+                <strong x-text="o.nombre || 'Oferta sin nombre'"></strong>
+                <span class="fila-sub" x-text="descripcion(o)"></span>
+                <span class="fila-sub" x-text="vigencia(o)"></span>
+              </button>
+              <span class="chip" :class="estado(o).clase" x-text="estado(o).texto"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <!-- Editor -->
+    <template x-if="edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <div>
+            <button type="button" class="boton texto chico" @click="cerrar()"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg> Todas las ofertas</button>
+            <h1 id="titulo-vista" tabindex="-1" x-text="edit.nombre || 'Oferta sin nombre'"></h1>
+          </div>
+          <span class="chip" :class="estado(edit).clase" x-text="estado(edit).texto"></span>
+        </div>
+
+        <article class="tarjeta" aria-labelledby="o-que">
+          <h2 id="o-que">Qué descuento</h2>
+          <label class="campo">
+            <span class="campo-etiqueta">Nombre (solo para ti)</span>
+            <input type="text" :value="edit.nombre" @input="g(edit, 'nombre', $event)" :aria-invalid="errores.nombre ? 'true' : 'false'" />
+            <span class="campo-error" x-show="errores.nombre" x-text="errores.nombre"></span>
+          </label>
+          <fieldset>
+            <legend>Tipo de descuento</legend>
+            <div class="grupo-opciones">
+              <label class="pastilla"><input type="radio" name="o-tipo" value="porcentaje" :checked="edit.tipo === 'porcentaje'" @change="gv(edit, 'tipo', 'porcentaje')" /><span>Porcentaje</span></label>
+              <label class="pastilla"><input type="radio" name="o-tipo" value="monto" :checked="edit.tipo === 'monto'" @change="gv(edit, 'tipo', 'monto')" /><span>Soles menos</span></label>
+              <label class="pastilla"><input type="radio" name="o-tipo" value="precio_final" :checked="edit.tipo === 'precio_final'" @change="gv(edit, 'tipo', 'precio_final')" /><span>Precio final</span></label>
+            </div>
+          </fieldset>
+          <label class="campo" style="max-width: 16rem">
+            <span class="campo-etiqueta" x-text="etiquetaValor"></span>
+            <span class="campo-moneda"><span aria-hidden="true" x-text="edit.tipo === 'porcentaje' ? '%' : 'S/'"></span>
+              <input type="text" inputmode="decimal" :value="edit.valor === null ? '' : edit.valor" @input="g(edit, 'valor', $event)" :aria-invalid="errores.valor ? 'true' : 'false'" />
+            </span>
+            <span class="campo-ayuda" x-text="ayudaValor"></span>
+            <span class="campo-error" x-show="errores.valor" x-text="errores.valor"></span>
+          </label>
+          <label class="campo">
+            <span class="campo-etiqueta">Texto de la insignia</span>
+            <input type="text" maxlength="24" :placeholder="edit.tipo === 'porcentaje' && edit.valor ? 'Si lo dejas vacío: -' + edit.valor + '%' : 'Por ejemplo: -30%'" :value="edit.etiqueta" @input="g(edit, 'etiqueta', $event)" />
+            <span class="campo-ayuda">Es lo que se ve sobre la foto de la prenda, por ejemplo «-30%» o «Día de la Madre».</span>
+          </label>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="o-donde">
+          <h2 id="o-donde">A qué se aplica</h2>
+          <label class="campo" style="max-width: 20rem">
+            <span class="campo-etiqueta">Se aplica a</span>
+            <select :value="edit.alcance" @change="cambiarAlcance($event)">
+              <option value="tienda" :selected="edit.alcance === 'tienda'">Toda la tienda</option>
+              <option value="producto" :selected="edit.alcance === 'producto'">Prendas que yo elija</option>
+              <option value="categoria" :selected="edit.alcance === 'categoria'">Categorías</option>
+              <option value="seccion" :selected="edit.alcance === 'seccion'">Secciones</option>
+              <option value="temporada" :selected="edit.alcance === 'temporada'">Temporadas</option>
+            </select>
+          </label>
+          <div x-show="edit.alcance === 'producto'">
+            <p class="campo-etiqueta">Prendas</p>
+            <p class="campo-ayuda" x-text="edit.objetivos.length ? edit.objetivos.length + (edit.objetivos.length === 1 ? ' prenda elegida' : ' prendas elegidas') : 'Todavía no elegiste ninguna.'"></p>
+            <button type="button" class="boton chico" style="margin-top: 0.375rem" @click="elegirPrendas()">Elegir prendas</button>
+          </div>
+          <fieldset x-show="['categoria', 'seccion', 'temporada'].indexOf(edit.alcance) !== -1">
+            <legend>Elige cuáles</legend>
+            <div class="grupo-opciones">
+              <template x-for="x in opcionesAlcance" :key="x.id">
+                <label class="pastilla"><input type="checkbox" :checked="edit.objetivos.indexOf(x.id) !== -1" @change="alternarObjetivo(x.id, $event)" /><span x-text="x.nombre"></span></label>
+              </template>
+            </div>
+            <p class="campo-ayuda" x-show="!opcionesAlcance.length">Todavía no hay nada que elegir aquí.</p>
+          </fieldset>
+          <p class="campo-error" x-show="errores.objetivos" x-text="errores.objetivos"></p>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="o-cuando">
+          <h2 id="o-cuando">Cuándo</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Empieza</span>
+              <input type="datetime-local" :value="fecha(edit, 'desde')" @change="gf(edit, 'desde', $event)" />
+              <span class="campo-ayuda">Hora de Lima. Vacío: desde ya.</span>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Termina</span>
+              <input type="datetime-local" :value="fecha(edit, 'hasta')" @change="gf(edit, 'hasta', $event)" :aria-invalid="errores.hasta ? 'true' : 'false'" />
+              <span class="campo-ayuda">Vacío: sin fin.</span>
+              <span class="campo-error" x-show="errores.hasta" x-text="errores.hasta"></span>
+            </label>
+          </div>
+          <label class="opcion">
+            <input type="checkbox" :checked="edit.cuenta_regresiva" :disabled="!edit.hasta" @change="g(edit, 'cuenta_regresiva', $event)" />
+            <span>Mostrar cuenta regresiva<br /><span class="campo-ayuda" x-text="edit.hasta ? 'Tus clientas ven cuánto falta para que termine.' : 'Solo se puede con fecha de fin: así la urgencia es real.'"></span></span>
+          </label>
+          <p class="campo-error" x-show="errores.cuenta_regresiva" x-text="errores.cuenta_regresiva"></p>
+          <label class="campo" style="max-width: 12rem">
+            <span class="campo-etiqueta">Prioridad</span>
+            <input type="text" inputmode="numeric" :value="edit.prioridad === null ? '' : edit.prioridad" @input="g(edit, 'prioridad', $event)" />
+            <span class="campo-ayuda">Si dos ofertas coinciden gana la de mayor número. Si empatan, la que más descuenta.</span>
+          </label>
+          <label class="opcion"><input type="checkbox" :checked="edit.es_liquidacion" @change="g(edit, 'es_liquidacion', $event)" /><span>Es una liquidación (sale en la sección de liquidación)</span></label>
+          <label class="opcion"><input type="checkbox" :checked="edit.activa" @change="g(edit, 'activa', $event)" /><span><strong>Oferta encendida</strong><br /><span class="campo-ayuda">Si la apagas, se guarda pero no se aplica.</span></span></label>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="o-previa">
+          <h2 id="o-previa">Cómo se vería el precio</h2>
+          <label class="campo" style="max-width: 28rem">
+            <span class="campo-etiqueta">Probar con la prenda</span>
+            <select x-model="productoPrueba">
+              <template x-for="p in productosConPrecio" :key="p.id"><option :value="p.id" :selected="productoPrueba === p.id" x-text="p.codigo + ' · ' + (p.nombre || 'sin nombre') + ' · ' + $u.formatoMonto(p.precio_regular)"></option></template>
+            </select>
+          </label>
+          <p class="campo-ayuda" x-show="!productosConPrecio.length">Para ver la vista previa necesitas al menos una prenda con precio.</p>
+          <p class="nota aviso" x-show="avisoPrevia" x-text="avisoPrevia"></p>
+          <p class="nota aviso" x-show="!avisoPrevia && !alcanza" x-text="'Esta prenda no entra en la oferta, así que su precio no cambia. Prueba con otra o cambia a qué se aplica.'"></p>
+          <p class="nota" x-show="!avisoPrevia && alcanza && !edit.activa">La oferta está apagada: así se vería cuando la enciendas.</p>
+          <div x-show="previa && !avisoPrevia && alcanza" role="status" aria-live="polite">
+            <p x-text="textoHoy"></p>
+            <ul class="lista" style="margin-top: 0.75rem">
+              <template x-for="(v, i) in (previa ? previa.ventanas : [])" :key="i">
+                <li class="fila" style="grid-template-columns: minmax(0, 1fr) auto">
+                  <span x-text="textoVentana(v)"></span>
+                  <strong class="num" x-text="$u.formatoMonto(v.precio)"></strong>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </article>
+
+        <div class="fila-botones" style="justify-content: space-between">
+          <button type="button" class="boton peligro" @click="eliminar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Eliminar esta oferta</button>
+          <button type="button" class="boton primario" @click="cerrar()">Listo</button>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+  var L = P.logica;
+  var U = P.util;
+
+  A.data('vistaOfertas', function () {
+    var base = P.mixinEditor('ofertas');
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      editId: null,
+      productoPrueba: '',
+      previa: null,
+      avisoPrevia: '',
+      pedido: 0,
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('ofertas'), d.cargar('productos'), d.cargar('categorias'), d.cargar('secciones'), d.cargar('temporadas'), d.cargar('temporada_fotos')]).then(
+          function () { self.listo = true; },
+          function (e) { self.error = e.amable || 'No pude cargar las ofertas.'; self.listo = true; }
+        );
+        var pedirVista = U.debounce(function () { self.actualizarPrevia(); }, 350);
+        this.$watch('claveVista', function () { pedirVista(); });
+      },
+
+      get ofertas() {
+        var ahora = new Date();
+        return A.store('datos').lista('ofertas').slice().sort(function (a, b) {
+          var ea = L.estadoOferta(a, ahora).texto === 'Activa' ? 0 : 1;
+          var eb = L.estadoOferta(b, ahora).texto === 'Activa' ? 0 : 1;
+          return ea - eb || (b.prioridad || 0) - (a.prioridad || 0);
+        });
+      },
+      get edit() { return this.editId ? A.store('datos').buscar('ofertas', this.editId) : null; },
+      get errores() { return this.edit ? P.validar.oferta(this.edit) : {}; },
+      get productosConPrecio() { return A.store('datos').lista('productos').filter(function (p) { return p.estado !== 'archivado' && P.validar.num(p.precio_regular) > 0; }); },
+      get opcionesAlcance() {
+        var d = A.store('datos');
+        var a = this.edit && this.edit.alcance;
+        if (a === 'categoria') return d.lista('categorias').map(function (c) { return { id: c.id, nombre: c.nombre }; });
+        if (a === 'seccion') return d.lista('secciones').map(function (s) { return { id: s.id, nombre: s.titulo }; });
+        if (a === 'temporada') return d.lista('temporadas').map(function (t) { return { id: t.id, nombre: t.nombre }; });
+        return [];
+      },
+      get etiquetaValor() {
+        var t = this.edit && this.edit.tipo;
+        return t === 'porcentaje' ? 'Descuento (de 1 a 90)' : t === 'monto' ? 'Soles que se descuentan' : 'Precio final';
+      },
+      get ayudaValor() {
+        var t = this.edit && this.edit.tipo;
+        return t === 'porcentaje' ? 'Por ejemplo, 25 baja el precio a tres cuartos.' : t === 'monto' ? 'Por ejemplo, 10 resta S/ 10 al precio regular.' : 'El precio que paga tu clienta mientras dure la oferta.';
+      },
+      get claveVista() {
+        var o = this.edit;
+        if (!o) return '';
+        return JSON.stringify([o.tipo, o.valor, o.desde, o.hasta, o.etiqueta, o.es_liquidacion, o.cuenta_regresiva, o.prioridad, o.alcance, o.objetivos, o.activa, this.productoPrueba]);
+      },
+      get alcanza() {
+        var d = A.store('datos');
+        var p = d.buscar('productos', this.productoPrueba);
+        if (!this.edit || !p) return true;
+        return L.ofertaAlcanza(this.edit, p, { secciones: d.lista('secciones'), temporada_fotos: d.lista('temporada_fotos') });
+      },
+      get textoHoy() {
+        if (!this.previa) return '';
+        var ahora = new Date().getTime();
+        var v = this.previa.ventanas.filter(function (x) { return (!x.desde || new Date(x.desde).getTime() <= ahora) && (!x.hasta || new Date(x.hasta).getTime() > ahora); })[0];
+        var m = U.formatoMonto;
+        var cuando = this.edit && !this.edit.activa ? 'Con la oferta encendida, tu clienta vería ' : 'Hoy tu clienta vería ';
+        if (v && v.antes) return cuando + m(v.precio) + ' (antes ' + m(v.antes) + ', ' + (v.etiqueta || '-' + v.descuento_pct + '%') + ').';
+        return 'Hoy tu clienta vería el precio regular, ' + m(this.previa.regular) + '. La oferta todavía no empieza o ya terminó.';
+      },
+
+      estado: function (o) { return L.estadoOferta(o, new Date()); },
+      descripcion: function (o) {
+        var d = A.store('datos');
+        return L.descripcionOferta(o, function (alcance, id) {
+          var ent = ({ producto: 'productos', categoria: 'categorias', seccion: 'secciones', temporada: 'temporadas' })[alcance];
+          var f = d.buscar(ent, id);
+          return f ? (f.nombre || f.titulo || f.codigo) : id;
+        }, A.store('panel').config.moneda_simbolo);
+      },
+      vigencia: function (o) {
+        var d = U.formatoFecha(o.desde);
+        var h = U.formatoFecha(o.hasta);
+        if (d && h) return 'Del ' + d + ' al ' + h;
+        if (d) return 'Desde el ' + d;
+        if (h) return 'Hasta el ' + h;
+        return 'Sin fechas: vale mientras esté encendida';
+      },
+      textoVentana: function (v) {
+        var d = U.formatoFecha(v.desde);
+        var h = U.formatoFecha(v.hasta);
+        var cuando = d && h ? 'Del ' + d + ' al ' + h : d ? 'Desde el ' + d : h ? 'Hasta el ' + h : 'Siempre';
+        return cuando + (v.antes ? ' · ' + (v.etiqueta || '-' + v.descuento_pct + '%') : ' · precio regular');
+      },
+
+      abrir: function (id) {
+        this.editId = id;
+        var primero = this.productosConPrecio[0];
+        if (!this.productoPrueba && primero) this.productoPrueba = primero.id;
+        this.actualizarPrevia();
+      },
+      cerrar: function () { this.editId = null; this.previa = null; },
+      nueva: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('ofertas', {}, { alInicio: true }).then(
+          function (o) { self.creando = false; self.abrir(o.id); },
+          function () { self.creando = false; }
+        );
+      },
+      liquidacion: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('ofertas', L.ofertaLiquidacion(), { alInicio: true }).then(
+          function (o) {
+            self.creando = false;
+            self.abrir(o.id);
+            A.store('toasts').mostrar({ tipo: 'ok', texto: 'Creé la liquidación apagada, con 30 % en toda la tienda. Revisa el descuento y enciéndela.', duracion: 9000 });
+          },
+          function () { self.creando = false; }
+        );
+      },
+      eliminar: function () {
+        var o = this.edit;
+        this.cerrar();
+        return A.store('datos').eliminar('ofertas', o, { mensaje: 'Eliminé la oferta «' + (o.nombre || 'sin nombre') + '».' });
+      },
+
+      cambiarAlcance: function (e) {
+        var o = this.edit;
+        var d = A.store('datos');
+        d.guardarVarios('ofertas', o, { alcance: e.target.value, objetivos: [] });
+      },
+      alternarObjetivo: function (id, e) {
+        var o = this.edit;
+        var lista = o.objetivos.filter(function (x) { return x !== id; });
+        if (e.target.checked) lista.push(id);
+        A.store('datos').guardar('ofertas', o, 'objetivos', lista);
+      },
+      elegirPrendas: function () {
+        var o = this.edit;
+        return P.elegirProductos({ seleccion: o.objetivos, titulo: 'Prendas con esta oferta' }).then(function (ids) {
+          if (ids) A.store('datos').guardar('ofertas', o, 'objetivos', ids);
+        });
+      },
+
+      /** Pregunta al servidor cómo quedaría el precio con lo que está escrito (aunque aún no se guarde). */
+      actualizarPrevia: function () {
+        var self = this;
+        var o = this.edit;
+        if (!o || !this.productoPrueba) { this.previa = null; return Promise.resolve(); }
+        var e = P.validar.oferta(o);
+        if (e.valor || e.hasta) { this.avisoPrevia = e.valor || e.hasta; return Promise.resolve(); }
+        this.avisoPrevia = '';
+        var n = ++this.pedido;
+        var valor = Number(String(o.valor).replace(',', '.'));
+        return P.servidor.llamar('vistaPreviaPrecios', {
+          producto_id: this.productoPrueba,
+          oferta: { id: o.id, tipo: o.tipo, valor: valor, desde: o.desde, hasta: o.hasta, etiqueta: o.etiqueta, es_liquidacion: o.es_liquidacion, cuenta_regresiva: o.cuenta_regresiva, prioridad: o.prioridad, activa: o.activa, alcance: o.alcance, objetivos: o.objetivos },
+        }).then(
+          function (r) { if (n === self.pedido) self.previa = r; },
+          function (err) { if (n === self.pedido) { self.previa = null; self.avisoPrevia = err.amable; } }
+        );
+      },
+    }, base);
+  });
+});
+</script>

@@ -1,0 +1,112 @@
+<!-- Selector de fotos: una sola hoja que usan productos, temporadas, portadas, categorías y logo.
+     Panel.elegirFotos({ multiple, destino, temporada_id, titulo, excluir }) → Promesa con los ids elegidos (o null). -->
+<dialog class="hoja ancha" x-modal="$store.selector.abierto" aria-labelledby="sel-titulo"
+        x-data x-effect="if (!$store.selector.abierto) $store.selector.terminar(null)">
+  <template x-if="$store.selector.abierto">
+    <div class="hoja-interior" :key="$store.selector.clave"
+         x-data="biblioteca(Object.assign({ modo: 'elegir' }, $store.selector.opciones))" x-init="cargar()">
+      <div class="hoja-cabecera">
+        <h2 id="sel-titulo" x-text="$store.selector.opciones.titulo || 'Elegir foto'"></h2>
+        <button type="button" class="boton icono texto" aria-label="Cerrar sin elegir" @click="$store.selector.terminar(null)"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+      </div>
+      <div class="hoja-cuerpo">
+        <section aria-labelledby="sel-subir">
+          <h3 id="sel-subir" class="solo-lector">Subir fotos nuevas</h3>
+          <div class="zona-soltar" :class="{ encima: arrastrando }" @dragover.prevent="arrastrando = true" @dragleave="arrastrando = false" @drop.prevent="alSoltar($event)">
+            <p><strong>Sube fotos nuevas</strong> <span class="suave">o elige una de tu biblioteca</span></p>
+            <div class="fila-botones" style="justify-content: center; margin-top: 0.75rem">
+              <label class="boton primario">
+                <svg class="ico" aria-hidden="true"><use href="#i-subir"/></svg>
+                <span>Elegir fotos</span>
+                <input type="file" class="solo-lector" accept="image/*" :multiple="multiple" @change="subir($event.target.files); $event.target.value = ''" />
+              </label>
+              <label class="boton">
+                <svg class="ico" aria-hidden="true"><use href="#i-camara"/></svg>
+                <span>Tomar foto</span>
+                <input type="file" class="solo-lector" accept="image/*" capture="environment" @change="subir($event.target.files); $event.target.value = ''" />
+              </label>
+            </div>
+          </div>
+          <p class="nota aviso" style="margin-top: 0.75rem" x-show="aviso" x-text="aviso"></p>
+          <ul class="lista" style="margin-top: 0.75rem" x-show="subidas.length" aria-label="Estado de las fotos">
+            <template x-for="(s, i) in subidas" :key="i">
+              <li class="subida">
+                <span class="fila-titulo" x-text="s.nombre" style="grid-column: 1 / -1"></span>
+                <span class="fila-sub" :class="{ 'campo-error': s.estado === 'error' }" x-text="s.texto"></span>
+                <div class="progreso" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="s.pct" :aria-label="'Progreso de ' + s.nombre">
+                  <i :style="'transform: scaleX(' + s.pct / 100 + ')'"></i>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </section>
+
+        <section aria-labelledby="sel-biblioteca">
+          <div class="tarjeta-cabecera">
+            <h3 id="sel-biblioteca">Tu biblioteca</h3>
+            <span class="contador" x-text="seleccion.length ? seleccion.length + (seleccion.length === 1 ? ' elegida' : ' elegidas') : ''"></span>
+          </div>
+          <fieldset style="margin-top: 0.5rem">
+            <legend class="solo-lector">Carpeta</legend>
+            <div class="grupo-opciones">
+              <template x-for="c in [['', 'Todas'], ['fotos', 'Prendas'], ['temporadas', 'Temporadas'], ['portadas', 'Portadas'], ['marca', 'Marca']]" :key="c[0]">
+                <label class="pastilla"><input type="radio" name="sel-carpeta" :value="c[0]" :checked="carpeta === c[0]" @change="elegirCarpeta(c[0])" /><span x-text="c[1]"></span></label>
+              </template>
+            </div>
+          </fieldset>
+          <p class="nota error" style="margin-top: 0.75rem" x-show="error" x-text="error"></p>
+          <p class="suave" style="margin-top: 0.75rem" x-show="cargando && !fotos.length" role="status">Cargando fotos…</p>
+          <div class="vacio" x-show="!cargando && !fotos.length && !error">
+            <svg class="ico" aria-hidden="true"><use href="#i-foto"/></svg>
+            <h3>Todavía no hay fotos aquí</h3>
+            <p>Sube las primeras con el botón de arriba.</p>
+          </div>
+          <ul class="rejilla-fotos" style="margin-top: 0.75rem">
+            <template x-for="f in fotos" :key="f.id">
+              <li class="foto-celda">
+                <button type="button" class="miniatura" :class="{ cargando: !$foto(f.id) }" :disabled="deshabilitada(f.id)"
+                        :aria-pressed="elegida(f.id) ? 'true' : 'false'" :aria-label="(elegida(f.id) ? 'Quitar la foto ' : 'Elegir la foto ') + f.nombre" @click="alternar(f.id)">
+                  <img :src="$foto(f.id)" :alt="'Foto ' + f.nombre" />
+                </button>
+                <span class="marca-elegida" x-show="elegida(f.id)"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
+                <span class="etiqueta" x-text="deshabilitada(f.id) ? 'Ya está aquí' : usosTexto(f)"></span>
+              </li>
+            </template>
+          </ul>
+          <div class="fila-botones" style="margin-top: 0.75rem; justify-content: center" x-show="hayMas">
+            <button type="button" class="boton" @click="masFotos()" :disabled="cargando">Ver más fotos</button>
+          </div>
+        </section>
+      </div>
+      <div class="hoja-pie">
+        <button type="button" class="boton" @click="$store.selector.terminar(null)">Cancelar</button>
+        <button type="button" class="boton primario" :disabled="!seleccion.length || subiendo" @click="$store.selector.terminar(seleccion)"
+                x-text="seleccion.length > 1 ? 'Usar ' + seleccion.length + ' fotos' : 'Usar esta foto'"></button>
+      </div>
+    </div>
+  </template>
+</dialog>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var resolver = null; // fuera del estado reactivo: no hace falta que Alpine lo vigile
+  window.Alpine.store('selector', {
+    abierto: false,
+    opciones: {},
+    clave: 0,
+    abrir: function (op) {
+      this.opciones = Object.assign({ multiple: false, destino: 'producto', titulo: 'Elegir foto', excluir: [] }, op);
+      this.clave++;
+      this.abierto = true;
+      return new Promise(function (res) { resolver = res; });
+    },
+    /** Cierra y resuelve la Promesa (ids elegidos o null si canceló). */
+    terminar: function (ids) {
+      var r = resolver;
+      resolver = null;
+      this.abierto = false;
+      if (r) r(ids);
+    },
+  });
+});
+</script>

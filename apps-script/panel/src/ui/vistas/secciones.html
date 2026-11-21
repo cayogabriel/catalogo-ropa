@@ -1,0 +1,195 @@
+<!-- Secciones del inicio: se ordenan arrastrando -->
+<template x-if="$store.panel.ruta === 'secciones' && !$store.panel.cargando">
+  <section class="vista" x-data="vistaSecciones()">
+
+    <template x-if="!edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <h1 id="titulo-vista" tabindex="-1">Secciones</h1>
+          <button type="button" class="boton primario" @click="nueva()" :disabled="creando"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg> Nueva sección</button>
+        </div>
+        <p class="vista-intro">Son las filas de prendas que se ven en el inicio de tu catálogo, en este orden. Arrastra desde el ícono de la izquierda o usa las flechas.</p>
+        <p class="nota error" x-show="error" x-text="error"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando…</p>
+        <div class="vacio tarjeta" x-show="listo && !secciones.length">
+          <svg class="ico" aria-hidden="true"><use href="#i-seccion"/></svg>
+          <h2>Aún no tienes secciones</h2>
+          <p>Crea una para mostrar, por ejemplo, tus novedades o tus ofertas.</p>
+          <button type="button" class="boton primario" @click="nueva()">Nueva sección</button>
+        </div>
+        <ul class="lista" x-reordenar @reordenado="mover($event.detail.de, $event.detail.a)">
+          <template x-for="(s, i) in secciones" :key="s.id">
+            <li class="fila" data-item style="grid-template-columns: auto minmax(0, 1fr) auto">
+              <button type="button" class="boton asa icono texto" data-asa :aria-label="'Mover la sección ' + (s.titulo || i + 1) + ' arrastrando'"><svg class="ico" aria-hidden="true"><use href="#i-asa"/></svg></button>
+              <button type="button" class="fila-principal" @click="abrir(s.id)">
+                <strong x-text="s.titulo || 'Sección sin título'"></strong>
+                <span class="fila-sub" x-text="nombreTipo(s.tipo) + (s.visible ? '' : ' · oculta')"></span>
+              </button>
+              <div class="fila-acciones">
+                <button type="button" class="boton icono texto" :disabled="i === 0" :aria-label="'Subir ' + (s.titulo || 'la sección')" @click="mover(i, i - 1)"><svg class="ico" aria-hidden="true"><use href="#i-arriba"/></svg></button>
+                <button type="button" class="boton icono texto" :disabled="i === secciones.length - 1" :aria-label="'Bajar ' + (s.titulo || 'la sección')" @click="mover(i, i + 1)"><svg class="ico" aria-hidden="true"><use href="#i-abajo"/></svg></button>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <template x-if="edit">
+      <div class="vista">
+        <div class="vista-cabecera">
+          <div>
+            <button type="button" class="boton texto chico" @click="cerrar()"><svg class="ico izq" aria-hidden="true"><use href="#i-arriba"/></svg> Todas las secciones</button>
+            <h1 id="titulo-vista" tabindex="-1" x-text="edit.titulo || 'Sección sin título'"></h1>
+          </div>
+        </div>
+        <article class="tarjeta" aria-labelledby="s-datos">
+          <h2 id="s-datos">Cómo se ve</h2>
+          <div class="rejilla-campos dos">
+            <label class="campo">
+              <span class="campo-etiqueta">Título</span>
+              <input type="text" :value="edit.titulo" @input="g(edit, 'titulo', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Subtítulo</span>
+              <input type="text" :value="edit.subtitulo" @input="g(edit, 'subtitulo', $event)" />
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Forma</span>
+              <select :value="edit.diseno" @change="g(edit, 'diseno', $event)">
+                <template x-for="d in disenos" :key="d[0]"><option :value="d[0]" :selected="edit.diseno === d[0]" x-text="d[1]"></option></template>
+              </select>
+            </label>
+            <label class="campo">
+              <span class="campo-etiqueta">Cuántas prendas como máximo</span>
+              <input type="text" inputmode="numeric" placeholder="12" :value="edit.limite === null ? '' : edit.limite" @input="g(edit, 'limite', $event)" />
+              <span class="campo-ayuda">Vacío: 12.</span>
+            </label>
+          </div>
+        </article>
+        <article class="tarjeta" aria-labelledby="s-que">
+          <h2 id="s-que">Qué prendas muestra</h2>
+          <label class="campo" style="max-width: 24rem">
+            <span class="campo-etiqueta">Tipo de sección</span>
+            <select :value="edit.tipo" @change="g(edit, 'tipo', $event)">
+              <template x-for="t in tipos" :key="t[0]"><option :value="t[0]" :selected="edit.tipo === t[0]" x-text="t[1]"></option></template>
+            </select>
+            <span class="campo-ayuda" x-text="ayudaTipo"></span>
+          </label>
+          <label class="campo" style="max-width: 24rem" x-show="edit.tipo === 'categoria'">
+            <span class="campo-etiqueta">Categoría</span>
+            <select :value="edit.parametro" @change="g(edit, 'parametro', $event)">
+              <option value="" :selected="!edit.parametro">Elige una categoría</option>
+              <template x-for="c in categorias" :key="c.id"><option :value="c.id" :selected="edit.parametro === c.id" x-text="c.nombre"></option></template>
+            </select>
+          </label>
+          <label class="campo" style="max-width: 24rem" x-show="edit.tipo === 'etiqueta'">
+            <span class="campo-etiqueta">Etiqueta</span>
+            <input type="text" placeholder="destacado" :value="edit.parametro" @input="g(edit, 'parametro', $event)" />
+            <span class="campo-ayuda">Se muestran las prendas que tengan esta etiqueta.</span>
+          </label>
+          <div x-show="edit.tipo === 'manual'">
+            <p class="campo-etiqueta">Prendas</p>
+            <p class="campo-ayuda" x-text="edit.productos.length ? edit.productos.length + (edit.productos.length === 1 ? ' prenda elegida' : ' prendas elegidas') + ', en el orden en que las elegiste.' : 'Todavía no elegiste ninguna.'"></p>
+            <button type="button" class="boton chico" style="margin-top: 0.375rem" @click="elegirPrendas()">Elegir prendas</button>
+          </div>
+        </article>
+        <article class="tarjeta" aria-labelledby="s-donde">
+          <h2 id="s-donde">Dónde y cuándo</h2>
+          <label class="campo" style="max-width: 24rem">
+            <span class="campo-etiqueta">¿En qué temporada se ve?</span>
+            <select :value="edit.temporada_id" @change="g(edit, 'temporada_id', $event)">
+              <option value="" :selected="!edit.temporada_id">En todas</option>
+              <template x-for="t in temporadas" :key="t.id"><option :value="t.id" :selected="edit.temporada_id === t.id" x-text="t.nombre"></option></template>
+            </select>
+          </label>
+          <label class="opcion"><input type="checkbox" :checked="edit.visible" @change="g(edit, 'visible', $event)" /><span><strong>Mostrar esta sección</strong><br /><span class="campo-ayuda">Si la ocultas, se guarda pero no se ve.</span></span></label>
+        </article>
+        <div class="fila-botones" style="justify-content: space-between">
+          <button type="button" class="boton peligro" @click="eliminar()"><svg class="ico" aria-hidden="true"><use href="#i-basura"/></svg> Eliminar esta sección</button>
+          <button type="button" class="boton primario" @click="cerrar()">Listo</button>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var P = window.Panel;
+
+  var TIPOS = [
+    ['manual', 'Prendas que yo elijo'], ['novedades', 'Novedades'], ['ofertas', 'Ofertas'], ['liquidacion', 'Liquidación'],
+    ['mas_consultados', 'Más consultados'], ['categoria', 'Una categoría'], ['etiqueta', 'Prendas con una etiqueta'],
+  ];
+  var AYUDA = {
+    manual: 'Tú eliges cada prenda y su orden.',
+    novedades: 'Las prendas que llegaron hace poco.',
+    ofertas: 'Las prendas que tienen una oferta encendida.',
+    liquidacion: 'Las prendas en liquidación, con su propio estilo.',
+    mas_consultados: 'Solo aparece cuando hay clics reales en los últimos 30 días.',
+    categoria: 'Todas las prendas de una categoría.',
+    etiqueta: 'Todas las prendas con una etiqueta que tú pongas.',
+  };
+
+  A.data('vistaSecciones', function () {
+    var base = P.mixinEditor('secciones');
+    return Object.assign({
+      listo: false,
+      error: '',
+      creando: false,
+      editId: null,
+      tipos: TIPOS,
+      disenos: [['carrusel', 'Carrusel (se desliza)'], ['grilla', 'Cuadrícula'], ['destacado', 'Destacado (más grande)']],
+
+      init: function () {
+        var self = this;
+        var d = A.store('datos');
+        Promise.all([d.cargar('secciones'), d.cargar('categorias'), d.cargar('temporadas'), d.cargar('productos')]).then(
+          function () { self.listo = true; },
+          function (e) { self.error = e.amable || 'No pude cargar las secciones.'; self.listo = true; }
+        );
+      },
+      get secciones() { return A.store('datos').lista('secciones').slice().sort(function (a, b) { return a.orden - b.orden; }); },
+      get edit() { return this.editId ? A.store('datos').buscar('secciones', this.editId) : null; },
+      get categorias() { return A.store('datos').lista('categorias'); },
+      get temporadas() { return A.store('datos').lista('temporadas'); },
+      get ayudaTipo() {
+        if (!this.edit) return '';
+        if (this.edit.tipo === 'mas_consultados') return AYUDA.mas_consultados.replace('clics reales', 'al menos ' + (A.store('panel').config.min_clics_mas_consultados || 3) + ' clics reales');
+        return AYUDA[this.edit.tipo] || '';
+      },
+
+      nombreTipo: function (t) { var x = TIPOS.filter(function (y) { return y[0] === t; })[0]; return x ? x[1] : t; },
+      abrir: function (id) { this.editId = id; },
+      cerrar: function () { this.editId = null; },
+      nueva: function () {
+        var self = this;
+        this.creando = true;
+        return A.store('datos').crear('secciones', {}).then(
+          function (s) { self.creando = false; self.abrir(s.id); },
+          function () { self.creando = false; }
+        );
+      },
+      eliminar: function () {
+        var s = this.edit;
+        this.cerrar();
+        return A.store('datos').eliminar('secciones', s, { mensaje: 'Eliminé la sección «' + (s.titulo || 'sin título') + '».' });
+      },
+      mover: function (de, a) {
+        var lista = this.secciones;
+        if (a < 0 || a >= lista.length || de === a) return;
+        A.store('datos').reordenar('secciones', P.arrastre.ordenNuevo(lista, de, a));
+        if (this.$anunciar) this.$anunciar('Moví la sección a la posición ' + (a + 1) + ' de ' + lista.length + '.');
+      },
+      elegirPrendas: function () {
+        var s = this.edit;
+        return P.elegirProductos({ seleccion: s.productos, titulo: 'Prendas de la sección' }).then(function (ids) {
+          if (ids) A.store('datos').guardar('secciones', s, 'productos', ids);
+        });
+      },
+    }, base);
+  });
+});
+</script>

@@ -1,0 +1,94 @@
+<!-- Selector de prendas: elegir varias prendas (para una oferta, una sección o las que salen en una foto).
+     Panel.elegirProductos({ seleccion: [ids], titulo, ayuda }) → Promesa con los ids elegidos (o null si cancela). -->
+<dialog class="hoja ancha" x-modal="$store.selectorProductos.abierto" aria-labelledby="selp-titulo"
+        x-data x-effect="if (!$store.selectorProductos.abierto) $store.selectorProductos.terminar(null)">
+  <template x-if="$store.selectorProductos.abierto">
+    <div class="hoja-interior" x-data="elegirPrendas($store.selectorProductos.opciones)" :key="$store.selectorProductos.clave">
+      <div class="hoja-cabecera">
+        <h2 id="selp-titulo" x-text="$store.selectorProductos.opciones.titulo || 'Elegir prendas'"></h2>
+        <button type="button" class="boton icono texto" aria-label="Cerrar sin elegir" @click="$store.selectorProductos.terminar(null)"><svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+      </div>
+      <div class="hoja-cuerpo">
+        <p class="campo-ayuda" x-show="$store.selectorProductos.opciones.ayuda" x-text="$store.selectorProductos.opciones.ayuda"></p>
+        <label class="campo">
+          <span class="campo-etiqueta">Buscar</span>
+          <input type="search" placeholder="Nombre o código" x-model="texto" autocomplete="off" />
+        </label>
+        <p class="contador" role="status" aria-live="polite" x-text="seleccion.length ? seleccion.length + (seleccion.length === 1 ? ' prenda elegida' : ' prendas elegidas') : 'Ninguna prenda elegida'"></p>
+        <p class="suave" x-show="!listo" role="status">Cargando prendas…</p>
+        <p class="suave" x-show="listo && !visibles.length">No encontré prendas con esa búsqueda.</p>
+        <ul class="lista">
+          <template x-for="p in visibles" :key="p.id">
+            <li class="fila" style="grid-template-columns: auto minmax(0, 1fr)">
+              <label class="opcion" style="grid-column: 1 / -1; align-items: center; gap: 0.75rem">
+                <input type="checkbox" :checked="elegida(p.id)" @change="alternar(p.id)" />
+                <div class="miniatura" style="width: 2.5rem" :class="{ cargando: p.fotos[0] && !$foto(p.fotos[0]) }"><img :src="$foto(p.fotos[0])" alt="" /></div>
+                <span style="min-width: 0"><span class="fila-titulo" x-text="p.nombre || 'Sin nombre'"></span><span class="fila-sub" x-text="p.codigo + (p.estado !== 'publicado' ? ' · ' + estadoTexto(p.estado) : '')"></span></span>
+              </label>
+            </li>
+          </template>
+        </ul>
+        <div class="fila-botones" style="justify-content: center" x-show="todas > limite">
+          <button type="button" class="boton" @click="limite += 60">Mostrar más prendas</button>
+        </div>
+      </div>
+      <div class="hoja-pie">
+        <button type="button" class="boton" @click="$store.selectorProductos.terminar(null)">Cancelar</button>
+        <button type="button" class="boton primario" @click="$store.selectorProductos.terminar(seleccion)">Listo</button>
+      </div>
+    </div>
+  </template>
+</dialog>
+
+<script>
+document.addEventListener('alpine:init', function () {
+  var A = window.Alpine;
+  var resolver = null;
+
+  A.store('selectorProductos', {
+    abierto: false,
+    opciones: {},
+    clave: 0,
+    abrir: function (op) {
+      this.opciones = Object.assign({ seleccion: [], titulo: 'Elegir prendas', ayuda: '' }, op);
+      this.clave++;
+      this.abierto = true;
+      return new Promise(function (res) { resolver = res; });
+    },
+    terminar: function (ids) {
+      var r = resolver;
+      resolver = null;
+      this.abierto = false;
+      if (r) r(ids);
+    },
+  });
+  window.Panel.elegirProductos = function (op) { return A.store('selectorProductos').abrir(op || {}); };
+
+  A.data('elegirPrendas', function (opciones) {
+    return {
+      texto: '',
+      limite: 60,
+      listo: false,
+      seleccion: (opciones.seleccion || []).slice(),
+      init: function () {
+        var self = this;
+        A.store('datos').cargar('productos').then(function () {
+          self.listo = true;
+          A.store('min').pedir(self.visibles.slice(0, 40).map(function (p) { return p.fotos[0]; }));
+        }, function () { self.listo = true; });
+      },
+      get coincidencias() {
+        var L = window.Panel.logica;
+        return L.ordenarProductos(L.filtrarProductos(A.store('datos').lista('productos'), { texto: this.texto }), 'codigo');
+      },
+      get todas() { return this.coincidencias.length; },
+      get visibles() { return this.coincidencias.slice(0, this.limite); },
+      elegida: function (id) { return this.seleccion.indexOf(id) !== -1; },
+      alternar: function (id) {
+        this.seleccion = this.elegida(id) ? this.seleccion.filter(function (x) { return x !== id; }) : this.seleccion.concat([id]);
+      },
+      estadoTexto: function (e) { return ({ borrador: 'borrador', agotado: 'agotada', publicado: 'publicada' })[e] || e; },
+    };
+  });
+});
+</script>

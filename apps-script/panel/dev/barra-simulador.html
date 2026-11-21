@@ -1,0 +1,36 @@
+<div id="sim-barra" class="sim-barra" aria-label="Simulador (solo para desarrollo)">
+  <style>
+    .sim-barra { position: fixed; right: 8px; top: 68px; z-index: 99999; font: 13px/1.3 system-ui, sans-serif; }
+    .sim-barra summary { cursor: pointer; background: #1f2328; color: #fff; padding: 6px 10px; border-radius: 999px; list-style: none; opacity: .85; }
+    .sim-barra[open] summary { opacity: 1; }
+    .sim-barra .sim-caja { margin-top: 6px; background: #fff; color: #1f2328; border: 1px solid #888; border-radius: 10px; padding: 8px; display: grid; gap: 6px; width: 230px; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+    .sim-barra button { font: inherit; padding: 6px 8px; border-radius: 6px; border: 1px solid #555; background: #f4f4f4; color: #1f2328; cursor: pointer; text-align: left; }
+    .sim-barra .sim-nota { font-size: 12px; color: #444; }
+    @media (min-width: 900px) { .sim-barra { top: auto; right: auto; left: 8px; bottom: 8px; } .sim-barra .sim-caja { position: absolute; bottom: 36px; left: 0; } }
+  </style>
+  <details class="sim-barra-det" id="sim-det">
+    <summary>Simulador</summary>
+    <div class="sim-caja">
+      <span class="sim-nota">Solo en desarrollo. Afecta a la próxima llamada.</span>
+      <button type="button" data-sim='{"falla":{"funcion":"*","codigo":"conflicto"}}'>Próxima llamada: conflicto</button>
+      <button type="button" data-sim='{"falla":{"funcion":"*","codigo":"limite"}}'>Próxima llamada: límite</button>
+      <button type="button" data-sim='{"falla":{"funcion":"*","codigo":"no_autorizado"}}'>Próxima llamada: sin permiso</button>
+      <button type="button" data-sim='{"falla":{"funcion":"*","codigo":"invalido"}}'>Próxima llamada: dato no válido</button>
+      <button type="button" data-sim='{"demora":2000}'>Demora de 2 s</button>
+      <button type="button" data-sim='{"demora":0}'>Sin demora</button>
+      <button type="button" data-sim='{"sinConexion":true}'>Cortar la conexión</button>
+      <button type="button" data-sim='{"sinConexion":false}'>Volver la conexión</button>
+      <button type="button" data-sim='{"publicacionFalla":true}'>La publicación falla</button>
+      <button type="button" data-sim='{"reiniciar":true}' data-recargar="1">Reiniciar datos y recargar</button>
+    </div>
+  </details>
+  <script>
+    document.getElementById('sim-det').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-sim]');
+      if (!b) return;
+      fetch('/__sim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: b.getAttribute('data-sim') }).then(function () {
+        if (b.getAttribute('data-recargar')) location.reload();
+      });
+    });
+  </script>
+</div>

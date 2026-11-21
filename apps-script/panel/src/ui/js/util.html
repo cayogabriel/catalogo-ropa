@@ -1,0 +1,137 @@
+<script>
+/* Utilidades puras del Panel: sin DOM, para poder probarlas en Node. */
+(function (P) {
+  var ZONA_MS = 5 * 3600 * 1000; // Lima = UTC-5, sin horario de verano
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function aLima(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getTime() - ZONA_MS);
+  }
+
+  /** '2026-12-05T05:00:00Z' → '2026-12-05T00:00' (para <input type="datetime-local">, hora de Lima). */
+  function isoALocal(iso) {
+    var l = aLima(iso);
+    return l ? l.toISOString().slice(0, 16) : '';
+  }
+  /** '2026-12-05T00:00' → '2026-12-05T00:00:00-05:00'. Vacío → null (sin límite). */
+  function localAIso(valor) {
+    if (!valor) return null;
+    return (valor.length === 16 ? valor + ':00' : valor) + '-05:00';
+  }
+  function formatoFecha(iso) {
+    var l = aLima(iso);
+    if (!l) return '';
+    return pad(l.getUTCDate()) + '/' + pad(l.getUTCMonth() + 1) + '/' + l.getUTCFullYear();
+  }
+  function formatoHora(iso) {
+    var l = aLima(iso);
+    return l ? pad(l.getUTCHours()) + ':' + pad(l.getUTCMinutes()) : '';
+  }
+  function haceCuanto(iso, ahora) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    var ms = (ahora || new Date()).getTime() - d.getTime();
+    var min = Math.floor(ms / 60000);
+    if (min < 1) return 'hace un momento';
+    if (min < 60) return 'hace ' + min + ' min';
+    var h = Math.floor(min / 60);
+    if (h < 24) return 'hace ' + h + ' h';
+    var dias = Math.floor(h / 24);
+    if (dias === 1) return 'ayer';
+    if (dias < 7) return 'hace ' + dias + ' días';
+    return formatoFecha(iso);
+  }
+
+  /** 66.75 → 'S/ 66.75'; 89 → 'S/ 89'; 66.5 → 'S/ 66.50'. */
+  function formatoMonto(n, simbolo) {
+    if (n === null || n === undefined || n === '') return '';
+    var v = Number(String(n).replace(',', '.'));
+    if (isNaN(v)) return '';
+    return (simbolo || 'S/') + ' ' + (Number.isInteger(v) ? String(v) : v.toFixed(2));
+  }
+
+  function textoALista(texto) {
+    var vistos = {};
+    return String(texto || '')
+      .split(/[,\n]/)
+      .map(function (t) { return t.trim(); })
+      .filter(function (t) {
+        if (!t || vistos[t]) return false;
+        vistos[t] = true;
+        return true;
+      });
+  }
+  function listaATexto(lista) { return Array.isArray(lista) ? lista.join(', ') : ''; }
+
+  function sinTildes(s) {
+    return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+  /** Todas las palabras de la búsqueda deben estar en el texto (sin tildes ni mayúsculas). */
+  function coincide(texto, busqueda) {
+    var t = sinTildes(texto);
+    return sinTildes(busqueda).split(/\s+/).filter(Boolean).every(function (p) { return t.indexOf(p) !== -1; });
+  }
+  function slug(texto) {
+    return sinTildes(texto).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function moverElemento(arr, de, a) {
+    var copia = arr.slice();
+    if (de < 0 || de >= copia.length || a < 0 || a >= copia.length) return copia;
+    var quitado = copia.splice(de, 1)[0];
+    copia.splice(a, 0, quitado);
+    return copia;
+  }
+
+  /** Rellena {variables}. Quita la línea entera si {talla} o {color} van vacíos. Las variables desconocidas quedan. */
+  function rellenarPlantilla(plantilla, datos) {
+    datos = datos || {};
+    return String(plantilla || '')
+      .split('\n')
+      .filter(function (linea) {
+        var m = linea.match(/\{(talla|color)\}/);
+        return !(m && !datos[m[1]]);
+      })
+      .map(function (linea) {
+        return linea.replace(/\{(\w+)\}/g, function (todo, nombre) {
+          return Object.prototype.hasOwnProperty.call(datos, nombre) ? String(datos[nombre] === null || datos[nombre] === undefined ? '' : datos[nombre]) : todo;
+        });
+      })
+      .join('\n');
+  }
+
+  /** Junta llamadas seguidas en una. .cancelar() descarta, .ahora() ejecuta ya lo pendiente. */
+  function debounce(fn, ms) {
+    var id = null;
+    var ultimo = null;
+    var hay = false;
+    function d() {
+      ultimo = Array.prototype.slice.call(arguments);
+      hay = true;
+      if (id !== null) clearTimeout(id);
+      id = setTimeout(function () { id = null; hay = false; fn.apply(null, ultimo); }, ms);
+    }
+    d.cancelar = function () { if (id !== null) clearTimeout(id); id = null; hay = false; };
+    d.ahora = function () {
+      if (id !== null) clearTimeout(id);
+      id = null;
+      if (hay) { hay = false; fn.apply(null, ultimo); }
+    };
+    return d;
+  }
+
+  function copiar(x) { return x === undefined ? undefined : JSON.parse(JSON.stringify(x)); }
+  function igual(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  P.util = {
+    isoALocal: isoALocal, localAIso: localAIso, formatoFecha: formatoFecha, formatoHora: formatoHora, haceCuanto: haceCuanto,
+    formatoMonto: formatoMonto, textoALista: textoALista, listaATexto: listaATexto, sinTildes: sinTildes,
+    coincide: coincide, slug: slug, moverElemento: moverElemento, rellenarPlantilla: rellenarPlantilla,
+    debounce: debounce, copiar: copiar, igual: igual, esperar: esperar,
+  };
+})((window.Panel = window.Panel || {}));
+</script>

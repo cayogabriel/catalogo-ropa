@@ -1,0 +1,148 @@
+<script>
+/* Biblioteca de fotos: la usa la vista «Fotos» y el selector de fotos (mismo comportamiento, dos pantallas).
+ * crearBiblioteca(deps, opciones) devuelve el estado y los métodos; Alpine lo registra como x-data="biblioteca({...})". */
+(function (P) {
+  var DESTINO_DE = { fotos: 'producto', temporadas: 'temporada', portadas: 'portada', marca: 'marca' };
+  var PCT = { en_espera: 5, comprimiendo: 35, subiendo: 70, listo: 100, error: 100 };
+  var TEXTO = { en_espera: 'En espera', comprimiendo: 'Preparando…', subiendo: 'Subiendo…', listo: 'Lista' };
+
+  function crearBiblioteca(deps, o) {
+    o = o || {};
+    return {
+      modo: o.modo || 'ver', // 'ver' | 'elegir'
+      multiple: !!o.multiple,
+      excluir: o.excluir || [],
+      destino: o.destino || 'producto',
+      temporada_id: o.temporada_id || null,
+      carpeta: '',
+      fotos: [],
+      total: 0,
+      recibidas: 0,
+      pagina: 1,
+      cargando: false,
+      error: '',
+      aviso: '',
+      seleccion: [],
+      subidas: [],
+      arrastrando: false,
+      pedido: 0,
+
+      get hayMas() { return this.recibidas < this.total; },
+      get errores() { return this.subidas.filter(function (s) { return s.estado === 'error'; }).length; },
+      get subiendo() { return this.subidas.some(function (s) { return s.estado !== 'listo' && s.estado !== 'error'; }); },
+      get destinoActual() { return this.carpeta ? DESTINO_DE[this.carpeta] : this.destino; },
+
+      _pedir: function () {
+        var self = this;
+        var n = ++this.pedido;
+        var opciones = { pagina: this.pagina };
+        if (this.carpeta) opciones.carpeta = this.carpeta;
+        this.cargando = true;
+        this.error = '';
+        return deps.servidor.llamar('biblioteca', opciones).then(
+          function (r) {
+            if (n !== self.pedido) return;
+            var vistos = {};
+            self.fotos.forEach(function (f) { vistos[f.id] = true; });
+            r.fotos.forEach(function (f) { if (!vistos[f.id]) self.fotos.push(f); });
+            self.total = r.total;
+            self.recibidas += r.fotos.length;
+            self.cargando = false;
+            deps.miniaturas.pedir(r.fotos.map(function (f) { return f.id; }));
+          },
+          function (e) {
+            if (n !== self.pedido) return;
+            self.error = e.amable || 'No pude cargar las fotos.';
+            self.cargando = false;
+          }
+        );
+      },
+      cargar: function () {
+        this.fotos = [];
+        this.pagina = 1;
+        this.recibidas = 0;
+        this.total = 0;
+        return this._pedir();
+      },
+      masFotos: function () {
+        if (!this.hayMas || this.cargando) return Promise.resolve();
+        this.pagina += 1;
+        return this._pedir();
+      },
+      elegirCarpeta: function (c) {
+        this.carpeta = c;
+        return this.cargar();
+      },
+
+      deshabilitada: function (id) { return this.excluir.indexOf(id) !== -1; },
+      elegida: function (id) { return this.seleccion.indexOf(id) !== -1; },
+      alternar: function (id) {
+        if (this.modo !== 'elegir' || this.deshabilitada(id)) return;
+        if (!this.multiple) { this.seleccion = [id]; return; }
+        this.seleccion = this.elegida(id) ? this.seleccion.filter(function (x) { return x !== id; }) : this.seleccion.concat([id]);
+      },
+
+      usosTexto: function (f) {
+        var u = f.usos || [];
+        if (!u.length) return 'Sin usar';
+        var et = u.map(function (x) { return x.etiqueta; });
+        if (et.length <= 3) return 'Usada en ' + et.join(', ');
+        return 'Usada en ' + et.slice(0, 3).join(', ') + ' y ' + (et.length - 3) + ' más';
+      },
+
+      subir: function (archivos) {
+        var self = this;
+        var lista = Array.prototype.slice.call(archivos || []);
+        var imagenes = lista.filter(function (a) { return /^image\//.test(a.type || ''); });
+        this.aviso = imagenes.length < lista.length ? 'Solo fotos: elige imágenes JPG, PNG o WebP.' : '';
+        if (!imagenes.length) return Promise.resolve([]);
+        var base = this.subidas.length;
+        imagenes.forEach(function (a) { self.subidas.push({ nombre: a.name, estado: 'en_espera', pct: PCT.en_espera, texto: TEXTO.en_espera, error: '' }); });
+        var opciones = {
+          destino: this.destinoActual,
+          subir: function (p) { return deps.servidor.llamar('subirFoto', p); },
+          onProgreso: function (i, estado, extra) {
+            var s = self.subidas[base + i];
+            s.estado = estado;
+            s.pct = PCT[estado];
+            if (estado === 'error') { s.error = extra; s.texto = extra; }
+            else s.texto = TEXTO[estado];
+            if (estado === 'listo' && extra) {
+              deps.miniaturas.agregar(extra.id, extra.miniatura);
+              self.fotos.unshift({ id: extra.id, nombre: extra.nombre, carpeta: self.carpeta || ({ producto: 'fotos', temporada: 'temporadas', portada: 'portadas', marca: 'marca' })[self.destinoActual], actualizado: new Date().toISOString(), usos: [] });
+              self.total += 1;
+              self.recibidas += 1;
+              if (self.modo === 'elegir' && self.seleccion.indexOf(extra.id) === -1) {
+                if (self.multiple) self.seleccion.push(extra.id);
+                else self.seleccion = [extra.id];
+              }
+            }
+          },
+        };
+        if (this.temporada_id) opciones.temporada_id = this.temporada_id;
+        return deps.subirFotos(imagenes, opciones);
+      },
+      quitarAvisosDeSubida: function () {
+        this.subidas = this.subidas.filter(function (s) { return s.estado !== 'listo' && s.estado !== 'error'; });
+      },
+      alSoltar: function (evento) {
+        this.arrastrando = false;
+        return this.subir(evento.dataTransfer ? evento.dataTransfer.files : []);
+      },
+    };
+  }
+
+  P.crearBiblioteca = crearBiblioteca;
+
+  if (typeof document === 'undefined') return;
+  document.addEventListener('alpine:init', function () {
+    window.Alpine.data('biblioteca', function (opciones) {
+      return crearBiblioteca({
+        servidor: P.servidor,
+        miniaturas: window.Alpine.store('min'),
+        subirFotos: P.fotos.subirFotos,
+      }, opciones);
+    });
+  });
+})((window.Panel = window.Panel || {}));
+</script>

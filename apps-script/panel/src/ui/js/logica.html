@@ -1,0 +1,287 @@
+<script>
+/* Lógica pura de las vistas (filtros, estados, textos para la dueña). Sin DOM: se prueba en Node. */
+(function (P) {
+  var U = P.util;
+  var V = P.validar;
+
+  function ms(iso) { return iso ? new Date(iso).getTime() : null; }
+  function unir(lista) {
+    if (lista.length <= 1) return lista.join('');
+    return lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1];
+  }
+
+  /* ---------- productos ---------- */
+  function filtrarProductos(lista, f) {
+    f = f || {};
+    return lista.filter(function (p) {
+      if (f.estado) { if (p.estado !== f.estado) return false; }
+      else if (p.estado === 'archivado') return false;
+      if (f.categoria && p.categoria_id !== f.categoria) return false;
+      if (f.texto && !U.coincide((p.nombre || '') + ' ' + (p.codigo || ''), f.texto)) return false;
+      if (f.sinFoto && (p.fotos || []).length) return false;
+      if (f.sinPrecio && V.num(p.precio_regular) > 0) return false;
+      return true;
+    });
+  }
+  function ordenarProductos(lista, criterio) {
+    var copia = lista.slice();
+    if (criterio === 'nombre') copia.sort(function (a, b) { return U.sinTildes(a.nombre).localeCompare(U.sinTildes(b.nombre)); });
+    else if (criterio === 'codigo') copia.sort(function (a, b) { return String(a.codigo).localeCompare(String(b.codigo)); });
+    else copia.sort(function (a, b) { return (ms(b.creado_en) || 0) - (ms(a.creado_en) || 0) || String(b.codigo).localeCompare(String(a.codigo)); });
+    return copia;
+  }
+  function textoFaltantes(p) {
+    var falta = [];
+    if (!String(p.nombre || '').trim()) falta.push('nombre');
+    if (!(V.num(p.precio_regular) > 0)) falta.push('precio');
+    if (!(p.fotos || []).length) falta.push('foto');
+    return falta.length ? 'Para publicarla falta: ' + unir(falta) + '.' : '';
+  }
+  function resumenAltaRapida(subidas, creados) {
+    var fallidas = subidas.filter(function (s) { return s.estado === 'error'; }).length;
+    if (!creados) return 'No pude subir ninguna foto.';
+    var t = 'Creé ' + creados + (creados === 1 ? ' borrador.' : ' borradores.');
+    if (fallidas) t += ' ' + fallidas + (fallidas === 1 ? ' foto no se pudo subir.' : ' fotos no se pudieron subir.');
+    return t + ' Completa el nombre y el precio' + (creados > 1 && !fallidas ? ' de cada uno.' : '.');
+  }
+
+  /* ---------- historial ---------- */
+  var CAMPOS = {
+    nombre: 'el nombre', descripcion: 'la descripción', precio_regular: 'el precio', stock: 'el stock', tallas: 'las tallas',
+    tallas_agotadas: 'las tallas agotadas', colores: 'los colores', fotos: 'las fotos', etiquetas: 'las etiquetas',
+    estado: 'el estado', titulo: 'el título', subtitulo: 'el subtítulo', intro: 'la introducción', cierre: 'el cierre',
+    valor: 'el valor', hasta: 'la fecha de fin', desde: 'la fecha de inicio', whatsapp: 'el WhatsApp', tokens: 'los colores',
+  };
+  var SINGULAR = {
+    productos: 'la prenda', ofertas: 'la oferta', secciones: 'la sección', portadas: 'la portada', temporadas: 'la temporada',
+    temporada_fotos: 'la foto de temporada', categorias: 'la categoría', paletas: 'la paleta', vendedoras: 'la vendedora',
+  };
+  var PLURAL = {
+    productos: 'las prendas', ofertas: 'las ofertas', secciones: 'las secciones', portadas: 'las portadas', temporadas: 'las temporadas',
+    temporada_fotos: 'las fotos de la temporada', categorias: 'las categorías', paletas: 'las paletas', vendedoras: 'las vendedoras',
+  };
+  function valorLegible(campo, crudo, simbolo) {
+    var v = crudo;
+    try { v = JSON.parse(crudo); } catch (e) { /* texto suelto */ }
+    if (v === null || v === undefined || v === '') return '(vacío)';
+    if (typeof v === 'boolean') return v ? 'sí' : 'no';
+    if (campo === 'precio_regular' && typeof v === 'number') return U.formatoMonto(v, simbolo || 'S/');
+    if (Array.isArray(v)) return v.length ? v.join(', ') : '(vacío)';
+    if (typeof v === 'object') return '(varios cambios)';
+    var t = String(v);
+    return t.length > 40 ? t.slice(0, 40) + '…' : t;
+  }
+  function describirCambio(h, ctx) {
+    var etq = ctx.etiqueta(h.entidad, h.entidad_id);
+    var sing = SINGULAR[h.entidad] || 'el dato';
+    var campo = CAMPOS[h.campo] || (h.campo ? 'el dato «' + h.campo + '»' : '');
+    switch (h.accion) {
+      case 'crear': return 'Creaste ' + sing + ' ' + etq;
+      case 'eliminar': return (h.entidad === 'productos' ? 'Archivaste ' : 'Eliminaste ') + sing + ' ' + etq;
+      case 'reordenar': return 'Cambiaste el orden de ' + (PLURAL[h.entidad] || 'la lista');
+      case 'deshacer': return campo ? 'Deshiciste el cambio en ' + campo + ' de ' + etq : 'Deshiciste un cambio en ' + sing + ' ' + etq;
+      default:
+        return 'Cambiaste ' + campo + ' de ' + etq + ': ' + valorLegible(h.campo, h.antes, ctx.simbolo) + ' → ' + valorLegible(h.campo, h.despues, ctx.simbolo);
+    }
+  }
+
+  /* ---------- temporadas ---------- */
+  function estadoTemporada(t, ahora) {
+    if (t.activa_manual === 'si') return { texto: 'Activa (forzada)', clase: 'ok' };
+    if (t.activa_manual === 'no') return { texto: 'Apagada', clase: '' };
+    var n = (ahora || new Date()).getTime();
+    var d = ms(t.desde);
+    var h = ms(t.hasta);
+    if (d !== null && d > n) return { texto: 'Programada', clase: 'aviso' };
+    if (h !== null && h < n) return { texto: 'Terminada', clase: '' };
+    return { texto: 'Activa ahora', clase: 'ok' };
+  }
+  function urlVistaPrevia(sitioUrl, slug) {
+    if (!sitioUrl || !slug) return '';
+    return sitioUrl.replace(/\/+$/, '') + '/temporada/' + slug + '/';
+  }
+  function variablesPaleta(tokens, radio) {
+    var salida = {};
+    V.TOKENS.forEach(function (t) { if (tokens && tokens[t]) salida['--p-' + t.replace('--color-', '')] = tokens[t]; });
+    if (radio) salida['--p-radio'] = radio;
+    return salida;
+  }
+  function vigenciaTexto(t, defecto) {
+    var dias = Number(t.vigencia_dias) || Number(defecto) || 15;
+    return 'Los precios de la revista valen ' + dias + (dias === 1 ? ' día' : ' días') + ' o hasta que termine la oferta más cercana, lo que llegue antes.';
+  }
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function mesesDeUso(uso) {
+    return String(uso || '').split(/[,\s]+/).filter(Boolean).map(function (n) { return MESES[Number(n) - 1]; }).filter(Boolean).join(', ');
+  }
+
+  /* ---------- ofertas ---------- */
+  function estadoOferta(o, ahora) {
+    if (!o.activa) return { texto: 'Apagada', clase: '' };
+    var n = (ahora || new Date()).getTime();
+    var d = ms(o.desde);
+    var h = ms(o.hasta);
+    if (d !== null && d > n) return { texto: 'Programada', clase: 'aviso' };
+    if (h !== null && h < n) return { texto: 'Vencida', clase: '' };
+    return { texto: 'Activa', clase: 'ok' };
+  }
+  function descripcionOferta(o, nombres, simbolo) {
+    var s = simbolo || 'S/';
+    var que = o.tipo === 'porcentaje' ? o.valor + ' % menos' : o.tipo === 'monto' ? U.formatoMonto(o.valor, s) + ' menos' : 'Precio final ' + U.formatoMonto(o.valor, s);
+    var ob = o.objetivos || [];
+    var n = ob.length;
+    var donde;
+    switch (o.alcance) {
+      case 'tienda': donde = 'en toda la tienda'; break;
+      case 'producto': donde = n === 0 ? 'en ninguna prenda todavía' : n === 1 ? 'en ' + nombres('producto', ob[0]) : 'en ' + n + ' prendas'; break;
+      case 'categoria': donde = n === 0 ? 'en ninguna categoría todavía' : n === 1 ? 'en la categoría ' + nombres('categoria', ob[0]) : 'en ' + n + ' categorías'; break;
+      case 'seccion': donde = n === 0 ? 'en ninguna sección todavía' : n === 1 ? 'en la sección ' + nombres('seccion', ob[0]) : 'en ' + n + ' secciones'; break;
+      case 'temporada': donde = n === 0 ? 'en ninguna temporada todavía' : n === 1 ? 'en la temporada ' + nombres('temporada', ob[0]) : 'en ' + n + ' temporadas'; break;
+      default: donde = '';
+    }
+    return (que + ' ' + donde).trim();
+  }
+  /** ¿Esta oferta alcanzaría a esta prenda? ctx = { secciones, temporada_fotos } (las listas del panel). */
+  function ofertaAlcanza(o, p, ctx) {
+    var ob = o.objetivos || [];
+    switch (o.alcance) {
+      case 'tienda': return true;
+      case 'producto': return ob.indexOf(p.id) !== -1;
+      case 'categoria': return ob.indexOf(p.categoria_id) !== -1;
+      case 'seccion': return (ctx.secciones || []).some(function (s) { return ob.indexOf(s.id) !== -1 && (s.productos || []).indexOf(p.id) !== -1; });
+      case 'temporada': return (ctx.temporada_fotos || []).some(function (f) { return ob.indexOf(f.temporada_id) !== -1 && (f.productos || []).indexOf(p.id) !== -1; });
+      default: return false;
+    }
+  }
+  /** Atajo «Liquidación»: nace apagada para que la dueña revise el descuento antes de encenderla. */
+  function ofertaLiquidacion() {
+    return {
+      nombre: 'Liquidación', tipo: 'porcentaje', valor: 30, alcance: 'tienda', objetivos: [], desde: null, hasta: null,
+      prioridad: 10, etiqueta: 'Liquidación', es_liquidacion: true, cuenta_regresiva: false, activa: false,
+    };
+  }
+  function rutasDeDestino(categorias, temporadas, productos) {
+    var r = [{ valor: '/catalogo/', texto: 'Todo el catálogo' }, { valor: '/catalogo/?oferta=1', texto: 'Todas las ofertas' }];
+    temporadas.forEach(function (t) { r.push({ valor: '/temporada/' + t.slug + '/', texto: 'Temporada: ' + t.nombre }); });
+    categorias.forEach(function (c) { r.push({ valor: '/catalogo/?categoria=' + c.slug, texto: 'Categoría: ' + c.nombre }); });
+    productos.filter(function (p) { return p.estado === 'publicado'; }).forEach(function (p) {
+      r.push({ valor: '/p/' + String(p.codigo).toLowerCase() + '/', texto: 'Prenda: ' + p.codigo + ' · ' + (p.nombre || 'sin nombre') });
+    });
+    return r;
+  }
+
+  /* ---------- textos ---------- */
+  var ORDEN_GRUPOS = ['tienda', 'inicio', 'seccion', 'temporada', 'producto', 'precio', 'insignia', 'cuenta_regresiva', 'lista', 'aviso', 'catalogo', 'revista', 'contacto', 'pie', 'accesibilidad'];
+  var NOMBRE_GRUPO = {
+    tienda: 'Tienda', inicio: 'Inicio', seccion: 'Secciones', temporada: 'Temporada', producto: 'Ficha de la prenda', precio: 'Precios',
+    insignia: 'Insignias', cuenta_regresiva: 'Cuenta regresiva', lista: 'Mi lista', aviso: 'Avisos', catalogo: 'Catálogo',
+    revista: 'Revista', contacto: 'Contacto', pie: 'Pie de página', accesibilidad: 'Accesibilidad',
+  };
+  var PALABRAS = { boton: 'botón', titulo: 'título', subtitulo: 'subtítulo', descripcion: 'descripción', informacion: 'información', categoria: 'categoría', mas: 'más', ultimas: 'últimas', unidades: 'unidades', revista: 'revista' };
+  function humanizar(seg) {
+    var t = seg.split('_').map(function (w) { return PALABRAS[w] || w; }).join(' ');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function etiquetaTexto(clave) {
+    var seg = clave.split('.');
+    var elemento = humanizar(seg[seg.length - 1]);
+    if (seg.length <= 2) return elemento;
+    return humanizar(seg.slice(1, -1).join('_')) + ' · ' + elemento;
+  }
+  function agruparTextos(textos) {
+    var grupos = {};
+    Object.keys(textos).forEach(function (clave) {
+      if (clave.indexOf('whatsapp.') === 0 || clave.charAt(0) === '_') return;
+      var id = clave.split('.')[0];
+      (grupos[id] = grupos[id] || []).push({ clave: clave, etiqueta: etiquetaTexto(clave), valor: textos[clave] });
+    });
+    var ids = Object.keys(grupos).sort(function (a, b) {
+      var ia = ORDEN_GRUPOS.indexOf(a);
+      var ib = ORDEN_GRUPOS.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b);
+    });
+    return ids.map(function (id) {
+      return {
+        id: id, titulo: NOMBRE_GRUPO[id] || humanizar(id),
+        claves: grupos[id].sort(function (a, b) { return a.clave.localeCompare(b.clave); }),
+      };
+    });
+  }
+
+  /* ---------- WhatsApp ---------- */
+  function vistaPreviaWhatsapp(textos, o) {
+    var simbolo = o.simbolo || 'S/';
+    var reales = (o.productos || []).filter(function (p) { return V.num(p.precio_regular) > 0; }).slice(0, 2);
+    var ejemplo = !reales.length;
+    var lista = ejemplo ? [{ nombre: 'Vestido de ejemplo', codigo: 'VES-001', precio_regular: 89, tallas: ['M'], colores: ['Coral'] }] : reales;
+    var base = o.sitioUrl ? o.sitioUrl.replace(/\/+$/, '') + '/' : '';
+    var p = lista[0];
+    var vendedora = o.vendedora || 'Vendedora';
+    var datos = {
+      vendedora: vendedora, producto: p.nombre, codigo: p.codigo, talla: (p.tallas || [])[0] || '', color: (p.colores || [])[0] || '',
+      precio: U.formatoMonto(p.precio_regular, simbolo),
+      enlace: base ? base + 'p/' + String(p.codigo).toLowerCase() + '/' : '(enlace de la prenda)',
+    };
+    var lineas = lista.map(function (x) {
+      var partes = [(x.nombre || 'Prenda') + ' (' + x.codigo + ')'];
+      if ((x.tallas || [])[0]) partes.push(x.tallas[0]);
+      if ((x.colores || [])[0]) partes.push(x.colores[0]);
+      partes.push(U.formatoMonto(x.precio_regular, simbolo));
+      return '- ' + partes.join(' · ');
+    });
+    var total = lista.reduce(function (s, x) { return s + V.num(x.precio_regular); }, 0);
+    var sinOpcionales = { vendedora: datos.vendedora, producto: datos.producto, codigo: datos.codigo, precio: datos.precio, enlace: datos.enlace };
+    return {
+      producto: U.rellenarPlantilla(textos['whatsapp.producto'] || '', datos),
+      revista: U.rellenarPlantilla(textos['whatsapp.revista'] || '', sinOpcionales),
+      lista: U.rellenarPlantilla(textos['whatsapp.lista'] || '', { vendedora: vendedora, lista: lineas.join('\n'), total: U.formatoMonto(total, simbolo) }),
+      ejemplo: ejemplo,
+    };
+  }
+
+  /* ---------- colores ---------- */
+  function agruparPaletas(paletas) {
+    return {
+      predefinidas: paletas.filter(function (p) { return p.origen !== 'propia'; }),
+      propias: paletas.filter(function (p) { return p.origen === 'propia'; }),
+    };
+  }
+  function nombreDeCopia(nombre, propias) {
+    var usados = {};
+    propias.forEach(function (p) { usados[p.nombre] = true; });
+    var base = 'Mi ' + nombre;
+    if (!usados[base]) return base;
+    var n = 2;
+    while (usados[base + ' ' + n]) n++;
+    return base + ' ' + n;
+  }
+
+  /** Prefijo de 3 letras para los códigos de una categoría nueva («Vestidos» → VES), sin repetir los usados. */
+  function prefijoDeCategoria(nombre, usados) {
+    var letras = U.sinTildes(nombre).replace(/[^a-z]/g, '').toUpperCase();
+    while (letras.length < 3) letras += 'X';
+    var libre = function (p) { return usados.indexOf(p) === -1; };
+    var base = letras.slice(0, 3);
+    if (libre(base)) return base;
+    for (var i = 3; i < letras.length; i++) {
+      if (libre(base.slice(0, 2) + letras[i])) return base.slice(0, 2) + letras[i];
+    }
+    var abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (var j = 0; j < abc.length; j++) {
+      if (libre(base.slice(0, 2) + abc[j])) return base.slice(0, 2) + abc[j];
+    }
+    return base;
+  }
+
+  P.logica = {
+    prefijoDeCategoria: prefijoDeCategoria,
+    filtrarProductos: filtrarProductos, ordenarProductos: ordenarProductos, textoFaltantes: textoFaltantes,
+    resumenAltaRapida: resumenAltaRapida, describirCambio: describirCambio, valorLegible: valorLegible,
+    estadoTemporada: estadoTemporada, urlVistaPrevia: urlVistaPrevia, variablesPaleta: variablesPaleta,
+    vigenciaTexto: vigenciaTexto, mesesDeUso: mesesDeUso, estadoOferta: estadoOferta, descripcionOferta: descripcionOferta,
+    ofertaLiquidacion: ofertaLiquidacion, ofertaAlcanza: ofertaAlcanza, rutasDeDestino: rutasDeDestino, etiquetaTexto: etiquetaTexto,
+    agruparTextos: agruparTextos, vistaPreviaWhatsapp: vistaPreviaWhatsapp, agruparPaletas: agruparPaletas,
+    nombreDeCopia: nombreDeCopia,
+  };
+})((window.Panel = window.Panel || {}));
+</script>

@@ -1,0 +1,9 @@
+<!-- Instalación: se ve solo si todavía no existe la hoja del catálogo -->
+<section class="vista tarjeta" x-show="$store.panel.falla === 'no_instalado'" x-data="{ instalando: false, error: '', listo: null }" style="max-width: 36rem; margin: 3rem auto">
+  <h1>Preparemos tu Google</h1>
+  <p>Falta crear tu hoja «Catálogo Ropa — Base de datos» y las carpetas de fotos en tu Drive. Se hace una sola vez y puedes repetirlo sin miedo si algo se corta.</p>
+  <p class="nota error" x-show="error" x-text="error"></p>
+  <button type="button" class="boton primario" :disabled="instalando" :class="{ cargando: instalando }"
+          @click="instalando = true; error = ''; $store.panel.instalar().then(function (r) { listo = r; }, function (e) { error = e.amable || 'No pude terminar la instalación. Inténtalo de nuevo.'; }).finally(function () { instalando = false; })"
+          x-text="instalando ? 'Instalando…' : 'Completar instalación'">Completar instalación</button>
+</section>
