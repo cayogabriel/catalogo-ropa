@@ -5,6 +5,7 @@ export default defineConfig({
     include: [
       'test/**/*.test.mjs',
       'apps-script/test/**/*.test.mjs',
+      'apps-script/panel/dev/**/*.test.mjs',
       'contratos/**/*.test.mjs',
       'web/test/**/*.test.mjs',
     ],

@@ -36,6 +36,16 @@ El script `web/scripts/publicar.mjs` (de S6) lo escribe antes de `astro build`. 
 
 ## Reglas que aplica la web
 
+Las reglas 1, 6, 7 y 9 ya están implementadas y probadas en `web/src/compartido/`:
+
+| Archivo | Qué trae |
+|---|---|
+| `precio.mjs` | `ventanaVigente`, `precioVigente`, `formatearMonto`, `formatearFecha` |
+| `mensajes.mjs` | `interpolar`, `vendedoraPara`, `mensajeProducto`, `mensajeLista`, `mensajeRevista` |
+| `enlaces.mjs` | `rutaProducto`, `rutaTemporada`, `urlProducto`, `urlTemporada`, `enlaceWhatsApp`, `urlRed` |
+
+S3 y S6 las importan y no las reescriben.
+
 1. **Precio vigente:**
    - es la ventana con `desde ≤ ahora < hasta`, donde `null` significa sin límite;
    - el HTML sale con la ventana vigente al momento de construir el sitio;

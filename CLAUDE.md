@@ -22,12 +22,14 @@ El trabajo está repartido en sesiones. **Cada sesión toca solo sus carpetas.**
 
 | Sesión | Carpetas propias |
 |---|---|
-| Coordinadora (S1/S7) | raíz (`package.json`, `CLAUDE.md`, `README.md`), `docs/`, `contratos/`, `fixtures/`, `scripts/`, `.github/workflows/ci.yml` |
+| Coordinadora (S1/S7) | raíz (`package.json`, `CLAUDE.md`, `README.md`), `docs/`, `contratos/`, `fixtures/`, `scripts/`, `.github/workflows/ci.yml`, `web/src/compartido/`, `web/test/compartido/`, `web/sitio.config.mjs` |
 | S2 · Backend Apps Script | `apps-script/panel/src/server/`, `apps-script/api/`, `apps-script/test/` (incluye los dobles) |
 | S3 · Web pública | `web/src/` (salvo lo de S6), `web/public/` (salvo `img/`, que se genera), `web/astro.config.mjs`, `web/test/sitio/` |
 | S4 · Interfaz del panel | `apps-script/panel/src/ui/`, `apps-script/panel/dev/` |
 | S5 · Marketing y contenido | `content/` |
 | S6 · Revista, PDFs y publicación | `web/scripts/`, `web/src/pages/imprimir/`, `web/src/pages/ir/`, `web/src/components/imprimir/`, `web/test/publicacion/`, `.github/workflows/publicar.yml` |
+
+**Lógica compartida de la web:** S3 (web) y S6 (revista/PDF) usan `web/src/compartido/` y no la duplican. Ahí están el precio vigente, los formatos de monto y fecha, los mensajes de WhatsApp y los enlaces a redes y rutas.
 
 Si necesitas una dependencia npm nueva, agrégala en el `package.json` de tu workspace con versión exacta (`--save-exact`) y menciónala en tu informe. Los choques de `package-lock.json` los resuelve la coordinadora al integrar.
 
