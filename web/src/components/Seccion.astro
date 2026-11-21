@@ -7,7 +7,7 @@ import { requisitoCumplido } from '../lib/vista-precio.mjs';
 import { ventanaVigente } from '../compartido/precio.mjs';
 
 interface Props {
-  datos: { seccion: any; requisito: 'oferta' | 'liquidacion' | null; candidatas: any[]; productos: any[]; enlace: string | null };
+  datos: { seccion: any; requisito: 'oferta' | 'liquidacion' | null; candidatas: any[]; productos: any[]; oculta: boolean; enlace: string | null };
 }
 const { seccion, requisito, candidatas, enlace } = Astro.props.datos;
 const id = `seccion-${seccion.id}`;
@@ -24,6 +24,7 @@ const tamanos =
   class:list={['seccion', `seccion-${seccion.diseno}`, { 'seccion-liquidacion': liquidacion }]}
   aria-labelledby={id}
   data-seccion-requisito={requisito ?? undefined}
+  hidden={Astro.props.datos.oculta}
 >
   <div class="contenedor bloque">
     <div class="cabecera-bloque">

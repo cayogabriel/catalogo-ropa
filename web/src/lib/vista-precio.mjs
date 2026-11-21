@@ -1,7 +1,7 @@
 // Precio, insignias y cuenta regresiva tal como se muestran. Lo usan el HTML (al construir)
 // y el navegador (al cargar), para que una oferta empiece o termine a su hora.
 // Contrato: docs/contracts/datos-web.md (reglas 1, 3 y 4).
-import { ventanaVigente } from '../compartido/precio.mjs';
+import { ventanaVigente, formatearMonto } from '../compartido/precio.mjs';
 
 export function presentarPrecio(producto, ahora = Date.now()) {
   const v = ventanaVigente(producto.precio.ventanas, ahora);
@@ -17,6 +17,10 @@ export function presentarPrecio(producto, ahora = Date.now()) {
     cuentaRegresiva: oferta && v.cuenta_regresiva && v.hasta !== null,
   };
 }
+
+// Texto para compartir con el precio vigente al momento del clic.
+export const textoCompartir = (producto, simbolo, ahora = Date.now()) =>
+  `${producto.nombre} · ${formatearMonto(presentarPrecio(producto, ahora).precio, simbolo)}`;
 
 export function requisitoCumplido(requisito, ventana) {
   if (requisito === 'oferta') return ventana.oferta_id !== null;

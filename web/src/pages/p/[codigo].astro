@@ -67,7 +67,7 @@ const descripcion = p.descripcion || `${p.nombre} · ${monto(precio.precio)}`;
         <SelectorPedido producto={p} prefijo="ficha" />
 
         <div class="ficha-compartir">
-          <button type="button" class="boton boton-secundario" data-compartir data-url={enlace} data-titulo={p.nombre} data-texto={`${p.nombre} · ${monto(precio.precio)}`} data-p={p.id}>
+          <button type="button" class="boton boton-secundario" data-compartir data-url={enlace} data-titulo={p.nombre} data-p={p.id}>
             <Icono nombre="compartir" />
             {t('producto.compartir')}
           </button>

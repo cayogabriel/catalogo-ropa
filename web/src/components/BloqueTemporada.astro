@@ -26,7 +26,7 @@ const rutaPdf = url(`${rutaTemporada(tem.slug)}revista-${tem.slug}.pdf`);
 
 <section class="temporada" aria-labelledby={idTitulo}>
   <div class="temporada-portada">
-    <Imagen foto={tem.foto_portada} sizes="100vw" prioridad />
+    <Imagen foto={tem.foto_portada} sizes="100vw" prioridad={principal} />
   </div>
   <div class="contenedor temporada-cabecera">
     <Titulo id={idTitulo} class="temporada-titulo">{tem.titulo || tem.nombre}</Titulo>

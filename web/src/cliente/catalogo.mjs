@@ -1,6 +1,6 @@
 // Catálogo en el navegador: lee los filtros de la URL, filtra y ordena las tarjetas
 // (moviendo nodos ya renderizados) y mantiene la URL al día con history.replaceState.
-import { leerFiltros, escribirFiltros, opcionesFiltro, aplicar } from '../lib/filtros.mjs';
+import { leerFiltros, escribirFiltros, opcionesFiltro, aplicar, mismoOrden } from '../lib/filtros.mjs';
 import { presentarPrecio } from '../lib/vista-precio.mjs';
 import { abrir, cerrar, prepararDialogo } from './dialogos.mjs';
 import { texto } from './comun.mjs';
@@ -13,6 +13,7 @@ function leerItems(lista) {
     try {
       const item = JSON.parse(li.dataset.item);
       const precio = JSON.parse(li.querySelector('[data-precio]').dataset.precio);
+      li.dataset.codigo = item.codigo;
       return [{ ...item, li, datosPrecio: precio }];
     } catch {
       return [];
@@ -47,7 +48,7 @@ export function iniciarCatalogo() {
   const pintarControles = () => {
     for (const nombre of ['categoria', 'talla', 'color']) {
       const valor = filtros[nombre] ?? '';
-      for (const r of form.elements[nombre]) r.checked = r.value === valor;
+      for (const r of form.querySelectorAll(`input[name="${nombre}"]`)) r.checked = r.value === valor;
     }
     form.elements.min.value = filtros.min ?? '';
     form.elements.max.value = filtros.max ?? '';
@@ -63,9 +64,15 @@ export function iniciarCatalogo() {
     const visibles = aplicar(conPrecio(), filtros);
     const mostrar = new Set(visibles.map((i) => i.codigo));
     const ordenados = [...visibles, ...items.filter((i) => !mostrar.has(i.codigo))];
-    lista.append(...ordenados.map((i) => i.li));
-    for (const i of items) i.li.hidden = !mostrar.has(i.codigo);
-    resultados.textContent = cantidadPrendas(texto, visibles.length);
+    // Solo se mueven nodos si el orden cambió: mover el que tiene el foco lo pierde.
+    const actual = [...lista.children].map((li) => li.dataset.codigo);
+    if (!mismoOrden(actual, ordenados.map((i) => i.codigo))) lista.append(...ordenados.map((i) => i.li));
+    for (const i of items) {
+      const oculto = !mostrar.has(i.codigo);
+      if (i.li.hidden !== oculto) i.li.hidden = oculto;
+    }
+    const nuevoTexto = cantidadPrendas(texto, visibles.length);
+    if (resultados.textContent !== nuevoTexto) resultados.textContent = nuevoTexto;
     sinResultados.hidden = visibles.length > 0;
   };
 

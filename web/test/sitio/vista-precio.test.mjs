@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { presentarPrecio, requisitoCumplido, insignias, restante } from '../../src/lib/vista-precio.mjs';
+import { presentarPrecio, requisitoCumplido, insignias, restante, textoCompartir } from '../../src/lib/vista-precio.mjs';
 import { producto, ventana, EN_OFERTA, ANTES_OFERTA, T } from './ayuda.mjs';
 
 const textos = (clave, v = {}) =>
@@ -94,6 +94,14 @@ describe('insignias (regla 4: ninguna se inventa)', () => {
 
   it('fuera de la oferta no hay descuento', () => {
     expect(insignias(producto({}, { oferta: {} }), ANTES_OFERTA, textos)).toEqual([]);
+  });
+});
+
+describe('textoCompartir', () => {
+  it('usa el precio vigente al momento de compartir, no el del build', () => {
+    const p = producto({ nombre: 'Vestido' }, { oferta: {} });
+    expect(textoCompartir(p, 'S/', EN_OFERTA)).toBe('Vestido · S/ 70');
+    expect(textoCompartir(p, 'S/', T('2026-12-21T00:00:00-05:00'))).toBe('Vestido · S/ 100');
   });
 });
 

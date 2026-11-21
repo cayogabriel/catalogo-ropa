@@ -102,6 +102,16 @@ describe('secciones del inicio (regla 2)', () => {
     expect(seccionesInicio(c, EN_OFERTA)[0].productos.map((p) => p.codigo)).toEqual(['VES-003']);
   });
 
+  it('una oferta que empieza después del build deja la sección en el HTML, oculta', () => {
+    const c = catalogo({ secciones: [seccion('sec_00000001', { tipo: 'ofertas', productos: ['prd_00000001', 'prd_00000002'] })] });
+    const r = seccionesInicio(c, ANTES_OFERTA);
+    expect(r).toHaveLength(1);
+    expect(r[0].productos).toEqual([]);
+    expect(r[0].oculta).toBe(true);
+    expect(r[0].candidatas.map((p) => p.codigo)).toEqual(['VES-001', 'VES-002']);
+    expect(seccionesInicio(c, EN_OFERTA)[0].oculta).toBe(false);
+  });
+
   it('se oculta si no queda ninguna, y con ids que no existen', () => {
     const c = catalogo({
       secciones: [
@@ -109,7 +119,8 @@ describe('secciones del inicio (regla 2)', () => {
         seccion('sec_00000002', { tipo: 'manual', productos: ['prd_ffffffff'] }),
       ],
     });
-    expect(seccionesInicio(c, ANTES_OFERTA)).toEqual([]);
+    // Pasada la oferta (20/12) ya no queda ninguna ventana futura: la sección sale del HTML.
+    expect(seccionesInicio(c, T('2026-12-21T00:00:00-05:00'))).toEqual([]);
   });
 
   it('ordena por orden y arma el enlace de categoría', () => {

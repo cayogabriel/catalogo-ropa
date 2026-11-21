@@ -80,6 +80,8 @@ const COMPARADORES = {
   nombre: (a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }) || a.orden - b.orden,
 };
 
+export const mismoOrden = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+
 export function aplicar(items, f) {
   const palabras = normalizar(f.q).split(' ').filter(Boolean);
   return items

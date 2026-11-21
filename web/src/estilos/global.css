@@ -459,6 +459,11 @@ main {
   display: none;
 }
 
+/* En la tarjeta el descuento ya va en la insignia. */
+.tarjeta .precio-pct {
+  display: none;
+}
+
 .tarjeta-nombre {
   font-size: 0.9375rem;
   line-height: 1.35;
@@ -472,12 +477,7 @@ main {
   .tarjeta:hover .foto {
     transform: scale(1.03);
   }
-  .tarjeta:hover /* En la tarjeta el descuento ya va en la insignia. */
-.tarjeta .precio-pct {
-  display: none;
-}
-
-.tarjeta-nombre {
+  .tarjeta:hover .tarjeta-nombre {
     text-decoration: underline;
   }
 }

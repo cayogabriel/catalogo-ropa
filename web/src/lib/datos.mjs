@@ -59,7 +59,21 @@ export function seccionesInicio(catalogo, ahora = Date.now()) {
       const requisito = requisitoSeccion(seccion);
       const candidatas = seccion.productos.map(buscar).filter(Boolean);
       const productos = candidatas.filter((p) => requisitoCumplido(requisito, ventanaVigente(p.precio.ventanas, ahora)));
-      return { seccion, requisito, candidatas, productos, enlace: enlaceSeccion(seccion, candidatas, catalogo.categorias) };
+      // Una oferta que empieza después del build deja la sección en el HTML, oculta:
+      // el navegador la muestra a su hora (cliente/precios.mjs).
+      const futura =
+        requisito !== null &&
+        candidatas.some((p) => p.precio.ventanas.some((v) => requisitoCumplido(requisito, v) && ahora < instante(v.hasta, Infinity)));
+      return {
+        seccion,
+        requisito,
+        candidatas,
+        productos,
+        oculta: productos.length === 0,
+        visible: productos.length > 0 || futura,
+        enlace: enlaceSeccion(seccion, candidatas, catalogo.categorias),
+      };
     })
-    .filter((s) => s.productos.length > 0);
+    .filter((s) => s.visible)
+    .map(({ visible, ...s }) => s);
 }

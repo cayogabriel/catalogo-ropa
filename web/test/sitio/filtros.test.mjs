@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { leerFiltros, escribirFiltros, opcionesFiltro, aplicar } from '../../src/lib/filtros.mjs';
+import { leerFiltros, escribirFiltros, opcionesFiltro, aplicar, mismoOrden } from '../../src/lib/filtros.mjs';
 
 const item = (codigo, extra = {}) => ({
   codigo,
@@ -58,6 +58,14 @@ describe('escribirFiltros', () => {
   it('ida y vuelta', () => {
     const f = { ...vacio, talla: 'M', min: 60, orden: 'nombre' };
     expect(leerFiltros(new URLSearchParams(escribirFiltros(f)), opciones)).toEqual(f);
+  });
+});
+
+describe('mismoOrden', () => {
+  it('compara dos órdenes de códigos para no mover nodos sin necesidad', () => {
+    expect(mismoOrden(['A', 'B', 'C'], ['A', 'B', 'C'])).toBe(true);
+    expect(mismoOrden(['A', 'B', 'C'], ['B', 'A', 'C'])).toBe(false);
+    expect(mismoOrden(['A', 'B'], ['A', 'B', 'C'])).toBe(false);
   });
 });
 
