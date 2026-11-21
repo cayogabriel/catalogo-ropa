@@ -1,0 +1,31 @@
+---
+// Foto procesada: srcset WebP, ancho/alto reales, carga diferida y lqip de fondo.
+import { base, imagen } from '../lib/sitio.mjs';
+import { srcset, srcMenor } from '../lib/imagenes.mjs';
+
+interface Props {
+  foto: { id: string; alt: string };
+  sizes?: string;
+  prioridad?: boolean;
+  clase?: string;
+  transicion?: string;
+  alt?: string;
+}
+const { foto, sizes = '100vw', prioridad = false, clase = '', transicion, alt } = Astro.props;
+const img = imagen(foto.id);
+const estilo = [`background-image:url(${img.lqip})`, transicion ? `view-transition-name:${transicion}` : ''].filter(Boolean).join(';');
+---
+
+<img
+  class:list={['foto', clase]}
+  src={srcMenor(img, base)}
+  srcset={srcset(img, base)}
+  sizes={sizes}
+  width={img.ancho}
+  height={img.alto}
+  alt={alt ?? foto.alt}
+  loading={prioridad ? 'eager' : 'lazy'}
+  decoding={prioridad ? 'sync' : 'async'}
+  fetchpriority={prioridad ? 'high' : undefined}
+  style={estilo}
+/>

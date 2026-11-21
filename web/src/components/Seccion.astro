@@ -1,0 +1,90 @@
+---
+// Sección del inicio: carrusel, grilla o destacado. Ofertas y Liquidación llevan todas sus
+// candidatas; las que no cumplen salen ocultas y el navegador las re-evalúa (regla 2).
+import TarjetaProducto from './TarjetaProducto.astro';
+import { url, t, ahora } from '../lib/sitio.mjs';
+import { requisitoCumplido } from '../lib/vista-precio.mjs';
+import { ventanaVigente } from '../compartido/precio.mjs';
+
+interface Props {
+  datos: { seccion: any; requisito: 'oferta' | 'liquidacion' | null; candidatas: any[]; productos: any[]; oculta: boolean; enlace: string | null };
+}
+const { seccion, requisito, candidatas, enlace } = Astro.props.datos;
+const id = `seccion-${seccion.id}`;
+const liquidacion = seccion.tipo === 'liquidacion';
+const lista = requisito ? candidatas : Astro.props.datos.productos;
+const oculta = (p: any) => !requisitoCumplido(requisito, ventanaVigente(p.precio.ventanas, ahora));
+const tamanos =
+  seccion.diseno === 'carrusel'
+    ? '(min-width: 48rem) 22vw, 44vw'
+    : '(min-width: 64rem) 18rem, (min-width: 48rem) 30vw, 46vw';
+---
+
+<section
+  class:list={['seccion', `seccion-${seccion.diseno}`, { 'seccion-liquidacion': liquidacion }]}
+  aria-labelledby={id}
+  data-seccion-requisito={requisito ?? undefined}
+  hidden={Astro.props.datos.oculta}
+>
+  <div class="contenedor bloque">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 id={id}>{seccion.titulo}</h2>
+        {seccion.subtitulo && <p>{seccion.subtitulo}</p>}
+      </div>
+      {enlace && (
+        <a class="enlace" href={url(enlace)}>
+          {t('seccion.ver_todo')}
+          <span class="sr"> · {seccion.titulo}</span>
+        </a>
+      )}
+    </div>
+    <ul class={seccion.diseno === 'carrusel' ? 'carrusel' : 'grilla'}>
+      {
+        lista.map((p: any, i: number) => (
+          <li class:list={{ 'destacado-primero': seccion.diseno === 'destacado' && i === 0 }}>
+            <TarjetaProducto producto={p} sizes={seccion.diseno === 'destacado' && i === 0 ? '(min-width: 48rem) 50vw, 100vw' : tamanos} requisito={requisito} oculta={requisito ? oculta(p) : false} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .seccion-liquidacion {
+    background: var(--color-liquidacion);
+    color: var(--color-sobre-liquidacion);
+  }
+  .seccion-liquidacion .cabecera-bloque p {
+    color: inherit;
+  }
+  .seccion-liquidacion .cabecera-bloque :focus-visible {
+    outline-color: var(--color-sobre-liquidacion);
+  }
+  .seccion-liquidacion :global(.tarjeta) {
+    background: var(--color-superficie);
+    color: var(--color-texto);
+    padding: 0.5rem 0.5rem 0.75rem;
+    border-radius: var(--radio-chico);
+  }
+  .seccion-liquidacion :global(.tarjeta .insignias) {
+    top: 1rem;
+    left: 1rem;
+  }
+  .seccion-liquidacion :global(.precio-antes) {
+    color: var(--color-texto-suave);
+  }
+  .seccion-destacado .destacado-primero {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 48rem) {
+    .seccion-destacado .destacado-primero {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+  }
+  .seccion-destacado .destacado-primero :global(.tarjeta-nombre) {
+    font-size: 1.125rem;
+  }
+</style>

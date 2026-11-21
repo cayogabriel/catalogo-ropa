@@ -1,0 +1,45 @@
+---
+// Tarjeta de producto: foto 4:5, insignias, nombre y precio. Toda la tarjeta es un enlace a la ficha.
+import Imagen from './Imagen.astro';
+import Precio from './Precio.astro';
+import Insignias from './Insignias.astro';
+import { url, t, datosPrecio } from '../lib/sitio.mjs';
+import { rutaProducto } from '../compartido/enlaces.mjs';
+
+interface Props {
+  producto: any;
+  sizes?: string;
+  requisito?: 'oferta' | 'liquidacion' | null;
+  oculta?: boolean;
+  prioridad?: boolean;
+  titulo?: 'h2' | 'h3';
+  extra?: Record<string, string>;
+}
+const { producto: p, sizes = '(min-width: 64rem) 18rem, (min-width: 48rem) 30vw, 46vw', requisito = null, oculta = false, prioridad = false, titulo = 'h3', extra = {} } = Astro.props;
+const Titulo = titulo;
+---
+
+<article
+  class="tarjeta"
+  data-precio={JSON.stringify(datosPrecio(p))}
+  data-requisito={requisito ?? undefined}
+  hidden={oculta}
+  {...extra}
+>
+  <div class="marco-foto">
+    <Imagen foto={p.fotos[0]} sizes={sizes} prioridad={prioridad} transicion={`foto-${p.codigo.toLowerCase()}`} />
+    <Insignias producto={p} />
+  </div>
+  <Titulo class="tarjeta-nombre">
+    <a class="tarjeta-enlace" href={url(rutaProducto(p.codigo))}>{p.nombre}</a>
+  </Titulo>
+  <Precio producto={p} />
+  {p.estado === 'agotado' && <p class="texto-suave tarjeta-agotado">{t('producto.agotado')}</p>}
+</article>
+
+<style>
+  .tarjeta-agotado {
+    font-size: 0.875rem;
+    margin-top: -0.375rem;
+  }
+</style>

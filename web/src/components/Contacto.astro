@@ -1,0 +1,59 @@
+---
+// WhatsApp de la vendedora por defecto y las redes configuradas (las null no se muestran).
+import Icono from './Icono.astro';
+import { catalogo, t } from '../lib/sitio.mjs';
+import { enlaceWhatsApp, urlRed } from '../compartido/enlaces.mjs';
+
+interface Props {
+  compacto?: boolean;
+}
+const { compacto = false } = Astro.props;
+const vendedora = catalogo.vendedoras.find((v) => v.por_defecto) ?? catalogo.vendedoras[0];
+const mensaje = t('contacto.mensaje_whatsapp');
+const whatsapp = mensaje ? enlaceWhatsApp(vendedora.whatsapp, mensaje) : `https://wa.me/${vendedora.whatsapp}`;
+const redes = (['instagram', 'facebook', 'tiktok'] as const)
+  .map((red) => ({ red, href: urlRed(red, catalogo.tienda.redes[red], 'perfil') }))
+  .filter((r) => r.href);
+---
+
+<ul class:list={['contacto', { compacto }]}>
+  <li>
+    <a class="boton boton-primario" href={whatsapp} target="_blank" rel="noopener" data-evento="whatsapp">
+      <Icono nombre="whatsapp" />
+      {t('contacto.whatsapp')}
+      <span class="sr">({t('accesibilidad.abrir_whatsapp')})</span>
+    </a>
+  </li>
+  {
+    redes.map(({ red, href }) => (
+      <li>
+        <a class="boton boton-secundario" href={href} target="_blank" rel="noopener">
+          <Icono nombre={red} />
+          {t(`contacto.${red}`)}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .contacto {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .contacto:not(.compacto) li:first-child {
+    flex-basis: 100%;
+  }
+  .contacto:not(.compacto) li:first-child .boton {
+    width: 100%;
+  }
+  @media (min-width: 40rem) {
+    .contacto:not(.compacto) li:first-child {
+      flex-basis: auto;
+    }
+  }
+</style>
