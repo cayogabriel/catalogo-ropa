@@ -2,6 +2,8 @@
 // por defecto y el puntero que usa la API pública. Se puede repetir sin miedo,
 // aunque la vez anterior haya fallado a mitad: cada id se guarda apenas se crea,
 // lo que esté en la papelera se restaura y un candado evita dos corridas a la vez.
+// Además carga las semillas (paletas y textos de content/) en las pestañas que estén vacías,
+// pone casillas en las columnas de sí/no e instala los activadores (sin duplicarlos).
 
 function instalar() {
   requireAdmin_();
@@ -46,8 +48,13 @@ function instalarConCandado_() {
   }
   asegurarDentro_(DriveApp.getFileById(libro.getId()), raiz);
   libro.setSpreadsheetTimeZone(CONFIG_DEFECTO.zona_horaria);
-  asegurarPestanas_(libro);
+  // La pestaña vacía que trae un libro nuevo se borra una sola vez: la primera instalación completa.
+  // (Si la corrida falló a mitad, la siguiente la borra; después nunca se borra nada que no sea del esquema.)
+  asegurarPestanas_(libro, !props.getProperty(PROP.HOJA_LIMPIA));
+  props.setProperty(PROP.HOJA_LIMPIA, '1');
   asegurarConfig_(libro);
+  sembrarSiVacias_();
+  asegurarActivadores_();
 
   const puntero = escribirPuntero_(raiz, libro.getId(), carpetas, props.getProperty(PROP.PUNTERO_ID));
   props.setProperty(PROP.PUNTERO_ID, puntero.getId());
@@ -99,46 +106,75 @@ function asegurarCarpetas_(raiz) {
   return ids;
 }
 
-function asegurarPestanas_(libro) {
+function asegurarPestanas_(libro, limpiarDefecto) {
   const nombres = Object.keys(ESQUEMA);
   nombres.forEach(function (nombre, indice) {
     let hoja = libro.getSheetByName(nombre);
     if (!hoja) hoja = libro.insertSheet(nombre, indice);
     asegurarEncabezados_(hoja, ESQUEMA[nombre]);
-    formatearTexto_(hoja, nombre);
+    formatearColumnas_(hoja, nombre);
+    ponerCasillas_(hoja, nombre);
     recortarColumnas_(hoja, ESQUEMA[nombre].length);
     hoja.setFrozenRows(1);
   });
-  // Quita la pestaña vacía que trae un libro nuevo («Hoja 1» o «Sheet1»).
+  if (!limpiarDefecto) return;
+  // Solo las pestañas vacías con el nombre que Google da a las nuevas («Hoja 1», «Sheet1»).
   libro.getSheets().forEach(function (hoja) {
-    if (nombres.indexOf(hoja.getName()) === -1 && hoja.getLastRow() === 0) libro.deleteSheet(hoja);
+    if (nombres.indexOf(hoja.getName()) === -1 && /^(Hoja|Sheet) ?[0-9]+$/.test(hoja.getName()) && hoja.getLastRow() === 0) {
+      libro.deleteSheet(hoja);
+    }
   });
 }
 
+function asegurarColumnas_(hoja, necesarias) {
+  const faltan = necesarias - hoja.getMaxColumns();
+  if (faltan > 0) hoja.insertColumnsAfter(hoja.getMaxColumns(), faltan);
+}
+
+// Agrega al final (después de la última columna con algo, NO después de la última con encabezado:
+// podría haber datos de la dueña en medio) las columnas del esquema que falten.
 function asegurarEncabezados_(hoja, columnas) {
-  const ancho = Math.max(hoja.getLastColumn(), 1);
-  const actuales = hoja.getRange(1, 1, 1, ancho).getValues()[0].filter(function (v) {
+  const ultima = hoja.getLastColumn();
+  const actuales = ultima > 0 ? hoja.getRange(1, 1, 1, ultima).getValues()[0] : [];
+  const presentes = actuales.filter(function (v) {
     return v !== '';
   });
-  if (actuales.length === 0) {
+  if (presentes.length === 0) {
+    asegurarColumnas_(hoja, columnas.length);
     hoja.getRange(1, 1, 1, columnas.length).setValues([columnas]).setFontWeight('bold');
     return;
   }
-  // Agrega al final las columnas que falten, sin tocar las que ya existen.
   const faltan = columnas.filter(function (c) {
-    return actuales.indexOf(c) === -1;
+    return presentes.indexOf(c) === -1;
   });
-  if (faltan.length) hoja.getRange(1, actuales.length + 1, 1, faltan.length).setValues([faltan]).setFontWeight('bold');
+  if (!faltan.length) return;
+  const inicio = ultima + 1;
+  asegurarColumnas_(hoja, inicio + faltan.length - 1);
+  hoja.getRange(1, inicio, 1, faltan.length).setValues([faltan]).setFontWeight('bold');
 }
 
-// Formato de texto plano en las columnas de texto (ver TIPOS en esquema.js).
-function formatearTexto_(hoja, nombre) {
+// Texto plano («@») en las columnas de texto (ver TIPOS en esquema.js) y formato legible en las de fecha.
+function formatearColumnas_(hoja, nombre) {
   const tipos = TIPOS[nombre] || {};
   const encabezados = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   ESQUEMA[nombre].forEach(function (columna) {
-    if (tipos[columna]) return;
     const indice = encabezados.indexOf(columna);
-    if (indice !== -1) hoja.getRange(1, indice + 1, hoja.getMaxRows(), 1).setNumberFormat('@');
+    if (indice === -1) return;
+    if (tipos[columna] === 'fecha') hoja.getRange(2, indice + 1, hoja.getMaxRows() - 1, 1).setNumberFormat(FORMATO_FECHA_HOJA);
+    else if (!tipos[columna]) hoja.getRange(1, indice + 1, hoja.getMaxRows(), 1).setNumberFormat('@');
+  });
+}
+
+// Casillas de verificación en las columnas de sí/no, para editar a mano sin escribir TRUE/FALSE.
+function ponerCasillas_(hoja, nombre) {
+  const tipos = TIPOS[nombre] || {};
+  const encabezados = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  ESQUEMA[nombre].forEach(function (columna) {
+    if (tipos[columna] !== 'booleano') return;
+    const indice = encabezados.indexOf(columna);
+    if (indice === -1) return;
+    const regla = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+    hoja.getRange(2, indice + 1, hoja.getMaxRows() - 1, 1).setDataValidation(regla);
   });
 }
 
@@ -146,6 +182,20 @@ function formatearTexto_(hoja, nombre) {
 function recortarColumnas_(hoja, minimo) {
   const ancho = Math.max(hoja.getLastColumn(), minimo);
   if (hoja.getMaxColumns() > ancho) hoja.deleteColumns(ancho + 1, hoja.getMaxColumns() - ancho);
+}
+
+// Paletas y textos de content/ (generados en semillas.js) y las plantillas de WhatsApp, solo si la pestaña está vacía.
+function sembrarSiVacias_() {
+  const sembrar = function (entidad, filas) {
+    const tabla = leerTabla_(entidad);
+    if (tabla.filas.length === 0) agregarFilas_(entidad, tabla, filas);
+  };
+  sembrar('paletas', SEMILLAS.paletas.map(function (p) {
+    return Object.assign({}, p, { version: 1 });
+  }));
+  sembrar('textos', SEMILLAS.textos.map(function (x) {
+    return { clave: x.clave, valor: x.valor, version: 1 };
+  }));
 }
 
 function asegurarConfig_(libro) {

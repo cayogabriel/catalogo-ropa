@@ -9,9 +9,9 @@ const paletas = JSON.parse(readFileSync(new URL('../../../content/paletas.json',
 describe('guardarTexto()', () => {
   test('crea la clave si no existe y la actualiza si existe, con versión e historial', () => {
     const { ctx, libro } = panelInstalado();
-    expect(ctx.guardarTexto('inicio.portada.titulo', 'Nueva temporada')).toEqual({ clave: 'inicio.portada.titulo', valor: 'Nueva temporada' });
-    expect(ctx.guardarTexto('inicio.portada.titulo', 'Verano')).toEqual({ clave: 'inicio.portada.titulo', valor: 'Verano' });
-    const fila = filasCrudas(libro, 'textos').find((f) => f.clave === 'inicio.portada.titulo');
+    expect(ctx.guardarTexto('prueba.portada.titulo', 'Nueva temporada')).toEqual({ clave: 'prueba.portada.titulo', valor: 'Nueva temporada' });
+    expect(ctx.guardarTexto('prueba.portada.titulo', 'Verano')).toEqual({ clave: 'prueba.portada.titulo', valor: 'Verano' });
+    const fila = filasCrudas(libro, 'textos').find((f) => f.clave === 'prueba.portada.titulo');
     expect(fila).toMatchObject({ valor: 'Verano', version: 2 });
     const h = ctx.historial({ entidad: 'textos' });
     expect(h.map((x) => [x.accion, x.antes, x.despues])).toEqual([['editar', '"Nueva temporada"', '"Verano"'], ['crear', '', '"Nueva temporada"']]);
@@ -19,9 +19,9 @@ describe('guardarTexto()', () => {
 
   test('guardar el mismo valor no sube la versión', () => {
     const { ctx, libro } = panelInstalado();
-    ctx.guardarTexto('pie.horario', 'Lunes a sábado');
-    ctx.guardarTexto('pie.horario', 'Lunes a sábado');
-    expect(filasCrudas(libro, 'textos').find((f) => f.clave === 'pie.horario').version).toBe(1);
+    ctx.guardarTexto('prueba.pie.horario', 'Lunes a sábado');
+    ctx.guardarTexto('prueba.pie.horario', 'Lunes a sábado');
+    expect(filasCrudas(libro, 'textos').find((f) => f.clave === 'prueba.pie.horario').version).toBe(1);
   });
 
   test('rechaza claves mal formadas, las que empiezan con _ y valores enormes', () => {
@@ -29,21 +29,21 @@ describe('guardarTexto()', () => {
     expect(() => ctx.guardarTexto('Sin Formato', 'x')).toThrow(/invalido: la clave/);
     expect(() => ctx.guardarTexto('_nota', 'x')).toThrow(/invalido: la clave/);
     expect(() => ctx.guardarTexto('una', 'x')).toThrow(/invalido: la clave/);
-    expect(() => ctx.guardarTexto('pie.envios', 'x'.repeat(2001))).toThrow(/^limite:/);
+    expect(() => ctx.guardarTexto('prueba.pie.envios', 'x'.repeat(2001))).toThrow(/^limite:/);
   });
 
   test('un texto que empieza con = se guarda como texto', () => {
     const { ctx, libro } = panelInstalado();
-    ctx.guardarTexto('pie.envios', '=1+1');
-    expect(filasCrudas(libro, 'textos').find((f) => f.clave === 'pie.envios').valor).toBe('=1+1');
+    ctx.guardarTexto('prueba.pie.envios', '=1+1');
+    expect(filasCrudas(libro, 'textos').find((f) => f.clave === 'prueba.pie.envios').valor).toBe('=1+1');
   });
 
   test('se puede deshacer', () => {
     const { ctx } = panelInstalado();
-    ctx.guardarTexto('pie.envios', 'A');
-    ctx.guardarTexto('pie.envios', 'B');
+    ctx.guardarTexto('prueba.pie.envios', 'A');
+    ctx.guardarTexto('prueba.pie.envios', 'B');
     ctx.deshacer(ctx.historial({ entidad: 'textos' })[0].id);
-    expect(ctx.leerTabla_('textos').filas.find((f) => f.clave === 'pie.envios').valor).toBe('A');
+    expect(ctx.leerTabla_('textos').filas.find((f) => f.clave === 'prueba.pie.envios').valor).toBe('A');
   });
 });
 

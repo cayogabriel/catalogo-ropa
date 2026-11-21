@@ -78,7 +78,7 @@ describe('qué se publica', () => {
     const c = copia(t);
     expect(c.tema_paleta_id).toBe('verano-costa');
     expect(Object.keys(c.paletas)).toEqual(['verano-costa']);
-    expect(c.paletas['verano-costa']).toMatchObject({ nombre: 'verano-costa', fuentes: { titulos: 'Poppins', texto: 'Nunito Sans' }, radio: '12px' });
+    expect(c.paletas['verano-costa']).toMatchObject({ nombre: 'Verano Costa', fuentes: { titulos: 'Poppins', texto: 'Nunito Sans' }, radio: '16px' });
     expect(Object.keys(c.paletas['verano-costa'].tokens)).toHaveLength(16);
     // sin temporada activa, el tema es la paleta por defecto de la tienda
     t.ctx.guardarCampo('temporadas', t.ids.temporada.id, 'activa_manual', 'no', 1);
