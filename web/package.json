@@ -1,5 +1,17 @@
 {
   "name": "@catalogo/web",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:fixture": "node scripts/publicar.mjs --origen=fixture && astro build",
+    "publicar": "node scripts/publicar.mjs --origen=api",
+    "verificar:build": "node scripts/verificar-build.mjs"
+  },
+  "dependencies": {
+    "@catalogo/contratos": "*",
+    "astro": "7.4.13",
+    "sharp": "0.35.5"
+  }
 }

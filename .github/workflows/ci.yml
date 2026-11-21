@@ -1,0 +1,25 @@
+# Pruebas en cada push y pull request: tests + build con datos de ejemplo.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build con datos de ejemplo
+        run: npm run build:fixture -w web
+      - name: Verificar páginas y vistas previas
+        run: npm run verificar:build -w web

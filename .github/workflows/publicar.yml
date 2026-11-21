@@ -1,0 +1,60 @@
+# Publica el sitio en GitHub Pages con la copia que armó el Panel.
+# Se dispara con el botón «Publicar» del Panel (repository_dispatch), a mano,
+# y cada madrugada mediante un activador del Panel. Si algo falla antes del
+# despliegue, la web anterior sigue en línea.
+name: Publicar sitio
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [publicar]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Caché de fotos procesadas
+        uses: actions/cache@v6
+        with:
+          path: web/.cache
+          key: fotos-${{ github.run_id }}
+          restore-keys: fotos-
+      - name: Datos y fotos desde la API
+        run: npm run publicar -w web
+        env:
+          CATALOG_API_URL: ${{ vars.CATALOG_API_URL }}
+      - name: Construir el sitio
+        run: npm run build -w web
+        env:
+          PUBLIC_API_URL: ${{ vars.CATALOG_API_URL }}
+      - name: Verificar páginas y vistas previas
+        run: npm run verificar:build -w web
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: web/dist
+
+  desplegar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,46 @@
+---
+// Ficha provisional de S1: prueba la vista previa (og:image) de cada producto. S3 la reemplaza.
+import datos from '../../data/catalogo.json';
+
+export function getStaticPaths() {
+  return datos.productos.map((p) => ({ params: { codigo: p.codigo.toLowerCase() }, props: { p } }));
+}
+
+const { p } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const img = datos.imagenes[p.fotos[0].id];
+const absoluta = (ruta) => new URL(base + ruta, Astro.site).href;
+const ahora = Date.now();
+const vigente =
+  p.precio.ventanas.find(
+    (v) => (v.desde === null || Date.parse(v.desde) <= ahora) && (v.hasta === null || ahora < Date.parse(v.hasta)),
+  ) ?? p.precio.ventanas[0];
+const precio = `${datos.tienda.moneda.simbolo} ${vigente.precio}`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{p.nombre} · {datos.tienda.nombre}</title>
+    <meta name="description" content={p.descripcion} />
+    <meta property="og:type" content="product" />
+    <meta property="og:title" content={p.nombre} />
+    <meta property="og:description" content={`${p.codigo} · ${precio}`} />
+    <meta property="og:image" content={absoluta(img.og)} />
+    <meta property="og:url" content={absoluta(`p/${p.codigo.toLowerCase()}/`)} />
+  </head>
+  <body style="font-family: system-ui, sans-serif; margin: 0 auto; max-width: 640px; padding: 1rem">
+    <a href={base}>← Volver</a>
+    <h1>{p.nombre}</h1>
+    <img
+      src={base + Object.values(img.webp).at(-1)}
+      alt={p.fotos[0].alt}
+      width={img.ancho}
+      height={img.alto}
+      style="height: auto; width: 100%"
+    />
+    <p>{p.codigo} · {precio}</p>
+  </body>
+</html>
