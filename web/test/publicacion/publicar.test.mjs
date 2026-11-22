@@ -65,7 +65,11 @@ describe('obtenerCatalogo', () => {
   });
 });
 
-describe('procesarFoto', () => {
+// Estas pruebas convierten imágenes reales con sharp (hasta 2000 px): con todas las pruebas en paralelo
+// pasaban los 5 s por defecto y fallaban al azar. El tiempo es del trabajo de sharp, no un cuelgue.
+const IMAGENES = { timeout: 30_000 };
+
+describe('procesarFoto', IMAGENES, () => {
   test('una foto de 1200×1500 da WebP de 480, 960 y 1200, un og de ≤ 300 KB y una miniatura borrosa', async () => {
     const dir = tmp();
     const r = await procesarFoto(readFileSync(join(DIR_FIXTURE_IMG, 'fx_00000001.jpg')), { id: 'fx_00000001', dirSalida: dir });
@@ -132,7 +136,7 @@ const ruido = (ancho, alto) =>
     .jpeg({ quality: 95 })
     .toBuffer();
 
-describe('mejoras de la revisión de S1', () => {
+describe('mejoras de la revisión de S1', IMAGENES, () => {
   test('usosDeFoto también cuenta las fotos de categoría', () => {
     const c = structuredClone(ejemplo);
     c.categorias[0].foto = { id: 'fx_00000001', alt: 'x' };
