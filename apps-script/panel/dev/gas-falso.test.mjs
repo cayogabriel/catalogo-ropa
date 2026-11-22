@@ -422,3 +422,25 @@ describe('crearGasFalso: datos de partida', () => {
     }
   });
 });
+
+// El simulador imita al servidor real (crud.js, quitarPorDefectoAjeno_): siempre queda exactamente una
+// vendedora por defecto, y las que el servidor desmarca suben su versión.
+describe('crearGasFalso: vendedora por defecto, como el servidor real', () => {
+  it('marcar una como por defecto desmarca a las demás y les sube la versión', async () => {
+    const gas = crearGasFalso();
+    const nueva = await gas.llamar('crear', ['vendedoras', { nombre: 'Bea', whatsapp: '51900000002', activa: true, por_defecto: false }]);
+    const antes = (await gas.llamar('listar', ['vendedoras'])).filas.filter((v) => v.por_defecto && v.id !== nueva.id);
+    expect(antes.length).toBeGreaterThan(0);
+    await gas.llamar('guardarCampo', ['vendedoras', nueva.id, 'por_defecto', true, nueva.version]);
+    const despues = (await gas.llamar('listar', ['vendedoras'])).filas;
+    expect(despues.filter((v) => v.por_defecto).map((v) => v.id)).toEqual([nueva.id]);
+    for (const v of antes) expect(despues.find((d) => d.id === v.id).version).toBe(v.version + 1);
+  });
+
+  it('crear una ya marcada por defecto también desmarca a las demás', async () => {
+    const gas = crearGasFalso();
+    const nueva = await gas.llamar('crear', ['vendedoras', { nombre: 'Cata', whatsapp: '51900000003', activa: true, por_defecto: true }]);
+    const filas = (await gas.llamar('listar', ['vendedoras'])).filas;
+    expect(filas.filter((v) => v.por_defecto).map((v) => v.id)).toEqual([nueva.id]);
+  });
+});

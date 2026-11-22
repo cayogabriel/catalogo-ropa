@@ -216,6 +216,18 @@ export function crearGasFalso({
     return { filas: copia(filas), leido_en: iso() };
   };
 
+  // Como el servidor real (crud.js, quitarPorDefectoAjeno_): si esta vendedora queda por defecto,
+  // las demás dejan de serlo y suben su versión.
+  function dejarUnaPorDefecto(fila) {
+    if (!fila.por_defecto) return;
+    for (const v of db.filas.vendedoras) {
+      if (v.id === fila.id || !v.por_defecto) continue;
+      historiar('vendedoras', v.id, 'por_defecto', true, false, 'editar');
+      v.por_defecto = false;
+      v.version += 1;
+    }
+  }
+
   f.crear = (entidad, datos = {}) => {
     const lista = entidadValida(entidad);
     const base = FILA_BASE[entidad]();
@@ -253,6 +265,7 @@ export function crearGasFalso({
     }
     if (entidad === 'paletas') fila.origen = 'propia';
     validarFila(entidad, fila, null, null);
+    if (entidad === 'vendedoras') dejarUnaPorDefecto(fila);
     lista.push(fila);
     historiar(entidad, fila.id, '', null, fila, 'crear');
     tocar();
@@ -273,6 +286,7 @@ export function crearGasFalso({
       historiar(entidad, id, campo, fila[campo], nueva[campo], 'editar');
       fila[campo] = nueva[campo];
     }
+    if (entidad === 'vendedoras') dejarUnaPorDefecto(fila);
     if (entidad === 'productos') {
       fila.actualizado_en = iso();
       if (publicado(fila) && !fila.publicado_en) fila.publicado_en = iso();

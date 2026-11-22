@@ -133,14 +133,13 @@ document.addEventListener('alpine:init', function () {
         }
         d.guardar('vendedoras', v, 'activa', e.target.checked);
       },
-      /** Primero se marca la nueva y después se desmarca la anterior: nunca queda la tienda sin vendedora por defecto. */
+      /** Se marca la nueva y el servidor desmarca solo a la anterior (le sube la versión): después se recarga
+       *  la lista. Un segundo guardado para desmarcarla llegaría con una versión vieja y daría «conflicto». */
       hacerPrincipal: function (v) {
         var d = A.store('datos');
-        var otras = this.vendedoras.filter(function (o) { return o.id !== v.id && o.por_defecto; });
         d.guardar('vendedoras', v, 'por_defecto', true);
         return d.vaciar().then(function (r) {
-          if (!r.ok) return;
-          otras.forEach(function (o) { d.guardar('vendedoras', o, 'por_defecto', false); });
+          if (r.ok) return d.cargar('vendedoras', true);
         });
       },
       eliminar: function (v) {
