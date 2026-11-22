@@ -165,6 +165,16 @@ describe('antes de nada', () => {
     expect(t.dobles._drive.llamadas.getFileById).toEqual([]);
   });
 
+  test('una vendedora activa a medias no se publica y el mensaje dice qué le falta', () => {
+    const t = tiendaDeEjemplo();
+    const bea = t.ids.bea.id;
+    t.ctx.guardarCampo('vendedoras', bea, 'nombre', '', version(t, 'vendedoras', bea));
+    expect(() => armar(t)).toThrow(/una vendedora activa no tiene nombre/);
+    t.ctx.guardarCampo('vendedoras', bea, 'nombre', 'Bea', version(t, 'vendedoras', bea));
+    t.ctx.guardarCampo('vendedoras', bea, 'whatsapp', '', version(t, 'vendedoras', bea));
+    expect(() => armar(t)).toThrow(/a la vendedora «Bea» le falta su número de WhatsApp/);
+  });
+
   test('sin vendedora activa, o con dos por defecto, lanza invalido', () => {
     const t = tiendaDeEjemplo();
     const tabla = t.ctx.leerTabla_('vendedoras');

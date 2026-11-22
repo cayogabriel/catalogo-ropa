@@ -67,6 +67,8 @@ function armarCatalogo_(datos, ahora, resolverFoto) {
       return v.activa;
     })
     .map(function (v) {
+      if (!String(v.nombre || '').trim()) mal('una vendedora activa no tiene nombre: escríbelo en «Vendedoras»');
+      if (!v.whatsapp) mal('a la vendedora «' + v.nombre + '» le falta su número de WhatsApp');
       if (!/^[0-9]{8,15}$/.test(v.whatsapp)) mal('la vendedora «' + v.nombre + '» no tiene un número de WhatsApp válido');
       return { id: v.id, nombre: v.nombre, whatsapp: v.whatsapp, por_defecto: Boolean(v.por_defecto) };
     });

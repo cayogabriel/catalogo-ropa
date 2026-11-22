@@ -25,11 +25,14 @@ describe('C1 · una fila vacía en estadisticas_diarias no hace perder otras fil
 });
 
 describe('C2 · todo lo que se guarda desde el Panel debe poder publicarse', () => {
-  test('una vendedora necesita nombre', () => {
-    const { ctx } = panelInstalado();
-    expect(() => ctx.crear('vendedoras', { whatsapp: '51911111111' })).toThrow(/^invalido: la vendedora necesita un nombre/);
-    const v = ctx.crear('vendedoras', { nombre: 'Ana', whatsapp: '51911111111' });
-    expect(() => ctx.guardarCampo('vendedoras', v.id, 'nombre', '  ', 1)).toThrow(/necesita un nombre/);
+  // Integración con la interfaz: la pantalla crea la vendedora vacía y la llena campo por campo,
+  // así que se guarda a medias (como un borrador) y lo completo se exige al publicar, con un mensaje claro.
+  test('una vendedora sin nombre se puede guardar a medias, pero no publicar', () => {
+    const t = tiendaDeEjemplo();
+    const v = t.ctx.crear('vendedoras', { whatsapp: '51900000003' });
+    expect(v).toMatchObject({ nombre: '', activa: true });
+    const ahora = t.ctx.ahora_();
+    expect(() => t.ctx.armarCatalogo_(t.ctx.leerDatosParaPublicar_(ahora), ahora, t.ctx.resolverFotoDrive_)).toThrow(/una vendedora activa no tiene nombre/);
   });
 
   test('una paleta necesita las dos fuentes', () => {
